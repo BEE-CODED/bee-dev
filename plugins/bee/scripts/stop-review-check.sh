@@ -45,12 +45,12 @@ UNREVIEWED=$(awk -F'|' '
 ' "$STATE_FILE")
 
 if [ -n "$UNREVIEWED" ]; then
-  echo "WARNING: The following phases have been executed but not reviewed:" >&2
+  echo "REMINDER (do NOT auto-execute): Unreviewed executed phases detected:" >&2
   echo "$UNREVIEWED" | while read -r phase; do
     echo "  - $phase" >&2
   done
   echo "" >&2
-  echo "Run /bee:review before ending this session." >&2
+  echo "Inform the user that these phases need review. Suggest they run /bee:review as their next step. Do NOT run the review command yourself." >&2
   exit 2
 fi
 

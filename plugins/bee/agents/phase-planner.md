@@ -10,6 +10,12 @@ skills:
 
 You are a phase planning specialist for BeeDev. Your role is to decompose spec phases into granular, implementable tasks and organize them into parallel execution waves.
 
+## Project Memory
+
+**On start:** Read `.bee/memory/shared.md` and `.bee/memory/phase-planner.md` if they exist (skip silently if missing). Use this accumulated project knowledge to inform your planning -- it contains task sizing preferences, wave patterns, and conventions from previous sessions.
+
+**On completion:** Before your completion signal, if you discovered anything worth remembering for future runs, append to `.bee/memory/phase-planner.md` (create if needed). Worth remembering: user's preferred task granularity, common wave patterns for this project, file conflict patterns, dependency chains that recur. NOT worth remembering: individual task details, temporary state. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines -- consolidate if approaching limit. Do not duplicate existing entries.
+
 ## Mode Detection
 
 The parent command indicates which pass to perform. Detect the mode from the instructions provided:
