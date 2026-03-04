@@ -83,13 +83,26 @@ Read STATE.md and check for an `## Autopilot` section.
 
 ### Step 3: Phase Loop
 
-For each phase from `$CURRENT_PHASE` to `$TOTAL_PHASES`, execute steps 3a through 3d in sequence. Before each sub-step, check STATE.md to see if that step is already complete for this phase (enables skip-ahead on resume).
+**CRITICAL ROUTING -- read this first before doing anything else in Step 3:**
+
+Use `$CURRENT_STEP` (from Step 2) to jump DIRECTLY to the right sub-step. Do NOT start from Step 3a every time. This is the jump table:
+
+| `$CURRENT_STEP` value | Jump to | Reason |
+|------------------------|---------|--------|
+| `plan` | Step 3a | Phase needs planning |
+| `execute` | Step 3b | Phase is planned, needs execution |
+| `review` | Step 3c | Phase is executed, needs review |
+| `project-review` | Step 4 | All phases done, run project review |
+
+After completing a sub-step and its compact point, the command STOPS. The user compacts and re-runs `/bee:autopilot`. Step 2 detects resume, sets `$CURRENT_STEP`, and this jump table routes to the right place.
+
+When a sub-step completes and transitions to the next step (e.g., plan -> execute), it updates `$CURRENT_STEP` in STATE.md's Autopilot section BEFORE hitting the compact point. This ensures the next resume lands in the right place.
 
 ---
 
 #### Step 3a: Plan Phase
 
-**Skip condition:** If the Phases table shows Plan = "Yes" for this phase AND Status is PLANNED or later (EXECUTING, EXECUTED, REVIEWING, REVIEWED, COMMITTED), skip to Step 3b.
+**Jump here when `$CURRENT_STEP = plan`.**
 
 1. Read phases.md to get the phase name for phase `$CURRENT_PHASE`
 2. Slugify the phase name: `echo "{name}" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-'`
@@ -148,7 +161,7 @@ Wait for completion. Verify wave sections exist. If not: display "Autopilot: Pha
 
 #### Step 3b: Execute Phase
 
-**Skip condition:** If the Phases table shows Status as EXECUTED, REVIEWING, REVIEWED, or COMMITTED for this phase, skip to Step 3c.
+**Jump here when `$CURRENT_STEP = execute`.** Do NOT run Step 3a. Do NOT evaluate Step 3a's compact point. Start directly here.
 
 1. Read STATE.md to find spec path
 2. Construct TASKS.md path: `{spec-path}/phases/{NN}-{slug}/TASKS.md`
@@ -218,7 +231,7 @@ Phase {N} executed: {completed} tasks done, {failed} failed
 
 #### Step 3c: Review Phase
 
-**Skip condition:** If the Phases table shows Status as REVIEWED or COMMITTED for this phase, skip to Step 3d.
+**Jump here when `$CURRENT_STEP = review`.** Do NOT run Step 3a or 3b. Do NOT evaluate their compact points. Start directly here.
 
 1. Read STATE.md, find spec path, construct phase directory path
 2. Read TASKS.md to identify files modified by the phase
@@ -278,12 +291,14 @@ CRITICAL: Spawn fixers SEQUENTIALLY. Never parallel.
 1. Read STATE.md from disk
 2. Set Reviewed column to "Yes ({N})" where N = total confirmed findings fixed
 3. Set Status to "REVIEWED"
-4. Update Autopilot section: Current Step = "plan" (for next phase), increment Current Phase
-5. Update Last Action:
+4. Update Autopilot Completed list: add this phase number
+5. **Determine next step:**
+   - If `$CURRENT_PHASE == $TOTAL_PHASES` (this was the LAST phase): set Autopilot Current Step to `project-review` (do NOT increment Current Phase)
+   - Otherwise: increment Autopilot Current Phase by 1, set Autopilot Current Step to `plan`
+6. Update Last Action:
    - Command: `/bee:autopilot`
    - Timestamp: current ISO 8601 timestamp
    - Result: "Autopilot: Phase {N} reviewed -- {findings} findings, {fixed} fixed, {fp} false positives"
-6. Update Autopilot Completed list: add this phase number
 7. Write STATE.md
 
 Display:
@@ -293,14 +308,14 @@ Phase {N} reviewed: {findings} total, {real_bugs} bugs ({fixed} fixed), {fp} fal
 
 ---
 
-#### Step 3d: Phase Transition
+#### Step 3d: Phase Transition (handled inside Step 3c)
 
-After review completes (or skip conditions met), move to next phase:
+Phase transition is handled at the end of Step 3c (review). After review completes:
 
-1. If current phase is the last phase (`$CURRENT_PHASE == $TOTAL_PHASES`): break out of the loop, proceed to Step 4
-2. Otherwise: increment `$CURRENT_PHASE`, set `$CURRENT_STEP = plan`
+- If `$CURRENT_PHASE == $TOTAL_PHASES` (last phase): set `$CURRENT_STEP = project-review` in STATE.md Autopilot section, then compact. On resume, the jump table sends to Step 4.
+- Otherwise: increment `$CURRENT_PHASE`, set `$CURRENT_STEP = plan` in STATE.md Autopilot section, then compact. On resume, the jump table sends to Step 3a for the next phase.
 
-**Compact Point:** Proceed to Step 3e (Compact) before starting next phase.
+This is already encoded in Step 3c's "After all findings processed" state update (point 4). No separate step needed.
 
 ---
 
@@ -449,8 +464,9 @@ After all phases are reviewed (the phase loop is complete):
 **Design Notes (do not display to user):**
 
 - Autopilot inlines the logic from plan-phase, execute-phase, review, compact, and review-project. It does NOT invoke those slash commands (which can't be called programmatically). The patterns are replicated with autopilot-specific behavior.
-- The `## Autopilot` section in STATE.md is the resume mechanism. It survives compaction (written to disk). On re-invocation, Step 2 detects it and resumes from the tracked phase and step.
+- The `## Autopilot` section in STATE.md is the resume mechanism. It survives compaction (written to disk). On re-invocation, Step 2 detects it and sets `$CURRENT_STEP`. Step 3's jump table routes DIRECTLY to the right sub-step -- no skip-condition chaining needed.
 - Compact points are mandatory between major steps. The command STOPS at each compact point and instructs the user to run `/compact` then `/bee:autopilot`. This is because `/compact` is a built-in CLI command that cannot be invoked programmatically.
+- CRITICAL: On resume, the jump table in Step 3 ensures Claude jumps directly to the right sub-step (3a/3b/3c/Step 4) without evaluating or passing through earlier steps. This prevents compact-point confusion where Claude might re-trigger a compact point from a skipped step.
 - No commits are made. The user reviews and commits manually after autopilot completes (or per phase if they prefer).
 - No manual testing. The `/bee:test` step is entirely skipped.
 - All human gates are auto-approved: plan approval, stylistic finding classification, >10 findings confirmation, already-planned/executed warnings.
