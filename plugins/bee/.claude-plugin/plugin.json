@@ -1,6 +1,6 @@
 {
   "name": "bee",
-  "version": "1.6.1",
+  "version": "2.0.0",
   "description": "Spec-driven development workflow with TDD enforcement, parallel agent execution, persistent agent memory, review gates, and autonomous autopilot mode",
   "author": {
     "name": "Beecoded",

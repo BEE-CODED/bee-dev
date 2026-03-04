@@ -86,24 +86,25 @@ Run all phases from a spec automatically with no human gates:
 
 ```
 1. /bee:new-spec                # Create the spec first
-2. /bee:autopilot               # Start autopilot -- plans, executes, reviews all phases
-   /compact                     # At each compact point, compress context
-   /bee:autopilot               # Resume -- autopilot picks up where it left off
-   --- repeat compact + autopilot until all phases done ---
-3. Review changes and commit    # No commits are made during autopilot
+2. /bee:autopilot               # Runs a script that executes ALL phases
+3. git diff                     # Review your changes
+4. /bee:commit                  # Commit when satisfied
 ```
 
-**What autopilot does per phase:**
+**How autopilot works:**
+
+Each step (plan, execute, review) runs as a **separate `claude -p` session** with a fresh context window. A bash script orchestrates the loop. STATE.md on disk coordinates between steps.
 
 ```
-Plan (3-pass, auto-approved) -> Execute (parallel waves) -> Review + Auto-fix -> Next Phase
+Per phase: Plan (3-pass) -> Execute (parallel waves) -> Review + Auto-fix
+After all: Project Review
 ```
 
-- No commits (you review and commit after)
-- No manual testing (relies on automated tests during TDD)
+- Fresh context per step -- no bloat, no compacting needed
+- No commits (you review the diff after)
+- No manual testing (TDD during execution provides coverage)
 - All gates auto-approved (plans, review findings, stylistic fixes)
-- Compact points between steps for context management
-- Resumable via STATE.md tracking (crash-safe)
+- Ctrl+C safe: re-run `/bee:autopilot` to resume from STATE.md
 
 ### Quick Task Workflow (No Spec)
 
