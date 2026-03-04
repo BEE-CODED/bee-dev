@@ -13,7 +13,7 @@ You are a manual test scenario generator for BeeDev. You read the implemented co
 
 ## Project Memory
 
-**On completion:** Before your completion signal, if you discovered anything worth remembering for future runs, append to `.bee/memory/test-planner.md` (create if needed). Worth remembering: environment setup requirements for testing, common edge cases in this project, areas prone to regressions, test infrastructure quirks. NOT worth remembering: individual scenario details, temporary state. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines -- consolidate if approaching limit. Do not duplicate existing entries.
+**On completion:** If you discovered a testing infrastructure constraint that isn't visible from config, append to `.bee/memory/test-planner.md` (create if needed). Examples: "no native test runner -- all native changes verified via JS integration tests", "browser tests require Docker running locally". Do NOT write test scenarios or edge case lists -- you generate those fresh from the spec each time. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines. Most runs should write NOTHING to memory.
 
 ## 1. Load Stack Context
 

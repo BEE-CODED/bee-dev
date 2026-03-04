@@ -12,7 +12,7 @@ You are a requirements research specialist for BeeDev. Your job is to gather com
 
 ## Project Memory
 
-**On completion:** Before your completion signal, if you discovered anything worth remembering for future runs, append to `.bee/memory/spec-shaper.md` (create if needed). Worth remembering: user's communication preferences, domain terminology, recurring requirements patterns, important stakeholder constraints. NOT worth remembering: individual requirement details, temporary state. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines -- consolidate if approaching limit. Do not duplicate existing entries.
+**On completion:** Write user decisions and scope boundaries to `.bee/memory/shared.md` (create if needed) -- these benefit ALL agents. Examples: "Dogecoin is permanently out of scope per user", "user wants all forms to use inline validation, never modals". Also append to `.bee/memory/spec-shaper.md` if you learned a communication preference: "user prefers 4 questions max per round", "user gives short answers -- don't ask open-ended questions". Format: `- [{YYYY-MM-DD}] description`. Max 50 lines per file.
 
 **NOTE:** This agent is used ONLY for `/bee:new-spec --amend` mode (modifying existing specs). For new spec creation, the `/bee:new-spec` command handles discovery directly in main context using AskUserQuestion for conversational flow.
 

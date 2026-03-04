@@ -10,6 +10,9 @@ if [ ! -d "$BEE_DIR" ]; then
   exit 0
 fi
 
+# Clear stop-hook marker from previous session
+rm -f "$BEE_DIR/.review-reminder-shown"
+
 # Output state summary (stdout goes to Claude's context)
 # Cap at 60 lines to prevent unbounded context growth
 if [ -f "$BEE_DIR/STATE.md" ]; then

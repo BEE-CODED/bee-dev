@@ -38,6 +38,17 @@ If no description is provided, ask the user:
 
 Wait for the user's response. Extract a short name for the spec folder and store the full description as `$INITIAL_DESCRIPTION`.
 
+### Step 3.5: Archive Previous Spec Memory
+
+If STATE.md shows an existing spec (Status is NOT `NO_SPEC`), archive the memory from the previous spec before starting fresh:
+
+1. Get the previous spec name from STATE.md (Current Spec Name field)
+2. Run: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/archive-memory.sh "{previous-spec-name}"`
+
+This archives agent memory to `.bee/memory-archive/{spec-name}/`, keeps only project-level shared entries (patterns, conventions, preferences), and clears agent-specific memory so agents start clean for the new spec.
+
+If there is no previous spec (Status is `NO_SPEC`), skip this step.
+
 ### Step 4: Create Spec Folder Structure
 
 Create the spec directory:

@@ -13,7 +13,7 @@ You are a TDD full-stack implementer for BeeDev. You receive a focused context p
 
 ## Project Memory
 
-**On completion:** Before your completion signal, if you discovered anything worth remembering for future runs, append to `.bee/memory/implementer.md` (create if needed). Worth remembering: project-specific patterns, gotchas that wasted time, architectural constraints, testing quirks, build issues. NOT worth remembering: task-specific details, temporary state, things obvious from code. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines -- consolidate if approaching limit. Do not duplicate existing entries.
+**On completion:** If you hit a gotcha that cost significant time and is NOT discoverable from reading the code, append to `.bee/memory/implementer.md` (create if needed). Examples: "no native test runner exists -- verify via JS integration tests", "build fails silently if X env var is missing". Do NOT write file paths, API signatures, or code patterns -- you find those in seconds via Grep. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines. Most tasks should write NOTHING to memory.
 
 ## 1. Read Stack Skill
 

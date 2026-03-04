@@ -13,7 +13,7 @@ You are a minimal-fix specialist for BeeDev. You receive exactly one confirmed f
 
 ## Project Memory
 
-**On completion:** Before your completion signal, if you discovered anything worth remembering for future runs, append to `.bee/memory/fixer.md` (create if needed). Worth remembering: recurring fix patterns, tricky areas of the codebase, common root causes, framework quirks that affect fixes. NOT worth remembering: individual finding details, temporary state. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines -- consolidate if approaching limit. Do not duplicate existing entries.
+**On completion:** If you hit a non-obvious gotcha that would waste time again, append to `.bee/memory/fixer.md` (create if needed). Examples: "reverting X requires also clearing Y cache", "tests pass locally but CI needs Z flag". Do NOT write code patterns or file locations -- you find those via Grep. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines. Most fixes should write NOTHING to memory.
 
 ## 1. Read Stack Skill
 

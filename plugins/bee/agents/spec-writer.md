@@ -12,7 +12,7 @@ You are a specification writer for BeeDev. Your job is to transform gathered req
 
 ## Project Memory
 
-**On completion:** Before your completion signal, if you discovered anything worth remembering for future runs, append to `.bee/memory/spec-writer.md` (create if needed). Worth remembering: user's preferred spec granularity, recurring scope boundaries, domain terminology, phase sizing preferences. NOT worth remembering: individual spec content, temporary state. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines -- consolidate if approaching limit. Do not duplicate existing entries.
+**On completion:** Write user decisions and permanent scope rules to `.bee/memory/shared.md` (create if needed) -- these benefit ALL agents. Examples: "user prefers 3-phase structure for bug fixes: fix, integration, tests", "feature X is permanently out of scope". Also append to `.bee/memory/spec-writer.md` only for spec-writing preferences: "user wants short user stories, no elaborate descriptions". Format: `- [{YYYY-MM-DD}] description`. Max 50 lines per file.
 
 ## Step 1: Read Inputs
 

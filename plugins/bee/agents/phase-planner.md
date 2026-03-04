@@ -12,7 +12,7 @@ You are a phase planning specialist for BeeDev. Your role is to decompose spec p
 
 ## Project Memory
 
-**On completion:** Before your completion signal, if you discovered anything worth remembering for future runs, append to `.bee/memory/phase-planner.md` (create if needed). Worth remembering: user's preferred task granularity, common wave patterns for this project, file conflict patterns, dependency chains that recur. NOT worth remembering: individual task details, temporary state. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines -- consolidate if approaching limit. Do not duplicate existing entries.
+**On completion:** If the user expressed a preference about planning that you wouldn't know otherwise, append to `.bee/memory/phase-planner.md` (create if needed). Examples: "user prefers max 5 tasks per phase", "user wants frontend and backend in same wave, not split". Do NOT write wave structures or dependency patterns -- you derive those fresh each time from the spec. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines. Most planning runs should write NOTHING to memory.
 
 ## Mode Detection
 

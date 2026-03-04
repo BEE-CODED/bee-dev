@@ -65,19 +65,24 @@ Agents have persistent per-project memory stored in `.bee/memory/`. This is NOT 
 - Only write genuinely useful project knowledge, not task-specific details
 - Write-capable agents write memory automatically; read-only agents consume only
 
+**The golden rule:** Write ONLY things you cannot discover by reading the codebase. If a `grep` or `Read` tool call would find it, do NOT write it to memory.
+
 **What belongs in memory:**
-- Project-specific patterns and conventions not obvious from code
-- Gotchas and pitfalls that wasted time
-- Architectural constraints and decisions
-- Environment setup requirements
-- Recurring issues and their root causes
-- User preferences for workflow and communication
+- User decisions and preferences ("user prefers 3-phase structure", "Dogecoin is permanently out of scope")
+- Non-obvious project constraints ("source at repo root, node_modules copy is a mirror -- edit root only")
+- Gotchas that wasted significant time and have no code-level signal
+- Environment quirks that block execution ("no native test runner, verify via JS integration tests only")
 
 **What does NOT belong in memory:**
+- File paths, API signatures, class structures -- agents find these in seconds via Grep/Read
+- Code patterns visible from reading the source ("uses static methods", "fields cast as X")
 - Task-specific implementation details
-- Temporary state or in-progress work
-- Information already captured in STATE.md, config.json, or TASKS.md
-- Generic framework knowledge (that's what Context7 and stack skills are for)
+- Anything already in STATE.md, config.json, TASKS.md, or stack skills
+- Generic framework knowledge (use Context7 for that)
+
+**Shared memory (`shared.md`):** Reserved for cross-cutting knowledge that benefits ALL agents. Only spec-shaper and spec-writer write to shared.md -- they capture user decisions and scope boundaries from the discovery conversation. Other agents write only to their own file.
+
+**Memory lifecycle across specs:** When `/bee:new-spec` creates a new spec, it archives the previous spec's memory to `.bee/memory-archive/{spec-name}/`. Only project-level shared entries survive (patterns, conventions, preferences). Agent-specific memory resets so agents start clean for the new feature.
 
 ### Spec-driven development
 Work only on features and tasks defined in specs. No ad-hoc implementation.

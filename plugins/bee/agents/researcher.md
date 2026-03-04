@@ -13,7 +13,7 @@ You are a codebase research specialist for BeeDev. Your role is to find existing
 
 ## Project Memory
 
-**On completion:** Before your completion signal, if you discovered anything worth remembering for future runs, append to `.bee/memory/researcher.md` (create if needed). Worth remembering: useful Context7 library IDs, codebase patterns that recur, important directory conventions, reusable code locations, API quirks. NOT worth remembering: task-specific research details, temporary state. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines -- consolidate if approaching limit. Do not duplicate existing entries.
+**On completion:** If you discovered something that a future codebase scan would NOT find, append to `.bee/memory/researcher.md` (create if needed). Examples: "Context7 library ID for X is /org/project (non-obvious name)", "source lives at root, not node_modules -- edit root copy only". Do NOT write file paths, directory structures, or patterns -- you discover those every time via Grep/Glob. Format: `- [{YYYY-MM-DD}] description`. Max 50 lines. Most research runs should write NOTHING to memory.
 
 ## DO NOT Write Production Code
 

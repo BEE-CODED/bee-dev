@@ -45,6 +45,17 @@ UNREVIEWED=$(awk -F'|' '
 ' "$STATE_FILE")
 
 if [ -n "$UNREVIEWED" ]; then
+  # Use a marker file to prevent repeating this reminder in a loop.
+  # The Stop hook fires every time Claude stops responding -- if we exit 2
+  # (feedback to Claude), Claude responds, which triggers another Stop,
+  # which fires the hook again, creating an infinite loop.
+  MARKER="$BEE_DIR/.review-reminder-shown"
+  if [ -f "$MARKER" ]; then
+    # Already reminded this session -- stay silent
+    exit 0
+  fi
+  touch "$MARKER"
+
   echo "REMINDER (do NOT auto-execute): Unreviewed executed phases detected:" >&2
   echo "$UNREVIEWED" | while read -r phase; do
     echo "  - $phase" >&2
