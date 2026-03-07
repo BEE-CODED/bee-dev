@@ -162,24 +162,22 @@ process.stdin.on('end', () => {
     }
 
     // Context window display (shows USED percentage scaled to 80% limit)
-    let ctx = '';
-    if (remaining != null) {
-      const rem = Math.round(remaining);
-      const rawUsed = Math.max(0, Math.min(100, 100 - rem));
-      const used = Math.min(100, Math.round((rawUsed / 80) * 100));
+    const rem = Math.round(remaining ?? 100);
+    const rawUsed = Math.max(0, Math.min(100, 100 - rem));
+    const used = Math.min(100, Math.round((rawUsed / 80) * 100));
 
-      const filled = Math.floor(used / 10);
-      const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(10 - filled);
+    const filled = Math.floor(used / 10);
+    const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(10 - filled);
 
-      if (used < 63) {
-        ctx = ` \x1b[32m${bar} ${used}%\x1b[0m`;
-      } else if (used < 81) {
-        ctx = ` \x1b[33m${bar} ${used}%\x1b[0m`;
-      } else if (used < 95) {
-        ctx = ` \x1b[38;5;208m${bar} ${used}%\x1b[0m`;
-      } else {
-        ctx = ` \x1b[31m${bar} ${used}%\x1b[0m`;
-      }
+    let ctx;
+    if (used < 63) {
+      ctx = ` \x1b[32m${bar} ${used}%\x1b[0m`;
+    } else if (used < 81) {
+      ctx = ` \x1b[33m${bar} ${used}%\x1b[0m`;
+    } else if (used < 95) {
+      ctx = ` \x1b[38;5;208m${bar} ${used}%\x1b[0m`;
+    } else {
+      ctx = ` \x1b[31m${bar} ${used}%\x1b[0m`;
     }
 
     // Output: Model │ v2.0.0 │ 🐝 ▰▰▱▱▱ P2/5 EXEC │ 3Δ │ ████░░░░░░ 40%
