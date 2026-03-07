@@ -134,6 +134,18 @@
         ]
       }
     ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/pre-commit-gate.sh",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [
