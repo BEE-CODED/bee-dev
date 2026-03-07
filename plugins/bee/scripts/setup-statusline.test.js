@@ -10,6 +10,7 @@ const os = require('os');
 
 const SCRIPT = path.join(__dirname, 'setup-statusline.js');
 const SOURCE_STATUSLINE = path.join(__dirname, 'bee-statusline.js');
+const PLUGIN_JSON = path.join(__dirname, '..', '.claude-plugin', 'plugin.json');
 
 let passed = 0;
 let failed = 0;
@@ -66,10 +67,17 @@ console.log('Test 1: Fresh setup on empty home directory');
       'statusLine command references bee-statusline.js'
     );
 
-    // Verify copied script matches source
+    // Verify copied script has version injected from plugin.json
     const copied = fs.readFileSync(targetScript, 'utf8');
-    const source = fs.readFileSync(SOURCE_STATUSLINE, 'utf8');
-    assert(copied === source, 'Copied script matches source bee-statusline.js');
+    const pluginData = JSON.parse(fs.readFileSync(PLUGIN_JSON, 'utf8'));
+    assert(
+      copied.includes(`const BEE_VERSION = '${pluginData.version}'`),
+      `Version ${pluginData.version} injected into copied script`
+    );
+    assert(
+      !copied.includes("'__BEE_VERSION__'"),
+      'Placeholder replaced (no __BEE_VERSION__ in copy)'
+    );
   } finally {
     cleanup(tmpHome);
   }
@@ -138,6 +146,13 @@ console.log('Test 3: Idempotent behavior -- re-run produces same result');
     assert(
       scriptAfterFirst === scriptAfterSecond,
       'bee-statusline.js identical after second run'
+    );
+
+    // Verify version is injected in both runs
+    const pluginData = JSON.parse(fs.readFileSync(PLUGIN_JSON, 'utf8'));
+    assert(
+      scriptAfterSecond.includes(`const BEE_VERSION = '${pluginData.version}'`),
+      'Version still injected after second run'
     );
   } finally {
     cleanup(tmpHome);

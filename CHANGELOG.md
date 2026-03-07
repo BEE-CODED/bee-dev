@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.1.0] - 2026-03-07
+
+### Added
+- `/bee:update` command for updating statusline and cleaning up legacy local copies
+
+### Changed
+- Statusline architecture: global-only via `~/.claude/hooks/` (no more local `.bee/statusline.js` copies)
+- `setup-statusline.js` now injects plugin version into the global copy
+- `bee-statusline.js` uses injectable `BEE_VERSION` constant with fallback to `plugin.json`
+- `/bee:init` Step 5 verifies global statusline instead of creating local copies
+
+### Removed
+- Local `.bee/statusline.js` copy (legacy, replaced by global hook)
+- Local `.claude/settings.json` statusLine config (global settings handle this)
+
 ## [2.0.0] - 2026-03-07 -- Workflow Overhaul
 
 ### Added

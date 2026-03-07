@@ -24,7 +24,7 @@ If the dynamic context above does NOT contain `NO_EXISTING_CONFIG` (meaning `.be
 - Inform the user: "Existing BeeDev project detected. I'll update your config without touching existing specs or state."
 - Proceed through detection steps below but only update `.bee/config.json` values (stack, linter, testRunner, ci).
 - Do NOT overwrite `.bee/STATE.md`, `.bee/specs/`, or any other existing state files.
-- Re-copy the statusline script (Step 5) to pick up any updates from the plugin, but leave `.claude/settings.json` statusLine config as-is if already present.
+- Verify the global statusline is installed (Step 5) and clean up any legacy local copies.
 - Skip the CLAUDE.md and .gitignore steps (those were handled on first init).
 
 If `NO_EXISTING_CONFIG` appears, this is a fresh init -- proceed with all steps.
@@ -124,30 +124,19 @@ Create the `.bee/` directory and write `.bee/config.json` with the confirmed val
 
 Replace `{STACK}`, `{LINTER}`, `{TEST_RUNNER}`, and `{CI}` with the confirmed values from Steps 2-3.
 
-### Step 5: Configure Statusline
+### Step 5: Verify Statusline
 
-Set up the bee statusline to show context usage and workflow state in Claude Code.
+The bee statusline is managed globally by the plugin's SessionStart hook (`setup-statusline.js`). It auto-copies `bee-statusline.js` to `~/.claude/hooks/` and configures `~/.claude/settings.json` on every session start. No local copy is needed.
 
-1. **Copy the statusline script** from the plugin to the project:
-   - Source: `${CLAUDE_PLUGIN_ROOT}/scripts/bee-statusline.js` (the plugin's scripts directory -- resolve relative to where this command file lives, i.e., `../scripts/bee-statusline.js` relative to the commands directory)
-   - Destination: `.bee/statusline.js`
-   - Use the Read tool to read the source file, then Write to create the destination.
+1. **Check if `~/.claude/hooks/bee-statusline.js` exists** (use Bash: `test -f ~/.claude/hooks/bee-statusline.js && echo "exists" || echo "missing"`):
+   - If exists: inform the user "Statusline is installed globally (managed by plugin SessionStart hook)."
+   - If missing: run `node ${CLAUDE_PLUGIN_ROOT}/scripts/setup-statusline.js` via Bash to install it now.
 
-2. **Configure `.claude/settings.json`** with the statusLine setting:
-   - If `.claude/settings.json` exists, read it first.
-   - If it contains an existing `"statusLine"` key, warn the user: "Existing statusLine configuration detected. Override with bee statusline? (yes/no)"
-     - If user says no, skip this step.
-   - Add or update the `statusLine` field:
-     ```json
-     {
-       "statusLine": {
-         "type": "command",
-         "command": "node .bee/statusline.js"
-       }
-     }
-     ```
-   - Preserve all other existing settings in the file.
-   - If `.claude/` directory doesn't exist, create it first.
+2. **Clean up legacy local copies** (from older bee versions):
+   - If `.bee/statusline.js` exists: delete it via Bash (`rm .bee/statusline.js`) and inform the user "Removed legacy local statusline copy."
+   - If `.claude/settings.json` exists: read it and check if `statusLine.command` contains `.bee/statusline.js`. If so, remove the `statusLine` key (or delete the file if it has no other settings) and inform the user "Removed legacy local statusline config (global config handles this)."
+
+Do NOT create `.bee/statusline.js` or local `.claude/settings.json` statusLine config.
 
 ### Step 6: Project Scan
 
@@ -299,8 +288,7 @@ Created:
 - .bee/config.json
 - .bee/PROJECT.md
 - .bee/STATE.md
-- .bee/statusline.js
-- .claude/settings.json (statusLine configured)
+- ~/.claude/hooks/bee-statusline.js (global, if missing)
 {- CLAUDE.md (if updated)}
 {- .gitignore (if updated)}
 

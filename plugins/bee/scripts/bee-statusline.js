@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Bee Statusline for Claude Code
-// Shows: model | v2.0.0 | 🐝 ▰▰▱▱▱ P2/5 EXEC | gitΔ | context bar
+// Shows: model | v2.1.0 | 🐝 ▰▰▱▱▱ P2/5 EXEC | gitΔ | context bar
 
 const fs = require('fs');
 const path = require('path');
@@ -74,15 +74,19 @@ process.stdin.on('end', () => {
     const dir = data.workspace?.current_dir || process.cwd();
     const remaining = data.context_window?.remaining_percentage;
 
-    // Plugin version from plugin.json
+    // Plugin version — injected by setup-statusline.js, falls back to plugin.json
+    const BEE_VERSION = '__BEE_VERSION__';
     let versionSegment = '';
     try {
-      const pluginPath = path.join(__dirname, '..', '.claude-plugin', 'plugin.json');
-      if (fs.existsSync(pluginPath)) {
-        const pluginData = JSON.parse(fs.readFileSync(pluginPath, 'utf8'));
-        if (pluginData.version) {
-          versionSegment = `\x1b[2mv${pluginData.version}\x1b[0m \x1b[2m\u2502\x1b[0m `;
+      let version = BEE_VERSION.startsWith('__') ? null : BEE_VERSION;
+      if (!version) {
+        const pluginPath = path.join(__dirname, '..', '.claude-plugin', 'plugin.json');
+        if (fs.existsSync(pluginPath)) {
+          version = JSON.parse(fs.readFileSync(pluginPath, 'utf8')).version;
         }
+      }
+      if (version) {
+        versionSegment = `\x1b[2mv${version}\x1b[0m \x1b[2m\u2502\x1b[0m `;
       }
     } catch (e) {
       // Never crash the statusline

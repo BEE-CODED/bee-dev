@@ -109,7 +109,7 @@ console.log('Test 4: Format comment updated to include version');
 {
   const scriptContent = fs.readFileSync(SCRIPT, 'utf8');
   assert(
-    scriptContent.includes('v2.0.0'),
+    scriptContent.includes('v2.1.0'),
     'Script comment mentions version format'
   );
 }
