@@ -10,7 +10,7 @@ Bee takes a feature idea through a complete, repeatable pipeline: **spec > plan 
 
 ```bash
 # Add the repo as a marketplace source
-claude plugin marketplace add https://github.com/george-popescu/bee-dev
+claude plugin marketplace add https://github.com/BEE-CODED/bee-dev
 
 # Install the plugin
 claude plugin install bee
