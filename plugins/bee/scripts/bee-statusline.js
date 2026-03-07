@@ -115,8 +115,9 @@ process.stdin.on('end', () => {
             beeSegment = '\x1b[2mready\x1b[0m';
           }
         } else {
-          // Parse phases table — count completed vs total
-          const phaseRows = stateContent.match(/^\|\s*\d+\s*\|.*\|$/gm);
+          // Parse phases table — count completed vs total (only from ## Phases section)
+          const phasesSection = stateContent.match(/## Phases\n[\s\S]*?(?=\n## |\n*$)/);
+          const phaseRows = phasesSection ? phasesSection[0].match(/^\|\s*\d+\s*\|.*\|$/gm) : null;
           let activePhase = null;
           let totalPhases = 0;
           let completedPhases = 0;
