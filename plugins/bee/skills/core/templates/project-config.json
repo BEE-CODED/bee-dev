@@ -14,5 +14,9 @@
   },
   "phases": {
     "require_review_before_next": true
+  },
+  "quick": {
+    "review": false,
+    "agents": true
   }
 }

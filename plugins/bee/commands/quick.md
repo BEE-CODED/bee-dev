@@ -1,6 +1,6 @@
 ---
 description: Execute a quick task without the full spec pipeline — just describe, execute, commit
-argument-hint: "[--agents] [--review] [task description]"
+argument-hint: "[--fast] [--review] [--amend] [task description]"
 ---
 
 ## Current State (load before proceeding)
@@ -26,10 +26,16 @@ No spec is required for quick tasks. No phase is required.
 
 Check `$ARGUMENTS` for flags and task description.
 
-1. **Check for `--agents` flag.** If present, store `$USE_AGENTS = true` and remove the flag from the remaining text. Otherwise `$USE_AGENTS = false`.
-2. **Check for `--review` flag.** If present, store `$USE_REVIEW = true` and remove the flag from the remaining text. Otherwise `$USE_REVIEW = false`. Also check `config.json` for `quick.review` setting -- if true, set `$USE_REVIEW = true` regardless of flag.
-3. **Get task description.** Use the remaining text after flag removal as `$DESCRIPTION`.
-4. If `$DESCRIPTION` is empty, ask the user:
+1. **Check for `--fast` flag.** If present, store `$USE_AGENTS = false` and remove the flag from the remaining text.
+2. **Check for `--amend` flag.** If present, store `$AMEND = true` and remove the flag from the remaining text. Check if the next token is a number -- if so, store it as `$AMEND_NUMBER` and remove it from the remaining text. If no number follows `--amend`, set `$AMEND_NUMBER = null` (will resolve to latest quick task).
+3. **Check for `--review` flag.** If present, store `$USE_REVIEW = true` and remove the flag from the remaining text. Otherwise `$USE_REVIEW = false`. Also check `config.json` for `quick.review` setting -- if true, set `$USE_REVIEW = true` regardless of flag.
+4. **Determine `$USE_AGENTS` (if not already set by `--fast`):**
+   - If `--fast` was present, `$USE_AGENTS = false` (already set above).
+   - Otherwise, check `config.json` for `quick.agents` setting -- if `false`, set `$USE_AGENTS = false`. If `true` or not set, set `$USE_AGENTS = true`.
+   - Default when no flag and no config: `$USE_AGENTS = true`.
+5. **If `$AMEND` is true**, jump to Step 2a (Amend Flow) below.
+6. **Get task description.** Use the remaining text after flag removal as `$DESCRIPTION`.
+7. If `$DESCRIPTION` is empty, ask the user:
 
 ```
 What's the quick task? Describe what you want to do.
@@ -37,13 +43,41 @@ What's the quick task? Describe what you want to do.
 
 Wait for the user's response. Store as `$DESCRIPTION`.
 
+---
+
+#### Step 2a: Amend Flow
+
+When `--amend` is set:
+
+1. **Resolve task number.** If `$AMEND_NUMBER` is null, read `.bee/STATE.md` and find the LATEST quick task row (highest number). Store as `$AMEND_NUMBER`.
+2. **Find plan file.** Look in `.bee/quick/` for a file matching the prefix `{$AMEND_NUMBER zero-padded to 3 digits}-` (e.g., `003-`).
+3. **If no plan file found**, display: "No plan file found for quick task {N}. Only tasks with plans can be amended." Stop.
+4. **Read the plan file** and present it to the user:
+
+```
+Current plan for quick task {N}:
+
+{plan file contents}
+
+What would you like to change?
+```
+
+5. Wait for the user's response. Update the plan file with the requested changes.
+6. Set `$DESCRIPTION` from the plan file's title (the `# Quick Task {N}: {DESCRIPTION}` heading).
+7. Set `$USE_AGENTS` and `$USE_REVIEW` from the plan file's metadata (Mode and Review fields).
+8. Proceed to Step 4 (Execute), using the amended plan file as context for the implementer.
+9. After execution completes, update the plan file's `## Execution Notes` section and set Status to EXECUTED.
+10. In Step 5 (Commit), after committing, update the EXISTING quick task row in STATE.md with the new commit hash (do NOT add a new row).
+
+---
+
 ### Step 3: Confirm Scope
 
 Present the task back to the user:
 
 ```
 Quick task: {DESCRIPTION}
-Mode: {USE_AGENTS ? "agents (researcher + implementer)" : "direct (main context)"}
+Mode: {USE_AGENTS ? "agents (researcher + implementer)" : "fast (direct, no plan)"}
 Review: {USE_REVIEW ? "yes (lightweight review before commit)" : "no"}
 
 This will:
@@ -57,15 +91,44 @@ Proceed? (yes/no)
 
 If the user says no, stop. If yes, continue.
 
+### Step 3.5: Persist Plan (agents mode only)
+
+**Skip this step entirely if `$USE_AGENTS` is false (fast mode).** Fast mode produces no plan artifacts.
+
+1. Create `.bee/quick/` directory if it doesn't exist.
+2. Read `.bee/STATE.md` and count existing quick task rows in the `## Quick Tasks` table to determine next number `$N`.
+3. Slugify the description: lowercase, replace spaces with hyphens, strip all characters except `a-z`, `0-9`, and hyphens, collapse consecutive hyphens, trim leading/trailing hyphens, truncate to 50 characters.
+4. Write plan file to `.bee/quick/{NNN}-{slug}.md` (3-digit zero-padded number) with this content:
+
+```markdown
+# Quick Task {N}: {DESCRIPTION}
+
+- Date: {YYYY-MM-DD}
+- Mode: {agents|fast}
+- Review: {yes|no}
+- Status: PLANNED
+
+## Description
+{DESCRIPTION}
+
+## Research
+{To be filled by researcher agent}
+
+## Execution Notes
+{To be filled after execution}
+```
+
+5. Store the plan file path as `$PLAN_FILE`.
+
 ### Step 4: Execute
 
-**If `$USE_AGENTS` is false (default):** execute directly in main context.
+**If `$USE_AGENTS` is false (fast mode):** execute directly in main context.
 
-**If `$USE_AGENTS` is true:** use the agent pipeline described in Step 4b below.
+**If `$USE_AGENTS` is true (default):** use the agent pipeline described in Step 4b below.
 
 ---
 
-#### Step 4a: Direct Execution (default)
+#### Step 4a: Direct Execution (fast mode)
 
 Implement the task directly. Follow these rules:
 
@@ -88,13 +151,13 @@ If `$USE_REVIEW` is true, continue to Step 4.5. Otherwise skip to Step 5.
 
 ---
 
-#### Step 4b: Agent Execution (--agents)
+#### Step 4b: Agent Execution (default)
 
 Use the Task tool to spawn specialized agents. This is useful when the task benefits from deeper research or parallel work.
 
-**Phase 1: Research (optional but recommended)**
+**Phase 1: Research**
 
-Spawn the `researcher` agent (runs on sonnet for speed) to understand the codebase area before making changes:
+Spawn the `researcher` agent (runs on sonnet for speed) to understand the codebase area before making changes. Research findings will be persisted to the plan file for traceability.
 
 ```
 Task(
@@ -116,15 +179,19 @@ Task(
 
     Do NOT write to TASKS.md -- return your findings in your final message as a concise
     summary with specific file paths and line numbers.
+
+    Your findings will be persisted to the plan file at {$PLAN_FILE} for future reference.
   "
 )
 ```
 
 Store the research output as `$RESEARCH`.
 
+**Persist research to plan file:** After the researcher returns, read `$PLAN_FILE` and update the `## Research` section with `$RESEARCH` content. Write the updated plan file to disk.
+
 **Phase 2: Implementation**
 
-Spawn an implementer agent with the research context:
+Spawn an implementer agent with the research context and plan file reference:
 
 ```
 Task(
@@ -136,6 +203,9 @@ Task(
     Project stack: {stack from config.json}
     Linter: {linter from config.json}
     Test runner: {testRunner from config.json}
+
+    Plan file with research context: {$PLAN_FILE}
+    Read this file for detailed research findings before starting implementation.
 
     Research context:
     {$RESEARCH}
@@ -166,6 +236,8 @@ Changes:
 
 Tests: {pass/fail summary}
 ```
+
+**Persist execution notes to plan file:** After the implementer returns, read `$PLAN_FILE` and update the `## Execution Notes` section with a summary of the changes made. Set `Status:` to `EXECUTED`. Write the updated plan file to disk.
 
 If the implementer reported failures or issues, present them and ask the user how to proceed before continuing to Step 4.5.
 
@@ -369,15 +441,14 @@ Commit? (yes / edit message / cancel)
 |---|-------------|------|--------|
 ```
 
-3. Count existing quick task rows to determine the next number.
-4. Get the commit hash: `git rev-parse --short HEAD`
-5. Append a new row:
+3. **If `$AMEND` is true:** Find the existing row for quick task `$AMEND_NUMBER` and update its Commit column with the new commit hash. Do NOT add a new row.
+4. **If `$AMEND` is false:** Count existing quick task rows to determine the next number. Get the commit hash: `git rev-parse --short HEAD`. Append a new row:
 
 ```markdown
 | {N} | {DESCRIPTION} | {YYYY-MM-DD} | {commit_hash} |
 ```
 
-6. Update the Last Action section:
+5. Update the Last Action section:
 
 ```markdown
 ## Last Action
@@ -386,7 +457,7 @@ Commit? (yes / edit message / cancel)
 - Result: Quick task {N}: {DESCRIPTION}
 ```
 
-7. Write the updated STATE.md.
+6. Write the updated STATE.md.
 
 ### Step 7: Complete
 
@@ -396,6 +467,7 @@ Display:
 Quick task {N} complete: {DESCRIPTION}
 Commit: {commit_hash}
 {If $USE_REVIEW was false: "Tip: Use --review flag for a lightweight code review before commit."}
+{If $USE_AGENTS was false: "Tip: Agents mode is the default. Omit --fast for researcher + implementer pipeline."}
 
 Next: /bee:progress to see project state, or /bee:quick for another task.
 ```
@@ -410,7 +482,7 @@ Next: /bee:progress to see project state, or /bee:quick for another task.
 - NEVER use `git add -A`, `git add .`, or destructive git operations.
 - If the task seems too large (>5 files, complex architecture changes), recommend `/bee:new-spec` instead.
 - The quick task table uses a simple incrementing number (1, 2, 3...) separate from phase numbering.
-- Default mode (no flag) runs in main context for speed. `--agents` mode spawns researcher (sonnet) + implementer (inherit) for deeper work.
+- **Default mode is agents** (researcher on sonnet + implementer on inherit). `--fast` flag switches to direct execution in main context. The `quick.agents` config option controls the default: `true` (default) = agents mode, `false` = fast mode. The `--fast` flag always forces fast mode regardless of config.
 - Agent mode research uses the `bee:researcher` agent which runs on sonnet for speed. Implementation uses `general-purpose` which inherits parent model for code quality.
 - `--review` flag enables a lightweight review gate before commit. Can also be set permanently via `config.quick.review: true`.
 - Review gate uses three specialized agents (bug-detector, pattern-reviewer, stack-reviewer) in quick-review mode (no spec/TDD checks, focus on bugs/standards/security). All three run in parallel via three Task tool calls in a single message. All use `model: "sonnet"` (focused scope scanning/classification work).
@@ -419,3 +491,5 @@ Next: /bee:progress to see project state, or /bee:quick for another task.
 - Each agent targets 1-3 findings; combined target is 3-8 findings. Findings are consolidated, deduplicated (same file + line ranges within 5 lines merged), and written to `.bee/quick-reviews/`.
 - The standalone `/bee:quick-review` command shares the same three-agent parallel pattern and can also be used to review quick task changes independently.
 - Even in agent mode, commit confirmation is always done in the main context (never auto-committed by agents).
+- **Plan persistence:** In agents mode, a plan file is written to `.bee/quick/{NNN}-{slug}.md` before execution. The plan captures the task description, research findings, and execution notes. This enables `--amend` and provides an audit trail. Fast mode (`--fast`) skips plan creation entirely -- no `.bee/quick/` artifacts.
+- **`--amend` flow:** Allows re-executing a previous quick task with modifications. Reads the existing plan file, lets the user modify it, then re-executes. After execution, updates the existing STATE.md row (new commit hash) rather than creating a new row. Only works for tasks that have plan files (agents mode tasks). Fast mode tasks cannot be amended.
