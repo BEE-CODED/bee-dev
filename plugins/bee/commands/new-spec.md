@@ -430,7 +430,7 @@ After the spec-shaper finishes updating `requirements.md`, spawn the spec-writer
 - The spec folder path
 - Instruction: "This is an amended spec. Read the updated requirements.md. Rewrite only sections affected by the changes in spec.md and phases.md. Preserve unchanged content exactly."
 
-After the spec-writer finishes, proceed to **Step 11: Update STATE.md**.
+After the spec-writer finishes, proceed to **Step 9.5: Spec Review Loop** to validate the amended spec. Then proceed to **Step 11: Update STATE.md**.
 
 ### Step 11: Update STATE.md
 

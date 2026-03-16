@@ -3,7 +3,8 @@
 # Receives JSON on stdin with tool_input.file_path
 # Exit 0 = silent success, Exit 2 = stderr fed to Claude as feedback
 
-set -euo pipefail
+# Do NOT use set -euo pipefail -- hook must handle errors gracefully
+# (non-zero exit before handler runs can block all file writes)
 
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
@@ -51,7 +52,7 @@ elif [ -f "$PROJECT_DIR/node_modules/.bin/prettier" ]; then
   }
 elif [ -f "$PROJECT_DIR/node_modules/.bin/biome" ]; then
   # Biome
-  OUTPUT=$("$PROJECT_DIR/node_modules/.bin/biome" format --write "$FILE_PATH" 2>&1) || {
+  OUTPUT=$("$PROJECT_DIR/node_modules/.bin/biome" check --write "$FILE_PATH" 2>&1) || {
     echo "$OUTPUT" >&2
     exit 2
   }

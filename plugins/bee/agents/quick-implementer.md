@@ -33,6 +33,20 @@ The parent command provides the plan file path in your context. Read the plan fi
 
 Read ALL `## Pattern References` files from disk before writing any code. These show the conventions and patterns your implementation must follow.
 
+## 2.5. Architectural Clarity
+
+Before writing tests, verify the task's approach:
+
+1. **Read the acceptance criteria carefully.** If they describe fixing behavior, ask: "Am I fixing a symptom or addressing root cause?" Compare against pattern references from the plan file.
+2. **If the task adds validation/error handling:** Identify the correct defense layer:
+   - **Layer 1 (Entry point):** Validate at boundary — implement in GREEN
+   - **Layer 2 (Business logic):** Validate in service methods — add in REFACTOR if warranted
+3. **If the task involves async/timing:** Use condition-based waiting in tests, NOT arbitrary timeouts:
+   ```
+   ✅ await waitFor(() => condition === true);
+   ❌ await new Promise(r => setTimeout(r, 100));
+   ```
+
 ## 3. TDD Cycle (MANDATORY)
 
 For each deliverable, follow this exact sequence. No exceptions.
@@ -46,6 +60,8 @@ For each deliverable, follow this exact sequence. No exceptions.
 - Test files MUST exist on disk BEFORE any production code files
 - Follow testing standards skill for test naming, structure, and mocking patterns
 - Target 2-8 tests per logical feature (happy path first, then critical error cases)
+- **Verify failure reason:** After running, confirm tests fail because the feature is MISSING, not because of test logic errors
+- **For async operations:** Use condition-based waiting patterns, NOT setTimeout/sleep
 
 ### 3b. GREEN -- Minimal Implementation
 
@@ -85,6 +101,7 @@ Notes MUST include:
 - **Patterns followed:** which existing code was used as reference
 - **Deviations from plan:** anything unexpected, with rationale
 - **Test results:** X tests passing, 0 failing
+- **Defense layers:** which layers (1-2) this task addresses, if applicable
 
 ## 6. Completion Signal
 

@@ -60,7 +60,7 @@ Check these guards in order. Stop immediately if any fails:
    {N} files changed, {insertions} insertions(+), {deletions} deletions(-)
    ```
 
-3. Read STATE.md to find the Current Spec Path and phase number. Construct the TASKS.md path: `{spec-path}/phases/{NN}-{slug}/TASKS.md`. Read TASKS.md to identify which files belong to this phase.
+3. Read STATE.md to find the Current Spec Path and phase number. Find the phase directory using Glob: `{spec-path}/phases/{NN}-*/TASKS.md` where NN is the zero-padded phase number. Read TASKS.md to identify which files belong to this phase.
 4. If there are files in git status that are NOT listed in TASKS.md or the spec/phase directories, warn:
    "Note: Some changes may be unrelated to Phase {N}. Review the file list carefully."
 

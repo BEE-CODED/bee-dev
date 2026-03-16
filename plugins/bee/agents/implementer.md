@@ -29,6 +29,23 @@ The parent command provides your task description, acceptance criteria, research
 - Identify pattern files from research notes -- read them before writing anything
 - Review dependency task notes for types, interfaces, and integration points you must use
 
+## 2.5. Architectural Clarity
+
+Before writing tests, ensure the task's architecture is sound:
+
+1. **If the task fixes behavior:** Ask yourself: "Am I fixing a symptom or addressing root cause?" Find working examples in the codebase to compare.
+2. **If the task adds validation/error handling:** Identify the correct defense layer:
+   - **Layer 1 (Entry point):** Validate at API/function boundary — implement in GREEN phase
+   - **Layer 2 (Business logic):** Validate in service/model methods — add in REFACTOR phase
+   - **Layer 3 (Environment):** Context-specific guards — add in REFACTOR if warranted
+   - **Layer 4 (Debug):** Instrumentation/logging — add only if task requires observability
+3. **If the task involves async/timing:** Use condition-based waiting in tests, NOT arbitrary timeouts:
+   ```
+   ✅ await waitFor(() => resource.isReady === true);
+   ❌ await new Promise(r => setTimeout(r, 100));
+   ```
+   Arbitrary timeouts cause flaky tests. Wait for the actual condition.
+
 ## 3. TDD Cycle (MANDATORY)
 
 For each deliverable in your task, follow this exact sequence. No exceptions.
@@ -41,6 +58,9 @@ For each deliverable in your task, follow this exact sequence. No exceptions.
 - Test files MUST exist on disk BEFORE any production code files
 - Follow testing standards skill for test naming, structure, and mocking patterns
 - Target 2-8 tests per logical feature (happy path first, then critical error cases)
+- **Verify failure reason:** After running, confirm tests fail because the feature is MISSING, not because of test logic errors
+- **For async operations:** Use condition-based waiting patterns, NOT setTimeout/sleep
+- **Document:** Note what failure message you expect and verify it matches
 
 ### 3b. GREEN -- Minimal Implementation
 
@@ -80,6 +100,8 @@ Notes MUST include:
 - **Patterns followed:** which existing code was used as reference
 - **Deviations from plan:** anything unexpected, with rationale
 - **Test results:** X tests passing, 0 failing
+- **Defense layers:** which layers (1-4) this task addresses, if applicable
+- **Architectural notes:** if implementation revealed design issues worth noting for future tasks
 
 ## 6. Completion Signal
 

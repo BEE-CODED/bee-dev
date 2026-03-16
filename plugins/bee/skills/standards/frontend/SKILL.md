@@ -1,11 +1,13 @@
 ---
 name: frontend-standards
-description: Universal frontend standards -- component architecture, accessibility, responsive design, CSS methodology
+description: Universal frontend standards -- component architecture, accessibility, responsive design, CSS methodology, design quality. Applies to ALL frontend stacks automatically.
 ---
 
 # Frontend Standards
 
-These standards apply to ALL frontend code regardless of framework (Vue, React, React Native). They define stack-agnostic principles -- the "what" and "why" of frontend quality. Framework-specific "how" belongs in stack skills.
+These standards apply to ALL frontend code regardless of framework (Vue, React, Svelte, etc.). They define stack-agnostic principles -- the "what" and "why" of frontend quality. Framework-specific "how" belongs in stack skills.
+
+**Library detection:** If the project uses shadcn/ui (check for `components.json` at project root OR `@/components/ui/` directory), **also read `skills/libraries/shadcn-ui/SKILL.md`** for component usage patterns, theming, and composition conventions.
 
 ## Component Architecture
 
@@ -13,7 +15,14 @@ These standards apply to ALL frontend code regardless of framework (Vue, React, 
 
 - One component, one purpose. A component that fetches data, transforms it, and renders a complex layout is doing too much.
 - If a component needs a comment to explain what it does, it should be split into smaller components.
-- Aim for components that are 50-150 lines. Over 200 lines is a signal to decompose.
+- **Max 250 lines per visual component.** Over 250 lines is a signal to decompose.
+
+### No Business Logic in Visual Components
+
+- **Visual components render UI only.** They receive data via props/slots, render JSX/template, and emit events.
+- **Extract all logic into hooks/composables:** Data fetching, transformations, validation, state machines, business rules — all belong in custom hooks (React) or composables (Vue).
+- Components orchestrate hooks and render — nothing else.
+- This separation makes components reusable, testable, and readable.
 
 ### Reusability
 
@@ -41,11 +50,35 @@ These standards apply to ALL frontend code regardless of framework (Vue, React, 
 - Lift state only when siblings need to share it -- lift to the nearest common ancestor.
 - Global state is for truly global concerns: authenticated user, theme, locale.
 
-### Presentational vs Container
+## Design Quality
 
-- **Presentational components** receive data via props, render UI, emit events. No data fetching, no side effects.
-- **Container components** (or hooks/composables) handle data fetching, state management, and business logic.
-- This separation makes presentational components reusable and testable without mocking data sources.
+### Intentional Aesthetics
+
+- Every interface must have a **clear aesthetic direction** — not generic defaults. Before coding, decide on the tone: minimal, playful, editorial, industrial, luxury, brutalist, etc.
+- **Typography matters:** Choose fonts that are beautiful and contextually appropriate. Avoid defaulting to system fonts, Inter, or Roboto without reason. Pair a distinctive display font with a refined body font.
+- **Color with purpose:** Commit to a cohesive palette. Use CSS variables/tokens for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
+- **Spatial composition:** Consider asymmetry, overlap, generous negative space, or controlled density. Don't default to centered-everything-on-white.
+
+### Avoid Generic AI Aesthetics
+
+- **NEVER** default to purple gradients on white backgrounds.
+- **NEVER** use the same font family across different projects without reason.
+- **NEVER** produce cookie-cutter layouts that look like every other AI-generated UI.
+- Each project should feel **designed for its specific context** — not templated.
+
+### Motion and Micro-Interactions
+
+- Use animations to enhance UX, not decorate. Focus on high-impact moments: page transitions, loading states, hover feedback, staggered reveals.
+- Prefer CSS animations/transitions over JavaScript animation libraries when possible.
+- One well-orchestrated page load with staggered reveals creates more delight than scattered micro-interactions.
+- Use `prefers-reduced-motion` media query to respect user preferences.
+
+### Visual Details
+
+- **Backgrounds:** Create atmosphere with gradient meshes, noise textures, geometric patterns, layered transparencies — not just solid colors.
+- **Shadows and depth:** Use layered shadows for realistic elevation. Avoid single-shadow flat design.
+- **Borders and dividers:** Subtle borders, custom dividers, or spacing can separate sections. Choose contextually.
+- **Icons:** Use a consistent icon set. Mix icon libraries = visual chaos.
 
 ## Accessibility (a11y)
 
@@ -132,7 +165,6 @@ These standards apply to ALL frontend code regardless of framework (Vue, React, 
 
 - When a utility combination repeats across components, extract to a reusable component (not a CSS class).
 - Component extraction > CSS extraction: styles stay colocated with behavior and markup.
-- Document extracted components in a shared component library or storybook.
 
 ### Avoid
 
@@ -156,3 +188,9 @@ These standards apply to ALL frontend code regardless of framework (Vue, React, 
 - Optimize images: compress, use modern formats (WebP, AVIF), and size appropriately for display dimensions.
 - Minimize third-party scripts. Each script adds to parse time and competes for the main thread.
 - Measure performance with real devices, not just desktop dev tools. Mobile CPUs are significantly slower.
+
+### Core Web Vitals
+
+- **LCP (Largest Contentful Paint):** Optimize hero images/text to render within 2.5s. Preload critical resources.
+- **INP (Interaction to Next Paint):** Keep main thread responsive. Break long tasks, defer non-critical work.
+- **CLS (Cumulative Layout Shift):** Reserve space for images/ads/embeds. Set explicit `width`/`height` on media. Avoid injecting content above the fold after load.

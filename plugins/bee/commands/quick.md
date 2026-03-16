@@ -52,9 +52,10 @@ Wait for the user's response. Store as `$DESCRIPTION`.
 When `--amend` is set:
 
 1. **Resolve task number.** If `$AMEND_NUMBER` is null, read `.bee/STATE.md` and find the LATEST quick task row (highest number). Store as `$AMEND_NUMBER`.
-2. **Find plan file.** Look in `.bee/quick/` for a file matching the prefix `{$AMEND_NUMBER zero-padded to 3 digits}-` (e.g., `003-`).
+2. **Find plan file.** Look in `.bee/quick/` for a file matching the prefix `{$AMEND_NUMBER zero-padded to 3 digits}-` (e.g., `003-`). Store the resolved path as `$PLAN_FILE`.
 3. **If no plan file found**, display: "No plan file found for quick task {N}. Only tasks with plans can be amended." Stop.
-4. **Read the plan file** and present it to the user:
+4. **Set `$N` to `$AMEND_NUMBER`** (amend preserves the original task number, does not increment).
+5. **Read the plan file** and present it to the user:
 
 ```
 Current plan for quick task {N}:
@@ -517,7 +518,7 @@ Commit? (yes / edit message / cancel)
 |---|-------------|------|--------|
 ```
 
-3. Parse the `#` column value from the existing single data row to determine the next number `{N}`. If a row exists (e.g., `| 5 | ... |`), extract the number from the first column and set `{N}` to that number + 1. If no data rows exist, set `{N}` to 1. Get the commit hash: `git rev-parse --short HEAD`.
+3. Determine `{N}`: **If `$AMEND` is true**, use `$N` (already set to `$AMEND_NUMBER` in Step 2a — preserve the original task number, do NOT increment). **Otherwise**, parse the `#` column value from the existing single data row: if a row exists (e.g., `| 5 | ... |`), set `{N}` to that number + 1; if no data rows exist, set `{N}` to 1. Get the commit hash: `git rev-parse --short HEAD`.
 4. **Replace** all existing data rows in the Quick Tasks table with a SINGLE row for the current task. The table always shows only the latest quick task (old entries are removed — the commit history is the audit trail):
 
 ```markdown

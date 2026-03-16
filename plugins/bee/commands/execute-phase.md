@@ -44,11 +44,11 @@ Check these guards in order. Stop immediately if any fails:
 ### Step 2: Load TASKS.md
 
 1. Read STATE.md to find the Current Spec Path
-2. Construct the TASKS.md path: `{spec-path}/phases/{NN}-{slug}/TASKS.md` where NN is the zero-padded phase number and slug comes from the Phases table Name column (slugified: lowercase, hyphens, no spaces)
-3. Read TASKS.md using the Read tool
-4. If TASKS.md does not exist, tell the user:
+2. Find the phase directory using Glob: `{spec-path}/phases/{NN}-*/TASKS.md` where NN is the zero-padded phase number. This avoids slug construction mismatches — Glob finds the actual directory on disk regardless of how the name was slugified.
+3. If Glob returns no results, tell the user:
    "No TASKS.md found for phase {N}. Run `/bee:plan-phase {N}` first."
    Do NOT proceed.
+4. If Glob returns exactly one result, use that path. Read TASKS.md using the Read tool.
 
 ### Step 3: Parse Wave Structure and Detect Resume Point
 

@@ -40,7 +40,6 @@ If the dynamic context above does NOT contain `NO_EXISTING_CONFIG` (meaning `.be
      Migrated config from v2 to v3:
      - Converted "stack": "<value>" to "stacks": [{ "name": "<value>", "path": "." }]
      - Added "implementation_mode": "quality"
-     - Added "quick.agents": true
      ```
   7. Do NOT touch `.bee/STATE.md`, `.bee/specs/`, or any other state files during migration.
 - If the config already has a `stacks` key that is an **array**, it is already v3 format -- skip migration silently.
@@ -54,7 +53,7 @@ If `NO_EXISTING_CONFIG` appears, this is a fresh init -- proceed with all steps.
 
 ### Step 2: Stack Detection
 
-Detect stacks at the project root AND in first-level subdirectories. For each location that has a `package.json` or `composer.json`, apply the detection rules below to identify the stack type.
+Detect stacks at the project root AND in first-level subdirectories. For each location that has a `package.json`, `composer.json`, or `build.gradle.kts`, apply the detection rules below to identify the stack type.
 
 **Detection rules (apply to each manifest location):**
 
@@ -62,10 +61,13 @@ Detect stacks at the project root AND in first-level subdirectories. For each lo
 |-----------|-----------------|
 | `composer.json` has `laravel/framework` AND `package.json` has `vue` | `laravel-inertia-vue` |
 | `composer.json` has `laravel/framework` AND `package.json` has `react` | `laravel-inertia-react` |
+| `package.json` has `vue` (but NOT `laravel/framework` in `composer.json`) | `vue` |
 | `package.json` has `react` (but NOT `next` and NOT `expo`) | `react` |
 | `package.json` has `next` | `nextjs` |
 | `package.json` has `@nestjs/core` | `nestjs` |
 | `package.json` has `expo` AND `react-native` | `react-native-expo` |
+| `package.json` has `@angular/core` | `angular` |
+| `build.gradle.kts` has `kotlin("multiplatform")` or `multiplatform` plugin | `kmp-compose` |
 
 **Multi-stack scanning procedure:**
 
@@ -91,10 +93,13 @@ Detect stacks at the project root AND in first-level subdirectories. For each lo
 If nothing is detected (no manifests found or no matching patterns), present the full list of supported stacks and ask the user to choose:
 - `laravel-inertia-vue`
 - `laravel-inertia-react`
+- `vue`
 - `react`
 - `nextjs`
 - `nestjs`
+- `angular`
 - `react-native-expo`
+- `kmp-compose`
 
 Ask: "No stacks were auto-detected. Which stack(s) does this project use? You can specify multiple with their paths."
 
@@ -114,10 +119,13 @@ Track the skill status for each stack (used in Step 10 completion summary).
 **Available built-in stack skills:**
 - `laravel-inertia-vue`
 - `laravel-inertia-react`
+- `vue`
 - `react`
 - `nextjs`
 - `nestjs`
+- `angular`
 - `react-native-expo`
+- `kmp-compose`
 - `claude-code-plugin`
 
 ### Step 3: Test Runner and Linter Detection
@@ -415,6 +423,78 @@ Next step:
   /clear
   /bee:new-spec
 ```
+
+### Step 10.5: Notification Setup
+
+Ask the user: "Would you like to enable push notifications? You'll get notified when long operations finish (phase execution, reviews, background agents)."
+
+Use AskUserQuestion with options:
+- "Yes, enable notifications (Recommended)" → proceed with setup
+- "No thanks" → skip this step entirely
+
+**If the user declines:** Skip silently. Do not ask again.
+
+**If the user accepts:**
+
+1. **Check if already configured.** Read `~/.claude/settings.json` using Bash (`cat ~/.claude/settings.json 2>/dev/null`). If the file exists AND contains `"Stop"` hooks with `notify` or `osascript` or `notify-send` in any hook command, display: "Notifications already configured!" and skip the rest of this step.
+
+2. **Detect platform and test notification tool:**
+   - macOS: run `osascript -e 'display notification "test" with title "Bee"'` — if exit 0, platform supported
+   - Linux: run `command -v notify-send` — if found, platform supported. If not found, display: "Install libnotify for notifications: `sudo apt install libnotify-bin` (Ubuntu/Debian) or `sudo dnf install libnotify` (Fedora). Skipping notifications for now." Skip rest of step.
+   - Windows (MINGW/MSYS/CYGWIN): run `powershell.exe -Command "echo test"` — if works, platform supported. If not, display: "Windows notifications require PowerShell 5+. Skipping." Skip rest of step.
+
+3. **Resolve the absolute path to notify.sh.** Run via Bash: `echo "${CLAUDE_PLUGIN_ROOT}/scripts/notify.sh"` and store the resolved absolute path as `$NOTIFY_SCRIPT`. This is critical — `$CLAUDE_PLUGIN_ROOT` is only available during plugin execution, not in global user hooks. The absolute path must be embedded in settings.json.
+
+4. **Update `~/.claude/settings.json`.** Read the current file (or start with `{}` if missing). Parse the JSON. Merge these hooks into the `hooks` object WITHOUT overwriting any existing hooks (append to arrays if hooks already exist for these events). Use the resolved `$NOTIFY_SCRIPT` path (NOT the `${CLAUDE_PLUGIN_ROOT}` variable):
+
+   ```json
+   {
+     "hooks": {
+       "Stop": [
+         {
+           "matcher": "",
+           "hooks": [
+             {
+               "type": "command",
+               "command": "{$NOTIFY_SCRIPT} 'Claude Code' 'Task completed'",
+               "timeout": 10
+             }
+           ]
+         }
+       ],
+       "Notification": [
+         {
+           "matcher": "",
+           "hooks": [
+             {
+               "type": "command",
+               "command": "{$NOTIFY_SCRIPT} 'Claude Code' 'Background agent finished'",
+               "timeout": 10
+             }
+           ]
+         }
+       ],
+       "PermissionRequest": [
+         {
+           "matcher": "",
+           "hooks": [
+             {
+               "type": "command",
+               "command": "{$NOTIFY_SCRIPT} 'Claude Code' 'Permission needed'",
+               "timeout": 10
+             }
+           ]
+         }
+       ]
+     }
+   }
+   ```
+
+   Write the merged JSON back to `~/.claude/settings.json`.
+
+5. **Send test notification.** Run: `bash {$NOTIFY_SCRIPT} "Bee" "Notifications enabled!"` via Bash.
+
+6. **Display:** "Notifications enabled. You'll be notified when tasks complete, agents finish, and permissions are needed."
 
 ### Step 11: Codebase Context Extraction
 

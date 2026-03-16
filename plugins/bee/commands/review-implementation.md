@@ -365,8 +365,7 @@ This step is handled inline in Step 4.3 through 4.5 above. After the output repo
 2. Collect classifications from each validator's final message (the `## Classification` section with Finding, Verdict, Confidence, Source Agent, and Reason fields)
 3. Escalate MEDIUM confidence classifications to specialist agents for a second opinion:
    - Filter the collected classifications: separate HIGH confidence (proceed unchanged) from MEDIUM confidence (need escalation)
-   - For each MEDIUM confidence classification, read the `Source Agent` field to identify which specialist originally found the issue (one of: `bug-detector`, `pattern-reviewer`, `plan-compliance-reviewer`, or `stack-reviewer`)
-   - Spawn the identified specialist agent (`bee:{source_agent}`) via Task tool with `model: "sonnet"` and a context packet containing:
+   - For each MEDIUM confidence classification, spawn a fresh `finding-validator` agent for a second opinion (NOT the source specialist — specialist agents have SubagentStop hooks that expect their standard output format, not the escalation format). Spawn via Task tool. Model selection: **economy** mode passes `model: "sonnet"`, **quality or premium** mode omits model. Provide this context packet:
      ```
      You are providing a second opinion on a review finding that received an uncertain classification.
 
@@ -387,13 +386,16 @@ This step is handled inline in Step 4.3 through 4.5 above. After the output repo
      ## Your Task
      Provide a second opinion on whether this finding is valid. Read the file and surrounding context. Respond with your verdict: REAL BUG or FALSE POSITIVE, followed by your reasoning.
 
-     End your response with:
-     ## Second Opinion
+     End your response with your standard classification format:
+     ## Classification
+     - **Finding:** F-{NNN}
      - **Verdict:** {REAL BUG | FALSE POSITIVE}
-     - **Reason:** {your reasoning}
+     - **Confidence:** HIGH
+     - **Source Agent:** {source_agent from original finding}
+     - **Reason:** {your reasoning for this second opinion}
      ```
    - Specialist escalations are spawned SEQUENTIALLY (one at a time) -- each is a focused re-analysis
-   - After the specialist responds, parse the `## Second Opinion` section from the specialist's final message
+   - After the finding-validator responds, parse the `## Classification` section from its final message
    - Use the specialist's verdict as the FINAL classification, overriding the validator's uncertain MEDIUM confidence classification
    - If the specialist confirms REAL BUG: the finding stays with verdict REAL BUG
    - If the specialist says FALSE POSITIVE: the finding's verdict becomes FALSE POSITIVE

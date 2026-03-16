@@ -29,7 +29,7 @@ fi
 
 # Parse the Phases table for rows where Status is EXECUTED but Reviewed is not Yes
 # Table format: | # | Name | Status | Plan | Plan Review | Executed | Reviewed | Tested | Committed |
-# Fields:        1   2      3        4      5              6          7          8        9
+# awk -F'|': $1="" $2="# " $3="Name " $4="Status " $5="Plan " $6="Plan Review " $7="Executed " $8="Reviewed " $9="Tested " $10="Committed "
 UNREVIEWED=$(awk -F'|' '
   /EXECUTED/ {
     status = $4

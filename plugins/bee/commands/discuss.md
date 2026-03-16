@@ -239,7 +239,7 @@ The discussion notes capture the problem space, approaches considered,
 and insights for spec creation.
 
 Next step:
-  /bee:new-spec --from-discussion {$NOTES_PATH} {$TOPIC}
+  /bee:new-spec --from-discussion {$NOTES_PATH}
 ```
 
 ---

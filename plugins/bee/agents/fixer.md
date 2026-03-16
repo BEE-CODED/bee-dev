@@ -47,6 +47,17 @@ The parent command provides the confirmed finding from REVIEW.md: ID, summary, s
 
 Read the entire file at the specified path, not just the finding's line range. Understand the full context: imports, surrounding functions, class structure, dependencies. The fix must fit within the existing code structure without introducing inconsistencies.
 
+## 3.5. Root Cause Investigation
+
+Before applying the fix, verify you understand the root cause — not just the symptom:
+
+1. **Is the suggested fix obviously correct?** (single line change, clear typo, missing field) → proceed to Step 4
+2. **Is the code complex or the fix non-obvious?** → investigate:
+   - Trace data flow backward: where does the bad value originate?
+   - Find working examples in the codebase for comparison (Grep for similar patterns)
+   - Check git diff for recent changes that could have caused this
+3. **Does the fix require changes in multiple locations?** → this signals an architectural issue, not a simple bug. Report to user: "Finding F-{NNN} appears to require changes in N locations, suggesting an architectural issue. Recommend systematic debugging before attempting a multi-location fix." Do NOT attempt a multi-location fix without user guidance.
+
 ## 4. Apply the Minimal Fix
 
 Apply the SMALLEST change that addresses the finding:
@@ -68,10 +79,18 @@ After applying the fix, run the project's test suite:
 - Run the tests using Bash
 - If tests PASS: the fix is complete
 - If tests FAIL after your fix:
-  1. Review the failure output
-  2. Determine if the failure is caused by your fix or was pre-existing
-  3. If caused by your fix: adjust the fix and re-run tests
-  4. If tests continue to fail after two fix attempts: revert all your changes and report the failure
+  1. Read the failure output COMPLETELY — don't skim
+  2. Is the failure caused by your fix or pre-existing?
+     - Pre-existing → document in report, continue
+     - Caused by fix → go to step 3
+  3. Diagnose the failure type:
+     - **Simple mistake** (typo, wrong variable): fix and re-run (attempt 1)
+     - **Pattern mismatch** (your fix doesn't fit the codebase pattern): find working examples, compare, adjust (attempt 2)
+     - **Wrong layer** (the bug exists at a different level than the finding suggests): this means the finding identified a symptom, not root cause. Do NOT attempt fix #3 — revert instead.
+  4. After fix attempt 2 still fails: STOP. Do not attempt #3.
+     - This indicates architectural issue or misidentified root cause
+     - Revert all changes
+     - Report: "Fix attempts indicate this finding may be treating a symptom. Root cause may be elsewhere."
 
 Do NOT skip test verification. Every fix must be validated against the test suite.
 
@@ -87,6 +106,7 @@ End your final message with a structured fix report:
 - **Files Changed:** {list of modified file paths}
 - **What Changed:** {Brief description of the fix applied}
 - **Tests:** {All passing | Failed -- reason}
+- **Root Cause:** {Confirmed at reported location | Symptom -- root cause appears to be elsewhere | N/A -- straightforward fix}
 ```
 
 If you reverted, explain why the fix could not be applied safely.

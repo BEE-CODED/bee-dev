@@ -10,12 +10,72 @@ description: BeeDev workflow rules -- TDD mandatory, disk-is-truth, no auto-comm
 These rules apply to ALL work within a Bee-managed project. No exceptions.
 
 ### TDD is mandatory
-Write tests BEFORE implementation. Follow the Red-Green-Refactor cycle:
-1. **Red:** Write a failing test that defines the desired behavior
-2. **Green:** Write the minimal code to make the test pass
-3. **Refactor:** Clean up while keeping tests green
 
-Never write implementation code without a corresponding test first.
+```
+NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
+```
+
+Write code before the test? **Delete it. Start over.**
+- Don't keep it as "reference"
+- Don't "adapt" it while writing tests
+- Don't look at it
+- Delete means delete
+
+**The Red-Green-Refactor cycle:**
+1. **Red:** Write a failing test. Run it. Watch it FAIL. Verify the failure is about missing implementation, not test logic errors.
+2. **Green:** Write the MINIMAL code to make the test pass. Nothing extra.
+3. **Refactor:** Clean up with passing tests as safety net. Tests must pass after every change.
+
+**Watch It Fail (MANDATORY):**
+After writing a test, run it and confirm:
+- Test FAILS (not errors — actual assertion failure)
+- Failure message matches expected behavior
+- Fails because feature is missing, not because of typos
+
+Test passes immediately? You're testing existing behavior. Fix the test.
+
+**Verification before completion:**
+Before claiming work is done, verify with fresh evidence:
+- [ ] Every new function/method has a test
+- [ ] Watched each test fail before implementing
+- [ ] Tests fail for expected reason
+- [ ] Wrote minimal code to pass
+- [ ] All tests pass (fresh run, not cached)
+- [ ] Output is clean (no errors, no warnings)
+- [ ] Tests use real code (mocks only when unavoidable)
+- [ ] Edge cases and error paths covered
+
+**Testing anti-patterns (avoid these):**
+- Testing mock behavior instead of real behavior — assert on what the code DOES, not what mocks return
+- Test-only methods in production classes — move cleanup/reset to test utilities
+- Mocking without understanding dependencies — know what side effects you're replacing
+- Incomplete mocks with partial data — mirror real data structures completely
+- Tests added after implementation — tests-after prove nothing; they pass immediately
+
+**Common rationalizations (all wrong):**
+
+| Excuse | Reality |
+|--------|---------|
+| "Too simple to test" | Simple code breaks. Test takes 30 seconds. |
+| "I'll test after" | Tests-after pass immediately and prove nothing. |
+| "Already manually tested" | Manual testing is not systematic and cannot be re-run. |
+| "Deleting my code is wasteful" | Sunk cost fallacy. Unverified code is technical debt. |
+| "Keep code as reference" | You'll adapt it. That's testing-after in disguise. |
+| "Need to explore first" | Fine. Throw away exploration, then start with TDD. |
+| "Hard to test = skip test" | Hard to test = hard to use. Listen to the test. |
+| "TDD will slow me down" | TDD is faster than debugging. Always. |
+| "Existing code has no tests" | You're improving it. Start with tests for your changes. |
+
+**Red flags — STOP and start over:**
+- Code written before test
+- Test passes immediately (no red phase)
+- Can't explain why test failed
+- "Just this once" rationalization
+- "I already manually tested it"
+- "Tests after achieve the same purpose"
+- "This is different because..."
+
+All of these mean: delete code, start over with TDD.
 
 ### Disk is truth
 All critical state lives on disk. Never rely on conversation memory.

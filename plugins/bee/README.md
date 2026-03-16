@@ -4,9 +4,9 @@ A Claude Code plugin that enforces disciplined, spec-driven development with TDD
 
 ## What Bee Does
 
-Bee structures your development workflow into a lifecycle: **Spec > Plan > Execute > Review > Test > Commit**. Each step produces artifacts on disk, every feature goes through review gates, and 18 specialized agents handle different aspects of the work.
+Bee structures your development workflow into a lifecycle: **Spec > Plan > Execute > Review > Test > Commit**. Each step produces artifacts on disk, every feature goes through review gates, and 22 specialized agents handle different aspects of the work.
 
-## Commands (23)
+## Commands (24)
 
 ### Setup & Navigation
 | Command | Args | Description |

@@ -57,13 +57,13 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Validate implementer agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Test files created BEFORE implementation (TDD compliance) 2) Tests run and passing 3) Structured task notes written (files created, patterns used, decisions) 4) Task reported complete, not abandoned.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "prompt": "Validate implementer agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) TDD red-green cycle verified: test files exist BEFORE implementation code, and agent output shows tests were run and FAILED before implementation was written, then PASSED after 2) Tests run and passing 3) Structured task notes written (files created, patterns used, decisions) 4) Task reported complete, not abandoned.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
             "timeout": 30
           }
         ]
       },
       {
-        "matcher": "fixer",
+        "matcher": "^fixer$",
         "hooks": [
           {
             "type": "prompt",
@@ -73,11 +73,11 @@
         ]
       },
       {
-        "matcher": "researcher",
+        "matcher": "^researcher$",
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Validate researcher agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Research notes were written to TASKS.md (mentions updating research sections) 2) No production code was written (no file creation or modification outside TASKS.md and memory files) 3) Completion signal matches expected format ('Research complete: [N] tasks enriched').\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "prompt": "Validate researcher agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field. The researcher runs in TWO modes -- validate based on which mode was used:\n\n**Phase research mode** (signal: 'Research complete: [N] tasks enriched'): 1) Research notes were written to TASKS.md (mentions updating research sections) 2) Completion signal present\n\n**Spec/quick research mode** (signal: structured research summary returned in final message, no TASKS.md write): 1) Output contains structured findings (project structure, patterns, reusable code) 2) No TASKS.md write expected -- findings are returned inline\n\nFor BOTH modes: No production code was written (no file creation or modification outside TASKS.md and memory files).\n\nExactly one mode must be detected. Respond {\"ok\": true} if ALL checks for the detected mode pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
             "timeout": 30
           }
         ]
@@ -103,7 +103,7 @@
         ]
       },
       {
-        "matcher": "plan-compliance-reviewer",
+        "matcher": "^plan-compliance-reviewer$",
         "hooks": [
           {
             "type": "prompt",
@@ -113,7 +113,7 @@
         ]
       },
       {
-        "matcher": "stack-reviewer",
+        "matcher": "^stack-reviewer$",
         "hooks": [
           {
             "type": "prompt",
@@ -123,7 +123,7 @@
         ]
       },
       {
-        "matcher": "laravel-inertia-vue-bug-detector",
+        "matcher": "^laravel-inertia-vue-bug-detector$",
         "hooks": [
           {
             "type": "prompt",
@@ -133,7 +133,7 @@
         ]
       },
       {
-        "matcher": "laravel-inertia-vue-pattern-reviewer",
+        "matcher": "^laravel-inertia-vue-pattern-reviewer$",
         "hooks": [
           {
             "type": "prompt",
@@ -143,7 +143,7 @@
         ]
       },
       {
-        "matcher": "laravel-inertia-vue-implementer",
+        "matcher": "^laravel-inertia-vue-implementer$",
         "hooks": [
           {
             "type": "prompt",
@@ -153,17 +153,17 @@
         ]
       },
       {
-        "matcher": "quick-implementer",
+        "matcher": "^quick-implementer$",
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Validate quick-implementer agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Test files created BEFORE implementation (TDD compliance) 2) Tests run and passing 3) Structured task notes written (files created, patterns used, decisions) 4) Task reported complete with the exact signal: 'Task complete. [X] tests passing.'\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "prompt": "Validate quick-implementer agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) TDD red-green cycle verified: test files exist BEFORE implementation code, and agent output shows tests were run and FAILED before implementation was written, then PASSED after 2) Tests run and passing 3) Structured task notes written (files created, patterns used, decisions) 4) Task reported complete with the exact signal: 'Task complete. [X] tests passing.'\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
             "timeout": 30
           }
         ]
       },
       {
-        "matcher": "spec-reviewer",
+        "matcher": "^spec-reviewer$",
         "hooks": [
           {
             "type": "prompt",
@@ -173,11 +173,11 @@
         ]
       },
       {
-        "matcher": "discuss-partner",
+        "matcher": "^discuss-partner$",
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Validate discuss-partner agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and determine which mode the agent ran in by checking which completion signal is present, then validate accordingly:\n\n**Write-notes mode** (signal: 'Discussion notes written: {path}'): 1) The completion signal 'Discussion notes written:' is present with a file path 2) Required headings are present in the notes (required headings present: ## Topic, ## Discussion Summary, ## Notes for Spec Creation) 3) No code was generated -- discussion notes contain prose analysis, no code blocks or implementation\n\n**Scan mode** (signal: '## Relevant Files' and '## Existing Patterns'): 1) Output contains '## Relevant Files' heading with file paths listed 2) Output contains '## Existing Patterns' heading with pattern descriptions 3) No files written -- scan mode is read-only, the agent must not create or modify any files\n\nExactly one mode must be detected. If neither signal is found, validation fails.\n\nRespond {\"ok\": true} if ALL checks for the detected mode pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "prompt": "Validate discuss-partner agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and determine which mode the agent ran in by checking which completion signal is present, then validate accordingly:\n\n**Write-notes mode** (signal: 'Discussion notes written: {path}'): 1) The completion signal 'Discussion notes written:' is present with a file path 2) Required headings are present in the notes (required headings present: ## Topic, ## Discussion Summary, ## Notes for Spec Creation) 3) No code was generated -- discussion notes contain prose analysis, no code blocks or implementation\n\n**Scan mode** (signal: 'Scan complete:' with file and pattern counts): 1) The completion signal 'Scan complete:' is present 2) Output contains '## Relevant Files' heading with file paths listed 3) Output contains '## Existing Patterns' heading with pattern descriptions 4) No files written -- scan mode is read-only, the agent must not create or modify any files\n\nExactly one mode must be detected. If neither signal is found, validation fails.\n\nRespond {\"ok\": true} if ALL checks for the detected mode pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
             "timeout": 30
           }
         ]

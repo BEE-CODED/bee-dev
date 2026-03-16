@@ -37,8 +37,7 @@ Check these guards in order. Stop immediately if any fails:
 
 1. Read STATE.md to find the Current Spec Path
 2. Determine the phase number and slug from the Phases table
-3. Construct paths:
-   - Phase directory: `{spec-path}/phases/{NN}-{slug}/`
+3. Find the phase directory using Glob: `{spec-path}/phases/{NN}-*/` where NN is the zero-padded phase number. This avoids slug construction mismatches.
    - TASKS.md: `{phase_directory}/TASKS.md`
    - spec.md: `{spec-path}/spec.md`
 4. Read TASKS.md to identify files created/modified by the phase
@@ -311,8 +310,7 @@ For each pair of findings from different agents, check if they reference the sam
 2. Collect classifications from each validator's final message (the `## Classification` section with Finding, Verdict, Confidence, Source Agent, and Reason fields)
 3. Escalate MEDIUM confidence classifications to specialist agents for a second opinion:
    - Filter the collected classifications: separate HIGH confidence (proceed unchanged) from MEDIUM confidence (need escalation)
-   - For each MEDIUM confidence classification, read the `Source Agent` field to identify which specialist originally found the issue (one of: `bug-detector`, `pattern-reviewer`, `plan-compliance-reviewer`, or `stack-reviewer`)
-   - Spawn the identified specialist agent (`bee:{source_agent}`) via Task tool with `model: "sonnet"` and a context packet containing:
+   - For each MEDIUM confidence classification, spawn a fresh `finding-validator` agent for a second opinion (NOT the source specialist — specialist agents have SubagentStop hooks that expect their standard output format, not the escalation format). Spawn via Task tool. Model selection: **economy** mode passes `model: "sonnet"`, **quality or premium** mode omits model. Provide this context packet:
      ```
      You are providing a second opinion on a review finding that received an uncertain classification.
 
@@ -333,13 +331,16 @@ For each pair of findings from different agents, check if they reference the sam
      ## Your Task
      Provide a second opinion on whether this finding is valid. Read the file and surrounding context. Respond with your verdict: REAL BUG or FALSE POSITIVE, followed by your reasoning.
 
-     End your response with:
-     ## Second Opinion
+     End your response with your standard classification format:
+     ## Classification
+     - **Finding:** F-{NNN}
      - **Verdict:** {REAL BUG | FALSE POSITIVE}
-     - **Reason:** {your reasoning}
+     - **Confidence:** HIGH
+     - **Source Agent:** {source_agent from original finding}
+     - **Reason:** {your reasoning for this second opinion}
      ```
    - Specialist escalations are spawned SEQUENTIALLY (one at a time) -- each is a focused re-analysis
-   - After the specialist responds, parse the `## Second Opinion` section from the specialist's final message
+   - After the finding-validator responds, parse the `## Classification` section from its final message
    - Use the specialist's verdict as the FINAL classification, overriding the validator's uncertain MEDIUM confidence classification
    - If the specialist confirms REAL BUG: the finding stays with verdict REAL BUG
    - If the specialist says FALSE POSITIVE: the finding's verdict becomes FALSE POSITIVE
@@ -407,11 +408,11 @@ CRITICAL: Spawn fixers SEQUENTIALLY, one at a time. Never spawn multiple fixers 
 ### Step 7: STEP 4 -- RE-REVIEW (if loop mode enabled)
 
 1. If loop mode is NOT enabled: skip to Step 8 (completion)
-2. Increment iteration counter
-3. If iteration counter > max iterations:
-   - Display: "Max review iterations ({max}) reached. Review complete."
+2. Track loop iterations separately from the cumulative iteration counter. Initialize `$LOOP_ITERATION = 1` on first entry to Step 7 (do NOT re-initialize on subsequent loops). Increment `$LOOP_ITERATION` on each re-entry. Also increment the cumulative `iteration_counter` (used for STATE.md and REVIEW.md naming).
+3. If `$LOOP_ITERATION > max_iterations`:
+   - Display: "Max review loop iterations ({max}) reached. Review complete."
    - Skip to Step 8
-4. Display: "Starting re-review iteration {counter}..."
+4. Display: "Starting re-review (loop iteration {$LOOP_ITERATION}, cumulative iteration {iteration_counter})..."
 
 #### 7.1: Archive current REVIEW.md
 
@@ -494,7 +495,7 @@ Next step:
 - Deduplication merges findings from different agents when they reference the same file AND line ranges overlap within 5 lines. Higher severity is kept, categories and descriptions are combined.
 - REVIEW.md is the pipeline state, progressively updated as validation and fixing proceed. Analogous to TASKS.md checkboxes in execute-phase.
 - Finding validation can be parallel (up to 5 at a time). Fixing MUST be sequential (one at a time) to prevent fix conflicts.
-- Specialist escalation for MEDIUM confidence findings happens AFTER batch validation completes (not inline during validation batching). Flow: (1) batch validate up to 5 findings, (2) collect all classifications, (3) for MEDIUM confidence ones, spawn the source specialist sequentially for a second opinion, (4) then proceed to update REVIEW.md with final classifications. Escalation uses `bee:{source_agent}` (e.g., `bee:bug-detector`) with `model: "sonnet"`. HIGH confidence classifications proceed unchanged -- only MEDIUM triggers escalation.
+- Specialist escalation for MEDIUM confidence findings happens AFTER batch validation completes (not inline during validation batching). Flow: (1) batch validate up to 5 findings, (2) collect all classifications, (3) for MEDIUM confidence ones, spawn the source specialist sequentially for a second opinion, (4) then proceed to update REVIEW.md with final classifications. Escalation uses `bee:finding-validator` (not the source specialist — specialist SubagentStop hooks expect their standard format, not second-opinion format). HIGH confidence classifications proceed unchanged -- only MEDIUM triggers escalation.
 - The command handles user interaction for STYLISTIC findings. Commands handle interaction, agents handle work.
 - `.bee/false-positives.md` is created on first use when the first false positive is documented. If no false positives exist yet, the file does not exist.
 - Loop mode is opt-in: `--loop` flag or `config.review.loop`. Capped at `max_loop_iterations` (default 3). Re-review (Step 7) re-extracts false positives (Step 7.2), re-spawns all review agents in parallel (Step 7.3), and applies the same parse/deduplicate/consolidate pipeline (Step 7.4) before evaluating findings. The re-review agents see the updated code (post-fix) and updated false-positives list.

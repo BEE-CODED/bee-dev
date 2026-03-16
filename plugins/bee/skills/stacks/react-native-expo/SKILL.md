@@ -7,6 +7,8 @@ description: React Native + Expo managed workflow conventions and patterns
 
 These standards apply when the project stack is `react-native-expo`. All agents and implementations must follow these conventions. This is a MOBILE-FIRST stack.
 
+**Also read `skills/standards/frontend/SKILL.md`** for universal frontend standards (component architecture, accessibility, design quality) that apply alongside these React Native-specific conventions. Note: responsive design and CSS methodology sections are web-focused — for mobile, follow the patterns in this skill instead.
+
 ## Expo Configuration
 
 - Use **Expo managed workflow** as the default. Eject to bare workflow only when a native module is unavailable.

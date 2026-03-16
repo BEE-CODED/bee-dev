@@ -7,6 +7,8 @@ description: Laravel 12 + Inertia 2 + Vue 3.5 + TailwindCSS conventions and patt
 
 These standards apply when the project stack is `laravel-inertia-vue`. All agents and implementations must follow these conventions.
 
+**Also read `skills/standards/frontend/SKILL.md`** for universal frontend standards (component architecture, accessibility, responsive design, CSS methodology, design quality) that apply alongside these Laravel+Vue-specific conventions.
+
 ## Laravel 12 Conventions
 
 ### Controllers
