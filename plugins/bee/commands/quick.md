@@ -145,10 +145,10 @@ If the user says no, stop. If yes, continue.
 Implement the task directly. Follow these rules:
 
 1. **Read before writing.** Always read existing files before modifying them.
-2. **Use the project's stack conventions.** Check `config.json` for the configured stack, linter, and test runner. Follow the standards for that stack.
+2. **Use the project's stack conventions.** Check `config.json` for the configured stacks. Determine which stack the modified files belong to by comparing file paths against each stack's `path` (a file matches a stack if its path starts with or is within the stack's path; `"."` matches everything). If unclear, use the first stack (`stacks[0]`). Follow the standards for that stack.
 3. **Keep it small.** Quick tasks should touch a few files at most. If the task grows beyond ~5 files, suggest the user run `/bee:new-spec` instead.
-4. **Run the linter.** If config has a linter configured (eslint, pint, biome, prettier), run it on modified files after implementation.
-5. **Run tests if relevant.** If you modified code that has existing tests, run the test suite to verify nothing broke.
+4. **Resolve per-stack linter.** For the relevant stack, resolve the linter: read `stacks[i].linter` first, fall back to root `config.linter` if absent, then `"none"`. If a linter is configured, run it on modified files after implementation scoped to the stack's path.
+5. **Run tests if relevant.** If you modified code that has existing tests, resolve the test runner for the relevant stack: read `stacks[i].testRunner` first, fall back to root `config.testRunner` if absent, then `"none"`. Run the test suite scoped to the stack's path to verify nothing broke.
 
 After implementation, present a summary:
 
@@ -219,8 +219,8 @@ Task(
     Implement this task using TDD (Red-Green-Refactor): {DESCRIPTION}
 
     Project stack: {stack from config.json}
-    Linter: {linter from config.json}
-    Test runner: {testRunner from config.json}
+    Linter: {resolved linter for this stack: stacks[i].linter ?? config.linter ?? "none"}
+    Test runner: {resolved test runner for this stack: stacks[i].testRunner ?? config.testRunner ?? "none"}
 
     Plan file: {$PLAN_FILE}
     Read this file for acceptance criteria, test file targets, pattern references,
@@ -267,8 +267,10 @@ If `$USE_REVIEW` is true, run a review before committing. The review pipeline us
 **Build check:** If `package.json` has a `build` script, run `npm run build`. If it fails, display the error and ask: "(a) Fix first (b) Continue anyway". If no build script, skip.
 
 **Test check:** Ask: "Run tests before review? (yes/no)". If yes:
-1. Read `testRunner` from `config.json`. If `none`, display "No test runner configured. Skipping." and continue.
-2. Run the test command (`vitest`: `npx vitest run`, `jest`: `npx jest --maxWorkers=auto`, `pest`: `./vendor/bin/pest --parallel`). Display results. If tests fail, ask: "(a) Fix first (b) Continue anyway".
+For each stack in `config.stacks`, resolve its test runner: read `stacks[i].testRunner` first, fall back to root `config.testRunner` if absent, then `"none"`. Run each stack's test runner scoped to its path. Report per-stack: "Tests: {stack.name} ({runner}): {result}".
+For each stack:
+1. Resolve the test runner using the fallback chain above. If `"none"`, display "Tests: {stack.name}: skipped (no test runner configured)" and continue to the next stack.
+2. Run the test command scoped to the stack path (`vitest`: `cd {stack.path} && npx vitest run`, `jest`: `cd {stack.path} && npx jest --maxWorkers=auto`, `pest`: `cd {stack.path} && ./vendor/bin/pest --parallel`). Display results. If tests fail, ask: "(a) Fix first (b) Continue anyway".
 
 #### 4.5.0: Detect review scope and compute output path
 

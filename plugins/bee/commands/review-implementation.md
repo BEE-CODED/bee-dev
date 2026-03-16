@@ -49,33 +49,37 @@ If full spec mode applies:
 
 This gate is identical for both modes.
 
-**Build check (automatic):**
+**Build check (automatic, per-stack):**
 
-1. Check `package.json` for a `build` script (run `node -e "const p=require('./package.json'); process.exit(p.scripts?.build ? 0 : 1)"` via Bash). Also check `composer.json` if the stack is Laravel-based.
-2. If a build script exists, run it via Bash:
-   - Node projects: `npm run build`
+For each stack in `config.stacks`, scoped to its `path`:
+1. Check `package.json` for a `build` script within `{stack.path}` (run `node -e "const p=require('./{stack.path}/package.json'); process.exit(p.scripts?.build ? 0 : 1)"` via Bash). Also check `composer.json` if the stack is Laravel-based.
+2. If a build script exists, run it via Bash scoped to the stack path:
+   - Node projects: `cd {stack.path} && npm run build`
    - PHP projects: skip (no build step typically)
-3. If build **fails**: display the error output and ask:
-   "Build failed. Options: (a) Fix build errors first (b) Continue review anyway"
+3. If build **fails**: display "Build: {stack.name} FAILED" with error output and ask:
+   "Build failed for {stack.name}. Options: (a) Fix build errors first (b) Continue review anyway"
    - If (a): stop the review. The user fixes and re-runs.
    - If (b): continue (note build failure in the review context).
-4. If build **passes**: display "Build: OK" and continue.
-5. If no build script exists: display "Build: skipped (no build script)" and continue.
+4. If build **passes**: display "Build: {stack.name}: OK" and continue.
+5. If no build script exists: display "Build: {stack.name}: skipped (no build script)" and continue.
 
-**Test check (user opt-in):**
+**Test check (user opt-in, per-stack):**
 
 Ask the user: "Run tests before review? (yes/no)"
 
 If the user says **yes**:
-1. Read `testRunner` from `config.json`. If `none`, display "No test runner configured. Skipping." and continue.
+For each stack in `config.stacks`, resolve its test runner: read `stacks[i].testRunner` first, fall back to root `config.testRunner` if absent, then `"none"`. Run each stack's test runner scoped to its path. Report per-stack: "Tests: {stack.name} ({runner}): {result}".
+
+For each stack:
+1. Resolve the test runner using the fallback chain above. If `"none"`, display "Tests: {stack.name}: skipped (no test runner configured)" and continue to the next stack.
 2. Detect the best parallel-capable test command:
-   - `vitest`: `npx vitest run` (parallel by default via worker threads)
-   - `jest`: `npx jest --maxWorkers=auto` (parallel by default via workers)
-   - `pest`: `./vendor/bin/pest --parallel` (uses Paratest under the hood)
+   - `vitest`: `cd {stack.path} && npx vitest run` (parallel by default via worker threads)
+   - `jest`: `cd {stack.path} && npx jest --maxWorkers=auto` (parallel by default via workers)
+   - `pest`: `cd {stack.path} && ./vendor/bin/pest --parallel` (uses Paratest under the hood)
 3. Run the detected test command via Bash (timeout: 5 minutes).
-4. If tests **pass**: display "Tests: {count} passed" and continue.
+4. If tests **pass**: display "Tests: {stack.name} ({runner}): {count} passed" and continue.
 5. If tests **fail**: display the failure summary and ask:
-   "Tests failed ({fail_count} failures). Options: (a) Fix test failures first (b) Continue review anyway"
+   "Tests failed for {stack.name} ({fail_count} failures). Options: (a) Fix test failures first (b) Continue review anyway"
    - If (a): stop. User fixes and re-runs.
    - If (b): continue (note test failures in the review context).
 

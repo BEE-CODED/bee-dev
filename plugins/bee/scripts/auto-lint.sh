@@ -31,32 +31,50 @@ fi
 
 PROJECT_DIR="$CLAUDE_PROJECT_DIR"
 
-# Detect and run linter
-if [ -f "$PROJECT_DIR/vendor/bin/pint" ]; then
-  # Laravel Pint (PHP)
-  OUTPUT=$("$PROJECT_DIR/vendor/bin/pint" "$FILE_PATH" 2>&1) || {
-    echo "$OUTPUT" >&2
-    exit 2
-  }
-elif [ -f "$PROJECT_DIR/node_modules/.bin/eslint" ]; then
-  # ESLint
-  OUTPUT=$("$PROJECT_DIR/node_modules/.bin/eslint" --fix "$FILE_PATH" 2>&1) || {
-    echo "$OUTPUT" >&2
-    exit 2
-  }
-elif [ -f "$PROJECT_DIR/node_modules/.bin/prettier" ]; then
-  # Prettier
-  OUTPUT=$("$PROJECT_DIR/node_modules/.bin/prettier" --write "$FILE_PATH" 2>&1) || {
-    echo "$OUTPUT" >&2
-    exit 2
-  }
-elif [ -f "$PROJECT_DIR/node_modules/.bin/biome" ]; then
-  # Biome
-  OUTPUT=$("$PROJECT_DIR/node_modules/.bin/biome" check --write "$FILE_PATH" 2>&1) || {
-    echo "$OUTPUT" >&2
-    exit 2
-  }
-fi
+# Determine linter based on file extension (avoids running PHP linter on JS files in monorepos)
+EXT="${FILE_PATH##*.}"
+
+case "$EXT" in
+    php)
+        if [ -f "$PROJECT_DIR/vendor/bin/pint" ]; then
+            OUTPUT=$("$PROJECT_DIR/vendor/bin/pint" "$FILE_PATH" 2>&1) || {
+                echo "$OUTPUT" >&2
+                exit 2
+            }
+        fi
+        ;;
+    js|ts|jsx|tsx|vue|svelte|mjs|mts)
+        if [ -f "$PROJECT_DIR/node_modules/.bin/eslint" ]; then
+            OUTPUT=$("$PROJECT_DIR/node_modules/.bin/eslint" --fix "$FILE_PATH" 2>&1) || {
+                echo "$OUTPUT" >&2
+                exit 2
+            }
+        elif [ -f "$PROJECT_DIR/node_modules/.bin/prettier" ]; then
+            OUTPUT=$("$PROJECT_DIR/node_modules/.bin/prettier" --write "$FILE_PATH" 2>&1) || {
+                echo "$OUTPUT" >&2
+                exit 2
+            }
+        elif [ -f "$PROJECT_DIR/node_modules/.bin/biome" ]; then
+            OUTPUT=$("$PROJECT_DIR/node_modules/.bin/biome" check --write "$FILE_PATH" 2>&1) || {
+                echo "$OUTPUT" >&2
+                exit 2
+            }
+        fi
+        ;;
+    css|scss|less)
+        if [ -f "$PROJECT_DIR/node_modules/.bin/prettier" ]; then
+            OUTPUT=$("$PROJECT_DIR/node_modules/.bin/prettier" --write "$FILE_PATH" 2>&1) || {
+                echo "$OUTPUT" >&2
+                exit 2
+            }
+        elif [ -f "$PROJECT_DIR/node_modules/.bin/biome" ]; then
+            OUTPUT=$("$PROJECT_DIR/node_modules/.bin/biome" check --write "$FILE_PATH" 2>&1) || {
+                echo "$OUTPUT" >&2
+                exit 2
+            }
+        fi
+        ;;
+esac
 
 # No linter found or linter succeeded -- silent exit
 exit 0

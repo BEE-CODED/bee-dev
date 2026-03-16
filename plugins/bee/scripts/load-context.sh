@@ -29,9 +29,19 @@ if [ -f "$BEE_DIR/STATE.md" ]; then
 fi
 
 if [ -f "$BEE_DIR/config.json" ]; then
-  STACK=$(jq -r '.stacks[0].name // .stack // "unknown"' "$BEE_DIR/config.json" 2>/dev/null || echo "unknown")
   echo "## Bee Config"
-  echo "Stack: $STACK"
+  # Check for new per-stack format (stacks array with objects)
+  STACKS_COUNT=$(jq '.stacks | length // 0' "$BEE_DIR/config.json" 2>/dev/null || echo "0")
+  STACKS_IS_OBJECTS=$(jq -r '.stacks[0] | type // "null"' "$BEE_DIR/config.json" 2>/dev/null || echo "null")
+
+  if [ "$STACKS_COUNT" -gt 0 ] 2>/dev/null && [ "$STACKS_IS_OBJECTS" = "object" ]; then
+    # New per-stack format: stacks is an array of objects with name, path, linter, testRunner
+    jq -r '.stacks[] | "Stack: \(.name) at '"'"'\(.path // ".")'"'"' (linter: \(.linter // "none"), tests: \(.testRunner // "none"))"' "$BEE_DIR/config.json" 2>/dev/null
+  else
+    # Old format: single stack string or stacks array of strings
+    STACK=$(jq -r '.stacks[0] // .stack // "unknown"' "$BEE_DIR/config.json" 2>/dev/null || echo "unknown")
+    echo "Stack: $STACK"
+  fi
   echo ""
 fi
 

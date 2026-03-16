@@ -75,8 +75,8 @@ The minimal fix principle: if you can fix it by changing 3 lines, do not change 
 
 After applying the fix, run the project's test suite:
 
-- Read config.json for the test runner command
-- Run the tests using Bash
+- Read `.bee/config.json`. Determine the test runner for the current stack: read `stacks[i].testRunner` where `stacks[i].name` matches the stack name provided in your context. If the stack entry has no `testRunner` field, fall back to the root `config.testRunner` field. If neither exists, skip tests.
+- Run the tests using Bash scoped to the stack's path
 - If tests PASS: the fix is complete
 - If tests FAIL after your fix:
   1. Read the failure output COMPLETELY — don't skim

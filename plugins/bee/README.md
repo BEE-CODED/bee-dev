@@ -189,12 +189,10 @@ Events: task completed (Stop), background agent finished (Notification), permiss
 {
   "version": "0.1.0",
   "stacks": [
-    { "name": "laravel-inertia-vue", "path": "." },
-    { "name": "nestjs", "path": "api" }
+    { "name": "laravel-inertia-vue", "path": ".", "linter": "pint", "testRunner": "pest" },
+    { "name": "nestjs", "path": "api", "linter": "eslint", "testRunner": "jest" }
   ],
   "implementation_mode": "quality",
-  "linter": "pint",
-  "testRunner": "pest",
   "ci": "github-actions",
   "context7": true,
   "review": {

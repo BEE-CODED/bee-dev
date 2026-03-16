@@ -1,11 +1,9 @@
 {
   "version": "0.1.0",
   "stacks": [
-    { "name": "{STACK}", "path": "." }
+    { "name": "{STACK}", "path": ".", "linter": "{LINTER}", "testRunner": "{TEST_RUNNER}" }
   ],
   "implementation_mode": "quality",
-  "linter": "{LINTER}",
-  "testRunner": "{TEST_RUNNER}",
   "ci": "{CI}",
   "context7": true,
   "review": {

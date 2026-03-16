@@ -44,7 +44,13 @@ If the dynamic context above does NOT contain `NO_EXISTING_CONFIG` (meaning `.be
   7. Do NOT touch `.bee/STATE.md`, `.bee/specs/`, or any other state files during migration.
 - If the config already has a `stacks` key that is an **array**, it is already v3 format -- skip migration silently.
 
-- Proceed through detection steps below but only update `.bee/config.json` values (stacks, linter, testRunner, ci).
+- If the config has root-level `linter` or `testRunner` keys AND the `stacks` entries do NOT have `linter`/`testRunner` fields, run per-stack migration:
+  1. For single-stack projects (stacks array has 1 entry): move root `linter` value into `stacks[0].linter` and root `testRunner` into `stacks[0].testRunner`.
+  2. For multi-stack projects: set each stack entry's `linter` and `testRunner` to `"none"` (will be re-detected in Step 3).
+  3. Remove the root-level `linter` and `testRunner` keys.
+  4. Add to migration summary: "Moved linter/testRunner into per-stack configuration"
+
+- Proceed through detection steps below but only update `.bee/config.json` values (stacks, per-stack linter/testRunner, ci).
 - Do NOT overwrite `.bee/STATE.md`, `.bee/specs/`, or any other existing state files.
 - Verify the global statusline is installed (Step 5) and clean up any legacy local copies.
 - Skip the CLAUDE.md and .gitignore steps (those were handled on first init).
@@ -128,45 +134,43 @@ Track the skill status for each stack (used in Step 10 completion summary).
 - `kmp-compose`
 - `claude-code-plugin`
 
-### Step 3: Test Runner and Linter Detection
+### Step 3: Per-Stack Test Runner and Linter Detection
 
-Scan for test runners and linters. Present detected values and confirm with the user.
+For EACH confirmed stack from Step 2, detect the linter and test runner scoped to that stack's path and ecosystem.
 
-**Test runners (check in order, use first match):**
+**Ecosystem mapping:**
 
-| Indicator | Test Runner |
-|-----------|------------|
-| `vendor/bin/pest` exists or `pestphp/pest` in composer.json | `pest` |
-| `node_modules/.bin/vitest` exists or `vitest` in package.json | `vitest` |
-| `node_modules/.bin/jest` exists or `jest` in package.json | `jest` |
-| None found | `none` |
+| Stack name contains | Ecosystem | Check for linters | Check for test runners |
+|---------------------|-----------|-------------------|----------------------|
+| `laravel` | PHP | `{path}/vendor/bin/pint`, `{path}/vendor/bin/phpstan` | `{path}/vendor/bin/pest`, `{path}/vendor/bin/phpunit` |
+| `react`, `vue`, `nextjs`, `angular`, `nestjs` | JS/TS | `{path}/node_modules/.bin/eslint`, `{path}/node_modules/.bin/prettier`, `{path}/node_modules/.bin/biome` | `{path}/node_modules/.bin/vitest`, `{path}/node_modules/.bin/jest` |
+| `react-native-expo` | JS/TS | `{path}/node_modules/.bin/eslint` | `{path}/node_modules/.bin/jest` |
+| `kmp-compose` | Kotlin | `{path}/gradlew` (ktlint task) | `{path}/gradlew` (test task) |
 
-**Linters (check in order, use first match):**
+Where `{path}` is the stack's configured path (`.` = project root).
 
-| Indicator | Linter |
-|-----------|--------|
-| `vendor/bin/pint` exists or `laravel/pint` in composer.json | `pint` |
-| `.eslintrc*` or `eslint.config.*` exists | `eslint` |
-| `.prettierrc*` exists | `prettier` |
-| `biome.json` exists | `biome` |
-| None found | `none` |
+For each stack:
+1. Determine ecosystem from the stack name
+2. Check for linter binaries at the stack's path. First match wins: pint > eslint > prettier > biome (within the relevant ecosystem)
+3. Check for test runner binaries at the stack's path. First match wins: pest > vitest > jest > phpunit (within the relevant ecosystem)
+4. Store detected values in the stack entry
 
-**CI detection:**
+**CI detection** stays global: check for `.github/workflows/*.yml` at project root.
 
 | Indicator | CI |
 |-----------|-----|
 | `.github/workflows/` directory has `.yml` files (from dynamic context) | `github-actions` |
 | None found | `none` |
 
-Present the detected values:
+Present all detected values and confirm:
 ```
 Detected configuration:
-- Test runner: {detected or "none"}
-- Linter: {detected or "none"}
-- CI: {detected or "none"}
-```
+- {stack1} at '{path1}': linter={linter1}, testRunner={runner1}
+- {stack2} at '{path2}': linter={linter2}, testRunner={runner2}
+CI: {ci} (project-wide)
 
-Ask: "Does this look right? (yes/no, or tell me what to change)"
+Does this look right? You can adjust any values.
+```
 
 ### Step 4: Create .bee/ Directory and config.json
 
@@ -179,12 +183,10 @@ The `stacks` array contains one entry per each confirmed stack-path pair from St
 {
   "version": "0.1.0",
   "stacks": [
-    { "name": "{STACK}", "path": "." }
+    { "name": "{detected_stack}", "path": ".", "linter": "{detected_linter}", "testRunner": "{detected_runner}" }
   ],
   "implementation_mode": "quality",
-  "linter": "{LINTER}",
-  "testRunner": "{TEST_RUNNER}",
-  "ci": "{CI}",
+  "ci": "{detected_ci}",
   "context7": true,
   "review": {
     "against_spec": true,
@@ -208,13 +210,11 @@ The `stacks` array contains one entry per each confirmed stack-path pair from St
 {
   "version": "0.1.0",
   "stacks": [
-    { "name": "laravel-inertia-vue", "path": "." },
-    { "name": "nestjs", "path": "api" }
+    { "name": "laravel-inertia-vue", "path": ".", "linter": "pint", "testRunner": "pest" },
+    { "name": "nestjs", "path": "api", "linter": "eslint", "testRunner": "jest" }
   ],
   "implementation_mode": "quality",
-  "linter": "{LINTER}",
-  "testRunner": "{TEST_RUNNER}",
-  "ci": "{CI}",
+  "ci": "github-actions",
   "context7": true,
   "review": {
     "against_spec": true,
@@ -233,7 +233,7 @@ The `stacks` array contains one entry per each confirmed stack-path pair from St
 }
 ```
 
-Replace `{STACK}`, `{LINTER}`, `{TEST_RUNNER}`, and `{CI}` with the confirmed values from Steps 2-3. For multi-stack projects, populate the `stacks` array with all confirmed stack-path pairs.
+Replace `{detected_stack}`, `{detected_linter}`, `{detected_runner}`, and `{detected_ci}` with the confirmed values from Steps 2-3. For multi-stack projects, populate the `stacks` array with all confirmed stack-path pairs, each with their own `linter` and `testRunner`.
 
 ### Step 5: Verify Statusline
 
@@ -399,12 +399,10 @@ Display a summary of everything that was created or updated:
 BeeDev initialized!
 
 Stacks:
-- {name} at '{path}' {✓ skill | ⚠ no skill}
-- {name} at '{path}' {✓ skill | ⚠ no skill}
+- {name} at '{path}' {✓ skill | ⚠ no skill} — linter: {linter}, tests: {testRunner}
+- {name} at '{path}' {✓ skill | ⚠ no skill} — linter: {linter}, tests: {testRunner}
 {...repeat for each stack}
 
-Linter: {linter}
-Test runner: {testRunner}
 CI: {ci}
 Implementation mode: {implementation_mode}
 

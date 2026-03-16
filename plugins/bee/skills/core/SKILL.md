@@ -81,7 +81,7 @@ All of these mean: delete code, start over with TDD.
 All critical state lives on disk. Never rely on conversation memory.
 - `STATE.md` tracks current spec, phase progress, decisions, and last action
 - `TASKS.md` is the execution contract -- tasks, waves, research notes, agent notes, completion status
-- `config.json` holds project configuration (stack, linter, test runner, CI, review settings)
+- `config.json` holds project configuration (stacks with per-stack linter and test runner, CI, review settings)
 
 - `memory/` directory holds per-agent persistent knowledge (see Agent memory system below)
 
