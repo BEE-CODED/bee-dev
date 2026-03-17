@@ -53,7 +53,7 @@ If the dynamic context above does NOT contain `NO_EXISTING_CONFIG` (meaning `.be
 - Proceed through detection steps below but only update `.bee/config.json` values (stacks, per-stack linter/testRunner, ci).
 - Do NOT overwrite `.bee/STATE.md`, `.bee/specs/`, or any other existing state files.
 - Verify the global statusline is installed (Step 5) and clean up any legacy local copies.
-- Skip the CLAUDE.md and .gitignore steps (those were handled on first init).
+- Skip the CLAUDE.md, .gitignore, and user.md steps (those were handled on first init -- user.md is user-authored and must not be overwritten).
 
 If `NO_EXISTING_CONFIG` appears, this is a fresh init -- proceed with all steps.
 
@@ -390,6 +390,31 @@ If the user agrees:
 - If `.gitignore` does not exist, create it with `.bee/`.
 
 If the user declines, skip this step.
+
+### Step 9.5: Optional User Preferences File
+
+Ask the user: "Would you like to create a `.bee/user.md` file for your personal preferences? This is a freeform markdown file where you can note your working style, communication preferences, and workflow overrides. It's loaded into every session and agent context."
+
+If the user agrees, create `.bee/user.md` with this minimal template:
+
+```markdown
+# User Preferences
+
+> Freeform notes about how you like to work. Loaded into every session and agent context.
+
+## Working Style
+<!-- e.g., "I prefer small incremental changes over large refactors" -->
+
+## Communication Preferences
+<!-- e.g., "Be concise, skip preambles, use bullet points" -->
+
+## Workflow Overrides
+<!-- e.g., "Always run linter before committing", "Skip plan review for quick tasks" -->
+```
+
+If the user declines, skip this step.
+
+**Re-init:** If `.bee/user.md` already exists, leave it untouched -- it contains user-authored content. Do not overwrite or modify it. Skip this step silently during re-initialization.
 
 ### Step 10: Completion Summary
 

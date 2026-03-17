@@ -45,6 +45,13 @@ if [ -f "$BEE_DIR/config.json" ]; then
   echo ""
 fi
 
+# Load user preferences if exists
+if [ -f "$BEE_DIR/user.md" ]; then
+  echo "## User Preferences (user.md)"
+  cat "$BEE_DIR/user.md"
+  echo ""
+fi
+
 # Load session context if exists (from PreCompact snapshot)
 if [ -f "$BEE_DIR/SESSION-CONTEXT.md" ]; then
   echo "## Previous Session Context"

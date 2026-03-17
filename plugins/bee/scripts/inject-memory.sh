@@ -34,12 +34,23 @@ fi
 
 CONTEXT=""
 
+# Read user preferences
+if [ -f "$BEE_DIR/user.md" ]; then
+  USER_PREFS=$(cat "$BEE_DIR/user.md" 2>/dev/null)
+  if [ -n "$USER_PREFS" ]; then
+    CONTEXT="## User Preferences
+${USER_PREFS}
+
+"
+  fi
+fi
+
 # Read shared memory
 if [ -f "$MEMORY_DIR/shared.md" ]; then
   CONTENT=$(cat "$MEMORY_DIR/shared.md" 2>/dev/null)
   # Only include if file has actual entries (not just headers)
   if echo "$CONTENT" | grep -q "^- "; then
-    CONTEXT="## Project Memory (shared)
+    CONTEXT="${CONTEXT}## Project Memory (shared)
 ${CONTENT}
 
 "

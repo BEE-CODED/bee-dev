@@ -8,6 +8,7 @@ argument-hint: ""
 Read these files using the Read tool:
 - `.bee/STATE.md` — if not found: NOT_INITIALIZED
 - `.bee/config.json` — if not found: use `{}`
+- `.bee/user.md` — if not found: NO_USER_PREFS (skip silently)
 - `.bee/COMPACT-CONTEXT.md` — if not found: try `.bee/SESSION-CONTEXT.md` — if neither found: NO_SESSION_CONTEXT
 - `.bee/CONTEXT.md` — if not found: NO_CONTEXT
 
