@@ -164,6 +164,35 @@ Every feature follows this lifecycle:
 
 Phases must be reviewed before advancing to the next phase (`phases.require_review_before_next` in config).
 
+## Context7 Integration
+
+Context7 provides live documentation lookups for framework APIs and best practices. Several agents (researcher, bug-detector, stack-reviewer, security-auditor, api-auditor, audit-bug-detector) have Context7 tools in their frontmatter.
+
+### How to use Context7
+
+1. Read `skills/context7/SKILL.md` for the **Library IDs Per Stack** table — this maps stack names to Context7 library names
+2. Resolve the library ID: `mcp__context7__resolve-library-id` with the library name from the table
+3. Query documentation: `mcp__context7__query-docs` with the resolved `libraryId` and a specific question
+
+### When to use Context7
+
+- Verifying that an API call matches the current version of a framework
+- Checking whether a flagged pattern is actually the recommended approach in the latest version
+- Looking up security best practices (CSRF, XSS prevention, auth middleware)
+- Resolving ambiguity when a stack skill describes a convention but you need confirmation
+- Checking for known vulnerability patterns in specific library versions
+
+### When Context7 is unavailable
+
+Context7 MCP tools may not be available in all environments. If the tools are missing or fail:
+- Fall back to the stack skill rules and codebase patterns
+- Never hard-fail because Context7 is unavailable
+- Note in your output that documentation verification was skipped
+
+### Context7 in multi-stack projects
+
+For projects with multiple stacks, each agent should resolve library IDs for the specific stack it's working with. The researcher agent resolves libraries for ALL configured stacks when doing broad research.
+
 ## File Format References
 
 - **TASKS.md:** Execution contract for each phase. See [templates/tasks.md](templates/tasks.md)

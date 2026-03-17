@@ -181,6 +181,116 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "^security-auditor$",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate security-auditor agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Output contains findings using the audit finding format (### F-SEC-NNN prefix) with Severity, Category, File, Lines, Agent, Description, Evidence, Impact, Suggested Fix fields -- OR a 'No security issues found.' message 2) Each finding includes an Evidence section with actual code snippet 3) A '## Security Audit Summary' section is present at the end with files scanned count, finding counts by severity, and overall security posture rating 4) No code modifications were made -- this is a read-only agent that must not create or edit any files.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "^error-handling-auditor$",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate error-handling-auditor agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Output contains findings using the audit finding format (### F-ERR-NNN prefix) with Severity, Category, File, Lines, Agent, Description, Evidence, Impact, Suggested Fix fields -- OR a 'No error handling issues found.' message 2) Each finding specifies the failure mode: CRASH, SILENT FAILURE, DATA LOSS, or DEGRADED UX 3) A '## Error Handling Audit Summary' section is present at the end with finding counts and overall maturity rating 4) No code modifications were made -- this is a read-only agent.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "^database-auditor$",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate database-auditor agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Output contains findings using the audit finding format (### F-DB-NNN prefix) with Severity, Category, File, Lines, Agent, Description, Evidence, Impact, Suggested Fix fields -- OR a 'No database issues found.' message 2) A '## Database Audit Summary' section is present at the end with migration files scanned, model files scanned, N+1 patterns found, missing indexes count, and overall data layer health rating 3) No code modifications were made -- this is a read-only agent.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "^architecture-auditor$",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate architecture-auditor agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Output contains findings using the audit finding format (### F-ARCH-NNN prefix) with Severity, Category, File, Lines, Agent, Description, Evidence, Impact, Suggested Fix fields -- OR a 'No architecture issues found.' message 2) A '## Architecture Audit Summary' section is present at the end with total files analyzed, god files count, duplicated patterns, separation of concerns violations, and overall architecture health rating 3) No code modifications were made -- this is a read-only agent.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "^api-auditor$",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate api-auditor agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Output contains findings using the audit finding format (### F-API-NNN prefix) with Severity, Category, File, Lines, Agent, Description, Evidence, Impact, Suggested Fix fields -- OR a 'No API issues found.' message 2) An '## Endpoint Inventory' table is present listing discovered endpoints with Method, Path, Auth, Validation columns 3) A '## API Audit Summary' section is present at the end with total endpoints, endpoints without validation, and overall API health rating 4) No code modifications were made -- this is a read-only agent.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "^frontend-auditor$",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate frontend-auditor agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Output contains findings using the audit finding format (### F-FE-NNN prefix) with Severity, Category, File, Lines, Agent, Description, Evidence, Impact, Suggested Fix fields -- OR a 'No frontend issues found.' message 2) A '## Frontend Audit Summary' section is present at the end with components scanned, missing loading/error states, memory leak risks, accessibility issues, and overall frontend health rating 3) No code modifications were made -- this is a read-only agent.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "^performance-auditor$",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate performance-auditor agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Output contains findings using the audit finding format (### F-PERF-NNN prefix) with Severity, Category, File, Lines, Agent, Description, Evidence, Impact, Suggested Fix fields -- OR a 'No performance issues found.' message 2) A '## Performance Audit Summary' section is present at the end with backend bottlenecks, frontend optimization issues, API performance issues, and overall performance health rating 3) No code modifications were made -- this is a read-only agent.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "^testing-auditor$",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate testing-auditor agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Output contains findings using the audit finding format (### F-TEST-NNN prefix) with Severity, Category, File, Lines, Agent, Description, Evidence, Impact, Suggested Fix fields -- OR a 'No testing issues found.' message 2) A '## Test Coverage Map' table is present mapping areas to coverage status 3) A '## Testing Audit Summary' section is present at the end with test files found, test cases found, critical paths covered ratio, test suite pass rate, and overall test health rating 4) No code modifications were made -- this is a read-only agent.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "^audit-bug-detector$",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate audit-bug-detector agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Output contains findings using the audit finding format (### F-BUG-NNN prefix) with Severity, Category, File, Lines, Agent, Description, Evidence, Impact, Suggested Fix fields -- OR a 'No cross-layer bugs found.' message 2) Each finding includes a Flow and Trace section showing the end-to-end path (Component → API → Controller → Service → DB) 3) A '## Bug Detection Summary' section is present at the end with critical flows traced, cross-layer bugs found, and overall flow integrity rating 4) No code modifications were made -- this is a read-only agent.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "^audit-finding-validator$",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate audit-finding-validator agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) Output contains validation results for each finding with '### Validation: F-' prefix, including Verdict (CONFIRMED/FALSE POSITIVE/NEEDS CONTEXT), Confidence (HIGH/MEDIUM), File verified, Evidence verified, and Reason fields 2) A '## Validation Summary' section is present at the end with total findings validated, counts per verdict, and false positive rate percentage 3) No code modifications were made -- this is a read-only agent that must not create or edit any files.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "^audit-report-generator$",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate audit-report-generator agent output. The agent's last message and metadata are in the JSON below:\n$ARGUMENTS\n\nExtract the last_assistant_message field and check: 1) The agent wrote AUDIT-REPORT.md (mentions writing or creating the file) 2) The agent wrote audit-findings.json (mentions writing or creating the JSON file) 3) The report includes an Executive Summary table with severity counts 4) The report includes a Risk Assessment section 5) The report includes Recommendations grouped by Immediate Actions, Short-term Actions, and Technical Debt.\n\nRespond {\"ok\": true} if ALL pass, or {\"ok\": false, \"reason\": \"<failure>\"} if ANY fail.",
+            "timeout": 30
+          }
+        ]
       }
     ],
     "Stop": [

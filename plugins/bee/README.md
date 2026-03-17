@@ -1,12 +1,12 @@
 # Bee - Spec-Driven Development Workflow
 
-A Claude Code plugin that enforces disciplined, spec-driven development with TDD, parallel agent execution, persistent agent memory, multi-stack support, and review gates.
+A Claude Code plugin that enforces disciplined, spec-driven development with TDD, parallel agent execution, persistent agent memory, multi-stack support, review gates, and comprehensive code auditing.
 
 ## What Bee Does
 
-Bee structures your development workflow into a lifecycle: **Spec > Plan > Execute > Review > Test > Commit**. Each step produces artifacts on disk, every feature goes through review gates, and 22 specialized agents handle different aspects of the work.
+Bee structures your development workflow into a lifecycle: **Spec > Plan > Execute > Review > Test > Commit**. Each step produces artifacts on disk, every feature goes through review gates, and 33 specialized agents handle different aspects of the work — including 11 dedicated audit agents for deep codebase analysis.
 
-## Commands (24)
+## Commands (26)
 
 ### Setup & Navigation
 | Command | Args | Description |
@@ -45,6 +45,12 @@ Bee structures your development workflow into a lifecycle: **Spec > Plan > Execu
 | `/bee:test` | | Generate manual test scenarios and verify with developer |
 | `/bee:test-e2e` | `[description] [--run]` | Generate and run Playwright E2E tests with Page Object Model |
 
+### Audit
+| Command | Args | Description |
+|---------|------|-------------|
+| `/bee:audit` | `[--only security,database,...] [--skip-validation] [--severity critical,high]` | Comprehensive multi-agent code audit — 9 specialists scan in parallel, validator filters hallucinations, structured report output |
+| `/bee:audit-to-spec` | `[--critical] [--high] [--all] [--dry-run]` | Convert audit findings into actionable specs — groups by severity, generates spec descriptions for `/bee:new` |
+
 ### Finalization
 | Command | Args | Description |
 |---------|------|-------------|
@@ -80,7 +86,27 @@ Bee structures your development workflow into a lifecycle: **Spec > Plan > Execu
 /bee:quick --review refactor auth middleware    # Execute + 4-agent review before commit
 ```
 
-## Agents (22)
+### Code Audit Workflow (Vibecoded Project Takeover)
+
+```
+1. /bee:init                                   # Initialize Bee on the inherited project
+2. /bee:audit                                  # Full 9-agent parallel audit
+   --- 9 specialists scan → validator filters → report generated ---
+3. /bee:audit-to-spec                          # Convert findings into specs by severity
+   --- CRITICAL → individual specs, HIGH → grouped, MEDIUM → cleanup, LOW → consolidated ---
+4. /bee:new --from-discussion .bee/audit-specs/critical-{slug}.md   # Fix critical issues first
+5. /bee:plan-phase 1 → execute → review → test → commit             # Standard Bee pipeline per fix
+```
+
+Selective auditing:
+```
+/bee:audit --only security,database            # Run specific audit agents only
+/bee:audit --skip-validation                   # Skip hallucination filtering (faster)
+/bee:audit-to-spec --critical                  # Generate specs for CRITICAL findings only
+/bee:audit-to-spec --dry-run                   # Preview what specs would be created
+```
+
+## Agents (33)
 
 ### Core Agents
 | Agent | Role | Model |
@@ -97,7 +123,7 @@ Bee structures your development workflow into a lifecycle: **Spec > Plan > Execu
 | **discuss-partner** | Codebase-grounded brainstorming (scan + write-notes modes) | inherit |
 | **context-builder** | Scan codebase, extract patterns into CONTEXT.md | inherit |
 
-### Review Agents (4 Specialists)
+### Review Agents (4 Specialists + Validator)
 | Agent | Role | Model |
 |-------|------|-------|
 | **bug-detector** | Bugs, logic errors, security vulnerabilities | inherit |
@@ -106,7 +132,22 @@ Bee structures your development workflow into a lifecycle: **Spec > Plan > Execu
 | **stack-reviewer** | Stack-specific best practice violations (dynamically loaded skill) | inherit |
 | **finding-validator** | Classify findings as real bug / false positive / stylistic | inherit |
 
-### Audit Agents
+### Audit Agents (11 — used by `/bee:audit`)
+| Agent | Prefix | Role |
+|-------|--------|------|
+| **security-auditor** | SEC | OWASP Top 10, auth bypass, injection, secrets exposure, CORS/CSRF |
+| **error-handling-auditor** | ERR | Missing error handling, crash vectors, silent failures, happy-path-only code |
+| **database-auditor** | DB | Schema design, N+1 queries, missing indexes, transactions, data integrity |
+| **architecture-auditor** | ARCH | Separation of concerns, god files, code duplication, dependency patterns |
+| **api-auditor** | API | Endpoint validation, response consistency, rate limiting, CORS config |
+| **frontend-auditor** | FE | Missing UI states, memory leaks, accessibility, form handling, performance |
+| **performance-auditor** | PERF | Bundle size, caching, async bottlenecks, resource optimization |
+| **testing-auditor** | TEST | Coverage gaps, test quality, stale tests, test infrastructure |
+| **audit-bug-detector** | BUG | End-to-end flow tracing, cross-layer bugs, contract mismatches |
+| **audit-finding-validator** | — | Validates findings against actual code, filters hallucinations (CONFIRMED / FALSE POSITIVE / NEEDS CONTEXT) |
+| **audit-report-generator** | — | Merges validated findings into AUDIT-REPORT.md + audit-findings.json |
+
+### EOD Agents
 | Agent | Role | Model |
 |-------|------|-------|
 | **test-planner** | Generate manual test scenarios | inherit |
@@ -154,12 +195,18 @@ Set via `config.implementation_mode` in `.bee/config.json` or during `/bee:new-s
 | **nestjs-rabbitmq** | `@nestjs/microservices` + `amqplib` | Transport config, message patterns, ACK, DLQ, CQRS |
 | **playwright** | Invoked by `/bee:test-e2e` | POM, fixtures, selectors, assertions, auth, network mocking |
 
+### Audit Skill
+
+| Skill | Scope | Notes |
+|-------|-------|-------|
+| **audit** | All audit agents | Severity definitions (CRITICAL/HIGH/MEDIUM/LOW), finding format with agent prefixes, validation rules, report template, spec generation rules |
+
 ### Standard Skills (Always Active)
 
 | Skill | Scope | Notes |
 |-------|-------|-------|
 | **frontend-standards** | All frontend stacks | Component architecture, a11y, responsive, design quality, CSS methodology |
-| **core** | All agents | TDD Iron Law, disk-is-truth, no auto-commit, agent memory, model delegation |
+| **core** | All agents | TDD Iron Law, disk-is-truth, no auto-commit, agent memory, model delegation, Context7 integration |
 
 ## Hooks
 
@@ -170,7 +217,7 @@ Set via `config.implementation_mode` in `.bee/config.json` or during `/bee:new-s
 | **PreToolUse** | Pre-commit validation gate — linter + test checks |
 | **PreCompact** | Snapshot session context before compaction |
 | **SubagentStart** | Inject agent memory (cross-platform, strips `bee:` prefix) |
-| **SubagentStop** | Validate agent output — 13 role-specific validators (TDD red-green cycle, output format, completeness) |
+| **SubagentStop** | Validate agent output — 24 role-specific validators (TDD red-green cycle, output format, completeness, audit finding format) |
 | **Stop** | Check for unreviewed executed phases |
 | **SessionEnd** | Warn about memory files approaching limits |
 

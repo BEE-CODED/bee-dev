@@ -27,14 +27,9 @@ esac
 BEE_DIR="$CLAUDE_PROJECT_DIR/.bee"
 MEMORY_DIR="$BEE_DIR/memory"
 
-# Skip if no memory directory
-if [ ! -d "$MEMORY_DIR" ]; then
-  exit 0
-fi
-
 CONTEXT=""
 
-# Read user preferences
+# Read user preferences (independent of memory directory)
 if [ -f "$BEE_DIR/user.md" ]; then
   USER_PREFS=$(cat "$BEE_DIR/user.md" 2>/dev/null)
   if [ -n "$USER_PREFS" ]; then
@@ -43,6 +38,19 @@ ${USER_PREFS}
 
 "
   fi
+fi
+
+# If no memory directory, output user prefs only (if any) and exit
+if [ ! -d "$MEMORY_DIR" ]; then
+  if [ -n "$CONTEXT" ]; then
+    printf '%s' "$CONTEXT" | jq -Rs '{
+      hookSpecificOutput: {
+        hookEventName: "SubagentStart",
+        additionalContext: .
+      }
+    }'
+  fi
+  exit 0
 fi
 
 # Read shared memory
