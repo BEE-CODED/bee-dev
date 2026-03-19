@@ -82,8 +82,7 @@ All critical state lives on disk. Never rely on conversation memory.
 - `STATE.md` tracks current spec, phase progress, decisions, and last action
 - `TASKS.md` is the execution contract -- tasks, waves, research notes, agent notes, completion status
 - `config.json` holds project configuration (stacks with per-stack linter and test runner, CI, review settings)
-
-- `memory/` directory holds per-agent persistent knowledge (see Agent memory system below)
+- `user.md` holds user preferences and work style rules (see User Preferences below)
 
 If it is not on disk, it does not exist.
 
@@ -94,6 +93,24 @@ The user decides when and what to commit via `/bee:commit`. Never commit automat
 - Never make forced decisions -- always confirm before destructive actions
 - Present options and let the user choose
 - Show what will change before making changes
+
+## Firm Rules
+
+These rules are non-negotiable and apply to ALL commands and agents.
+
+**R1: Bee never auto-commits.** Commit is only a suggestion. User confirms via `/bee:commit`.
+
+**R2: Bee never suggests clear or compact.** User sees the statusbar and decides. If user explicitly asks for clear/compact via Custom option, then execute.
+
+**R3: Interactive menu at every major step.** Use `AskUserQuestion` with selectable `options` parameter. Last option is always "Custom" (free text input). On ALL workflows without exception.
+
+**R4: Re-review available after any review/fix cycle.** No iteration limit. User decides when it's clean.
+
+**R5: Unlimited clarifying questions.** discuss, new-spec, and any conversational flow — no hardcoded limit. Continue one-at-a-time questions until context is sufficient. User can always choose to move forward.
+
+**R6: When user selects an option, execute it.** No follow-up warnings, no extra confirmation (exception: commit has its own confirmation flow via bee:commit).
+
+**R7: user.md is the only persistent memory.** Injected to all agents at SubagentStart. Contains preferences, rules, work style. Only conductors write to it, never agents.
 
 ### Smart model delegation
 When spawning agents via the Task tool, the conductor (parent command) chooses the model based on the agent's work complexity. All agents use `model: inherit` in their frontmatter -- the conductor overrides at spawn time.
@@ -109,40 +126,9 @@ When spawning agents via the Task tool, the conductor (parent command) chooses t
 
 The conductor SHOULD assess each spawn and pass `model: "sonnet"` explicitly for structured work, or omit the model for reasoning-heavy work. This is not optional -- it is how Bee manages cost and speed.
 
-### Agent memory system
-Agents have persistent per-project memory stored in `.bee/memory/`. This is NOT loaded into the main context -- only agents load their own memory when spawned.
+### User Preferences
 
-- `shared.md` -- cross-cutting knowledge all agents read
-- `{agent-name}.md` -- per-agent knowledge (only that agent reads/writes it)
-
-**Memory injection:** The SubagentStart hook (`scripts/inject-memory.sh`) automatically reads `shared.md` and `{agent-name}.md` and injects the content into the agent's context at spawn time. Agents do NOT need to read memory files manually. If no memory appears in context, the project has no accumulated knowledge yet -- fallback: read `.bee/memory/shared.md` and `.bee/memory/{agent-name}.md` manually.
-
-**Rules for agents writing memory:**
-- Append new learnings, never rewrite the entire file
-- One entry per line: `- [{YYYY-MM-DD}] description`
-- No duplicates -- check existing entries before appending
-- Max 50 lines per file -- consolidate older entries when approaching the limit
-- Only write genuinely useful project knowledge, not task-specific details
-- Write-capable agents write memory automatically; read-only agents consume only
-
-**The golden rule:** Write ONLY things you cannot discover by reading the codebase. If a `grep` or `Read` tool call would find it, do NOT write it to memory.
-
-**What belongs in memory:**
-- User decisions and preferences ("user prefers 3-phase structure", "Dogecoin is permanently out of scope")
-- Non-obvious project constraints ("source at repo root, node_modules copy is a mirror -- edit root only")
-- Gotchas that wasted significant time and have no code-level signal
-- Environment quirks that block execution ("no native test runner, verify via JS integration tests only")
-
-**What does NOT belong in memory:**
-- File paths, API signatures, class structures -- agents find these in seconds via Grep/Read
-- Code patterns visible from reading the source ("uses static methods", "fields cast as X")
-- Task-specific implementation details
-- Anything already in STATE.md, config.json, TASKS.md, or stack skills
-- Generic framework knowledge (use Context7 for that)
-
-**Shared memory (`shared.md`):** Reserved for cross-cutting knowledge that benefits ALL agents. Only spec-shaper and spec-writer write to shared.md -- they capture user decisions and scope boundaries from the discovery conversation. Other agents write only to their own file.
-
-**Memory lifecycle across specs:** When `/bee:new-spec` creates a new spec, it archives the previous spec's memory to `.bee/memory-archive/{spec-name}/`. Only project-level shared entries survive (patterns, conventions, preferences). Agent-specific memory resets so agents start clean for the new feature.
+`.bee/user.md` is the only persistent memory file. It contains user preferences, work style rules, and recurring decisions. It is injected to all agents via the SubagentStart hook. Only conductor commands write to it — agents never modify it directly.
 
 ### Spec-driven development
 Work only on features and tasks defined in specs. No ad-hoc implementation.
