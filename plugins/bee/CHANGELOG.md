@@ -4,6 +4,14 @@ All notable changes to the Bee plugin are documented in this file.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## v3.2.1 — Full R3 Compliance
+
+### Interactive Menus Everywhere
+- Added AskUserQuestion menus to all remaining commands: fix-implementation, test-e2e, eod, progress, resume, compact, refresh-context, update
+- Replaced text yes/no prompts with AskUserQuestion in archive-spec, init, add-phase, audit-to-spec
+- Fixed menu bypass paths: review (0 findings), plan-phase (auto-fix loop), new-spec (spec review loop), plan-review (clean path)
+- All 26 commands now fully comply with R3 — every code path ends with interactive menu
+
 ## v3.2.0 — Optimization & Quality Upgrade
 
 ### Interactive Flow Control
