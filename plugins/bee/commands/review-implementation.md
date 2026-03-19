@@ -603,7 +603,7 @@ Review saved: {output_path}
 - Ad-hoc mode spawns 3 agent types: bug-detector, pattern-reviewer, stack-reviewer. No plan-compliance-reviewer because there is no spec or plan context. Total agents: `3 x N` where N = number of stacks.
 - Multi-stack logic follows the same pattern as review.md: per-stack agents (bug-detector, pattern-reviewer, stack-reviewer) with stack-specific fallback routing, plus one global plan-compliance-reviewer (full spec mode only).
 - The Build & Test Gate is identical for both modes -- a single step applied before agent spawning.
-- The validate-fix pipeline (Step 6) is identical for both modes: finding-validator batched (up to 5 at a time), MEDIUM confidence escalation to source specialist, sequential fixers.
+- The validate-fix pipeline (Step 6) is identical for both modes: finding-validator batched (up to 5 at a time), MEDIUM confidence escalation to source specialist, file-based parallel fixers (parallel across files, sequential within the same file).
 - Output paths differ by mode: full spec writes to `{spec-path}/REVIEW-IMPLEMENTATION.md`, ad-hoc writes to `.bee/reviews/YYYY-MM-DD-{N}.md`.
 - COMPLETED status is set on STATE.md Current Spec Status only in full spec mode when all phases are COMMITTED. This reflects that the spec lifecycle is complete.
 - This command never auto-commits. The user runs `/bee:commit` manually.

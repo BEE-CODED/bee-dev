@@ -173,7 +173,7 @@ Next steps:
 - This command never auto-commits. The user decides when to commit via `/bee:commit`.
 - This command does NOT perform a review. It operates on existing review output (REVIEW-IMPLEMENTATION.md, REVIEW-PROJECT.md, or any review file in `.bee/reviews/`).
 - The auto-detect priority (REVIEW-IMPLEMENTATION.md > newest in .bee/reviews/ > REVIEW-PROJECT.md) assumes the most specific review is most relevant.
-- Fixer agents are spawned sequentially with the parent model (omit model parameter) because they write production code and need full reasoning.
+- Fixer agents are spawned with file-based parallelism (parallel across files, sequential within the same file) using the parent model (omit model parameter) because they write production code and need full reasoning.
 - The Read-Modify-Write pattern ensures each fixer's status is persisted immediately, so progress survives if the session is interrupted.
 - Stack resolution uses per-finding path-overlap logic (matching review-implementation.md Step 6.2): compare each finding's file path against stack paths, use the matching stack name. Supports multi-stack projects and v2 config backward compatibility (`config.stacks` first, then `config.stack` fallback).
 - The severity sort matches the fix priority order used by `/bee:review` and `/bee:review-implementation` (Step 4.2 / Step 6).

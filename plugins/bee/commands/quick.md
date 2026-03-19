@@ -513,12 +513,23 @@ Options: "Fix before commit" (spawn fixers for confirmed issues), "Commit as-is"
      ...
      ```
 
-     Then for each finding in sorted priority order, spawn `fixer` agent SEQUENTIALLY (one at a time):
-     1. Display: "Fixing F-{NNN}: {summary}..."
-     2. Spawn fixer and WAIT for completion.
+     **Fixer Parallelization Strategy:**
+
+     1. Group confirmed findings by file path
+     2. For findings on DIFFERENT files: spawn fixers in parallel (one fixer per file group, processing its findings)
+     3. For findings on the SAME file: run fixers sequentially within the group (safety — each fix changes file state)
+     4. Collect all results, update review file with fix status
+
+     Example: 6 findings on 3 files → 3 parallel fixer groups (instead of 6 sequential).
+
+     Then for each file group (parallel across groups, sequential within each group):
+     1. Display: "Fixing F-{NNN}: {summary}..." (for each finding in the group)
+     2. For same-file findings: spawn fixer and WAIT for completion before the next in the group. For different-file groups: spawn in parallel.
      3. Read the fixer's Fix Report status from its final message.
      4. If the fixer reports "Reverted" or "Failed": display "Fix for F-{NNN} failed -- changes reverted. Skipping." and continue to the next finding.
      5. After all findings processed, display: "{fixed} fixed, {skipped} skipped out of {total}."
+
+     CRITICAL: Within the same file group, spawn fixers SEQUENTIALLY, one at a time. Never spawn multiple fixers for the same file in parallel. One fix may change the context for the next finding on that file. Cross-file fixer groups may run in parallel safely.
 
         Then present the post-review menu:
 
@@ -630,4 +641,4 @@ Next: /bee:progress to see project state, or /bee:quick for another task.
 - **Plan persistence:** In TDD mode, a plan file is written to `.bee/quick/{NNN}-{slug}.md` before execution. The plan captures the task description, acceptance criteria, test file targets, pattern references, research findings, and execution notes. This enables `--amend` and provides an audit trail. Fast mode (`--fast`) skips plan creation entirely -- no `.bee/quick/` artifacts.
 - **Plan enrichment:** The plan file in TDD mode includes three enriched sections beyond the basic template: `## Acceptance Criteria` (testable criteria derived from the description), `## Test File Targets` (test file paths for the implementer), and `## Pattern References` (existing files to use as code patterns). These sections are consumed by the `bee:quick-implementer` agent.
 - **`--amend` flow:** Allows re-executing a previous quick task with modifications. Reads the existing plan file, lets the user modify it, then re-executes. Only works for tasks that have plan files (TDD mode tasks). Fast mode tasks cannot be amended.
-- **User choice gate:** The review gate presents three options via AskUserQuestion: Fix (spawns fixer agents sequentially for confirmed issues), Commit as-is (proceeds to commit), Cancel (stops). The sequential fixer loop follows the same pattern as `/bee:fix-implementation`.
+- **User choice gate:** The review gate presents three options via AskUserQuestion: Fix (spawns fixer agents with file-based parallelism for confirmed issues), Commit as-is (proceeds to commit), Cancel (stops). The fixer strategy follows the same pattern as `/bee:fix-implementation`: parallel across files, sequential within the same file.

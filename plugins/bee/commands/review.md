@@ -404,7 +404,7 @@ For each pair of findings from different agents, check if they reference the sam
 7. Build confirmed fix list: all REAL BUG findings (both HIGH confidence and specialist-confirmed) + user-approved STYLISTIC findings (those where user chose option a). Exclude any findings reclassified as FALSE POSITIVE by specialist escalation.
 8. Display validation summary: "{real_bug} real bugs, {false_positive} false positives, {stylistic} stylistic ({user_fix} to fix, {user_ignore} ignored), {escalated} escalated ({escalated_real_bug} confirmed, {escalated_false_positive} reclassified as FP)"
 
-### Step 6: STEP 3 -- FIX CONFIRMED ISSUES (spawn fixer agents sequentially)
+### Step 6: STEP 3 -- FIX CONFIRMED ISSUES (spawn fixer agents with file-based parallelism)
 
 1. Sort confirmed findings by priority order:
    - Priority 1: Critical severity
@@ -413,13 +413,23 @@ For each pair of findings from different agents, check if they reference the sam
    - Priority 4: Dead Code category (Medium)
    - Priority 5: Other Medium severity
 2. If no confirmed findings (all were false positives, ignored, or skipped): display "No confirmed findings to fix -- all findings were classified as false positives or stylistic (ignored)." Update STATE.md and skip to Step 8.
-3. For EACH confirmed finding in priority order (SEQUENTIAL -- one at a time, never parallel):
+
+**Fixer Parallelization Strategy:**
+
+1. Group confirmed findings by file path
+2. For findings on DIFFERENT files: spawn fixers in parallel (one fixer per file group, processing its findings)
+3. For findings on the SAME file: run fixers sequentially within the group (safety — each fix changes file state)
+4. Collect all results, update review file with fix status
+
+Example: 6 findings on 3 files → 3 parallel fixer groups (instead of 6 sequential).
+
+3. For EACH file group (parallel across groups, sequential within each group):
    - Build fixer context packet:
      - Finding details: ID, summary, severity, category, file path, line range, description, suggested fix
      - Validation classification: REAL BUG or STYLISTIC (user-approved)
      - Stack info: resolve the correct stack for the finding's file path using path-overlap logic (compare the finding's file path against each stack's `path` in config.stacks -- a file matches a stack if the file path starts with or is within the stack's path; `"."` matches everything). Pass the resolved stack name explicitly: "Stack: {resolved-stack-name}. Load the stack skill at skills/stacks/{resolved-stack-name}/SKILL.md." If only one stack is configured, use it directly.
    - Spawn `fixer` agent via Task tool with the context packet. Use the parent model (omit model parameter) -- fixers write production code and need full reasoning.
-   - WAIT for the fixer to complete before spawning the next fixer
+   - For findings on the same file: WAIT for each fixer to complete before spawning the next within that group. For findings on different files: fixer groups run in parallel.
    - Read the fixer's fix report from its final message (## Fix Report section)
    - Read current REVIEW.md from disk (fresh read -- Read-Modify-Write pattern)
    - Update REVIEW.md: set Fix Status for this finding to the fixer's reported status (Fixed / Reverted / Failed)
@@ -428,7 +438,7 @@ For each pair of findings from different agents, check if they reference the sam
      - Display failure to user: "Fix for F-{NNN} failed -- tests broke after fix. Changes reverted. Skipping this finding."
      - Update REVIEW.md Fix Status to "Skipped (tests failed)"
 
-CRITICAL: Spawn fixers SEQUENTIALLY, one at a time. Never spawn multiple fixers in parallel. One fix may change the context for the next finding. Sequential execution prevents file conflicts and ensures each fixer sees the latest code state.
+CRITICAL: Within the same file group, spawn fixers SEQUENTIALLY, one at a time. Never spawn multiple fixers for the same file in parallel. One fix may change the context for the next finding on that file. Cross-file fixer groups may run in parallel safely.
 
 4. After all confirmed findings have been processed, display fix summary:
    "{fixed} fixed, {skipped} skipped, {failed} failed out of {total} confirmed findings"
@@ -529,7 +539,7 @@ AskUserQuestion(
 - The plan-compliance-reviewer operates in "code review mode" (not plan review mode). The context packet explicitly states this.
 - Deduplication merges findings from different agents when they reference the same file AND line ranges overlap within 5 lines. Higher severity is kept, categories and descriptions are combined.
 - REVIEW.md is the pipeline state, progressively updated as validation and fixing proceed. Analogous to TASKS.md checkboxes in execute-phase.
-- Finding validation can be parallel (up to 5 at a time). Fixing MUST be sequential (one at a time) to prevent fix conflicts.
+- Finding validation can be parallel (up to 5 at a time). Fixing uses file-based parallelism: fixers for different files run in parallel; fixers for the same file run sequentially to prevent conflicts.
 - Specialist escalation for MEDIUM confidence findings happens AFTER batch validation completes (not inline during validation batching). Flow: (1) batch validate up to 5 findings, (2) collect all classifications, (3) for MEDIUM confidence ones, spawn the source specialist sequentially for a second opinion, (4) then proceed to update REVIEW.md with final classifications. Escalation uses `bee:finding-validator` (not the source specialist — specialist SubagentStop hooks expect their standard format, not second-opinion format). HIGH confidence classifications proceed unchanged -- only MEDIUM triggers escalation.
 - The command handles user interaction for STYLISTIC findings. Commands handle interaction, agents handle work.
 - `.bee/false-positives.md` is created on first use when the first false positive is documented. If no false positives exist yet, the file does not exist.
