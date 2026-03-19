@@ -187,6 +187,20 @@ Failed tests need manual investigation. Run:
   npx playwright show-trace   (trace viewer)
 ```
 
+Ask:
+
+```
+AskUserQuestion(
+  question: "E2E tests complete. [passed] passed, [failed] failed.",
+  options: ["Re-run tests", "Fix failures", "Accept", "Custom"]
+)
+```
+
+- **Re-run tests**: Re-run the test suite
+- **Fix failures**: Attempt to fix failing tests
+- **Accept**: End command
+- **Custom**: Free text
+
 ---
 
 **Design Notes (do not display to user):**

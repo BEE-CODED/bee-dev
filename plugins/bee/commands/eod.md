@@ -137,6 +137,20 @@ Update `.bee/STATE.md` Last Action:
 - Timestamp: current ISO 8601 timestamp
 - Result: "EOD audit: {integrity_status}, {code_status}, {test_status}, {compliance_status}"
 
+Ask:
+
+```
+AskUserQuestion(
+  question: "EOD check complete. {integrity_status} | {code_status} | {test_status} | {compliance_status}",
+  options: ["Commit", "Review findings", "Accept", "Custom"]
+)
+```
+
+- **Commit**: Proceed to `/bee:commit`
+- **Review findings**: Show detailed findings
+- **Accept**: End session
+- **Custom**: Free text
+
 ---
 
 **Design Notes (do not display to user):**

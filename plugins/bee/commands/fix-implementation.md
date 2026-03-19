@@ -166,6 +166,19 @@ Next steps:
 
 4. Write updated STATE.md to disk.
 
+5. Ask:
+
+```
+AskUserQuestion(
+  question: "Fix complete. [fixed] findings fixed, [skipped] reverted, [failed] skipped.",
+  options: ["Re-review", "Accept", "Custom"]
+)
+```
+
+- **Re-review**: Re-run review on the same files to check if fixes introduced new issues
+- **Accept**: End command
+- **Custom**: Free text
+
 ---
 
 **Design Notes (do not display to user):**
