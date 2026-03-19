@@ -1,6 +1,6 @@
 # Bee - Spec-Driven Development Workflow
 
-A Claude Code plugin that enforces disciplined, spec-driven development with TDD, parallel agent execution, persistent agent memory, multi-stack support, review gates, and comprehensive code auditing.
+A Claude Code plugin that enforces disciplined, spec-driven development with TDD, parallel agent execution, multi-stack support, interactive flow control, review gates, and comprehensive code auditing.
 
 ## What Bee Does
 
@@ -15,7 +15,7 @@ Bee structures your development workflow into a lifecycle: **Spec > Plan > Execu
 | `/bee:progress` | | Show project state, phase progress, and suggest next action |
 | `/bee:resume` | | Resume work from previous session with full context restoration |
 | `/bee:compact` | | Smart compact — preserve bee context, then compress conversation |
-| `/bee:memory` | | View accumulated agent memories for the current project |
+| `/bee:memory` | | View and manage user preferences (`.bee/user.md`) |
 | `/bee:refresh-context` | | Re-run codebase context extraction, overwriting CONTEXT.md with fresh analysis |
 | `/bee:create-agent` | `[agent-name]` | Create a custom project-local agent extension for bee |
 | `/bee:create-skill` | `[skill-name]` | Create a custom project-local skill extension for bee |
@@ -39,9 +39,9 @@ Bee structures your development workflow into a lifecycle: **Spec > Plan > Execu
 ### Quality
 | Command | Args | Description |
 |---------|------|-------------|
-| `/bee:review` | `[--loop]` | Multi-agent parallel review (4 specialists) with finding validation, escalation, and auto-fix |
+| `/bee:review` | | Multi-agent parallel review (4 specialists) with finding validation, escalation, auto-fix, and unlimited re-review |
 | `/bee:review-implementation` | | Context-aware review — full spec mode (4 agents per stack) or ad-hoc mode (3 agents) |
-| `/bee:fix-implementation` | `[path/to/REVIEW.md]` | Standalone fix — reads review output and fixes confirmed findings sequentially |
+| `/bee:fix-implementation` | `[path/to/REVIEW.md]` | Standalone fix — reads review output and fixes confirmed findings (parallel across files, sequential within same file) |
 | `/bee:test` | | Generate manual test scenarios and verify with developer |
 | `/bee:test-e2e` | `[description] [--run]` | Generate and run Playwright E2E tests with Page Object Model |
 
@@ -206,7 +206,7 @@ Set via `config.implementation_mode` in `.bee/config.json` or during `/bee:new-s
 | Skill | Scope | Notes |
 |-------|-------|-------|
 | **frontend-standards** | All frontend stacks | Component architecture, a11y, responsive, design quality, CSS methodology |
-| **core** | All agents | TDD Iron Law, disk-is-truth, no auto-commit, agent memory, model delegation, Context7 integration |
+| **core** | All agents | TDD Iron Law, disk-is-truth, no auto-commit, firm rules R1-R7, model delegation, Context7 integration |
 
 ## Hooks
 
@@ -216,10 +216,10 @@ Set via `config.implementation_mode` in `.bee/config.json` or during `/bee:new-s
 | **PostToolUse** | Auto-lint modified files after Write/Edit |
 | **PreToolUse** | Pre-commit validation gate — linter + test checks |
 | **PreCompact** | Snapshot session context before compaction |
-| **SubagentStart** | Inject agent memory (cross-platform, strips `bee:` prefix) |
-| **SubagentStop** | Validate agent output — 24 role-specific validators (TDD red-green cycle, output format, completeness, audit finding format) |
+| **SubagentStart** | Inject user preferences from `.bee/user.md` (cross-platform, strips `bee:` prefix) |
+| **SubagentStop** | Validate agent output — 24 role-specific validators (TDD red-green cycle, evidence chain, output format, completeness, audit finding format) |
 | **Stop** | Check for unreviewed executed phases |
-| **SessionEnd** | Warn about memory files approaching limits |
+| **SessionEnd** | Session summary |
 
 ## Notifications (Optional)
 
