@@ -42,6 +42,13 @@ For each acceptance criterion in TASKS.md and each requirement in spec.md:
 
 3. **No extra features:** Check for implemented functionality that goes beyond what the spec and acceptance criteria require. Unrequested additions are Over-Scope findings.
 
+## Acceptance Criteria Verification
+
+For each acceptance criteria in the spec/requirements:
+- Produce an explicit checklist line: `- [x] AC: "criteria text" — COVERED (file:line evidence)` or `- [ ] AC: "criteria text" — NOT COVERED (explanation)`
+- PARTIAL is NOT acceptable. Either the criteria is fully covered by implemented code, or it is NOT COVERED.
+- For each NOT COVERED item, create a Spec Gap finding with severity High.
+
 ### Step 5c: Cross-Phase Integration (Phases Beyond Phase 1)
 
 If the phase number is greater than 1, perform cross-phase integration checks:
@@ -73,6 +80,9 @@ Output your findings in your final message using this format:
   - **Criterion:** {the acceptance criterion or spec requirement that is not met}
   - **Gap:** {what is missing or incorrect}
   - **Severity:** Critical | High | Medium
+  - **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+  - **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
+  - **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 {Repeat for each. If none: "No spec gaps found."}
 
@@ -82,6 +92,9 @@ Output your findings in your final message using this format:
   - **Phase dependency:** Phase {N} -> Phase {M}
   - **Issue:** {what is broken or inconsistent}
   - **Severity:** Critical | High | Medium
+  - **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+  - **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
+  - **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 {Repeat for each. If none and phase > 1: "No cross-phase integration issues found." If phase 1: "Not applicable -- Phase 1 has no prior phases."}
 
@@ -90,6 +103,9 @@ Output your findings in your final message using this format:
 - **[OS-NNN]:** {description} - `{file}:{line}`
   - **Extra feature:** {what was implemented beyond spec}
   - **Severity:** Medium
+  - **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+  - **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
+  - **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 {Repeat for each. If none: "No over-scope findings."}
 
@@ -189,6 +205,8 @@ Output your findings in your final message using this format:
 - **Requirement:** {full requirement text}
 - **Impact:** {what the user loses if this is not planned}
 - **Suggestion:** {what task to add or which existing task to expand}
+- **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+- **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 {Repeat for each gap. If no gaps: "No gaps found -- all requirements are covered."}
 
@@ -199,6 +217,8 @@ Output your findings in your final message using this format:
 - **Covered by:** T{N}.{M}
 - **Missing aspect:** {what part of the requirement is not addressed}
 - **Suggestion:** {how to close the gap}
+- **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+- **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 {If none: "No partial coverage issues found."}
 
@@ -209,6 +229,9 @@ Output your findings in your final message using this format:
 - **Spec says:** {what the spec requires}
 - **Plan says:** {what the task does differently}
 - **Suggestion:** {how to realign}
+- **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+- **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
+- **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 {If none: "No spec drift found -- all tasks align with spec intent."}
 
@@ -218,6 +241,9 @@ Output your findings in your final message using this format:
 - **Task:** T{N}.{M} -- {task description}
 - **Not in spec:** {what capability goes beyond spec}
 - **Suggestion:** Remove or defer to a future phase
+- **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+- **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
+- **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 {If none: "No over-engineering found -- plan stays within spec scope."}
 ```

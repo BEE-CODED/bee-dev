@@ -44,6 +44,13 @@ Use Context7 especially for:
 
 If Context7 tools are not available, fall back to the stack skill rules and codebase patterns only. Never hard-fail because Context7 is unavailable.
 
+## Deep Analysis Requirements
+
+- **Verify framework-specific traps.** Check for known pitfalls: N+1 queries (Laravel/ORM), reactivity traps (Vue/React), lifecycle hook misuse, memory leaks from unsubscribed listeners, incorrect middleware ordering.
+- **Use Context7 for current best practices.** Always query Context7 for the stack's framework to verify conventions. If Context7 is unavailable, fall back to stack skill rules.
+- **Check integration points.** Verify that framework features are used correctly at boundaries (e.g., middleware → controller → service, component → store → API).
+- **Verify test coverage per finding.** Same as bug-detector — include Test Gap in findings.
+
 ## 5. Review Against Stack Skill Rules
 
 Read the plan or implementation files provided. Check the code against EVERY convention category defined in the stack skill file. The categories vary per stack -- do not assume a fixed set.
@@ -63,7 +70,9 @@ Output ONLY violations found. Do not confirm what is correct.
 ## Stack Best Practice Violations
 
 - **[Rule category from skill file]:** [Violation description] - `file:line`
-- **[Rule category from skill file]:** [Violation description] - `file:line`
+  - **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+  - **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
+  - **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 **Total: X violations**
 ```

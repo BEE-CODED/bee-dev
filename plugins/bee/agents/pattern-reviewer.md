@@ -55,6 +55,12 @@ From the similar existing files, identify:
 
 Compare the reviewed code against these established patterns. Cross-reference each potential finding against documented false positives from Step 1 before including it.
 
+## Deep Analysis Requirements
+
+- **Compare against CONTEXT.md patterns.** Read `.bee/CONTEXT.md` first. Flag deviations only when they break consistency or could confuse other developers — not for stylistic preference.
+- **Trace consumer impact.** When a pattern deviation is found, check if other files depend on the pattern being consistent (e.g., shared imports, naming conventions used in dynamic lookups).
+- **Verify test patterns.** Check if test files follow the same patterns as the files they test (naming, structure, assertion style).
+
 ## What to Look For
 
 - **Naming inconsistencies** - Different naming convention than similar files
@@ -72,6 +78,9 @@ Output ONLY deviations found. Do not confirm what matches.
 - **[Pattern type]:** [Deviation description] - `file:line`
   - **Existing pattern:** [How it's done elsewhere]
   - **This code:** [How it's done here]
+  - **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+  - **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
+  - **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 **Total: X deviations**
 ```

@@ -85,6 +85,13 @@ Review the provided plan or implementation looking for potential bugs.
 - Empty strings not handled
 - Maximum limits not enforced
 
+## Deep Analysis Requirements
+
+- **Trace data flow end-to-end.** Follow every variable from input (controller/handler parameter) through service layer to output (response/return). Check each transformation point for: null/undefined handling, type mismatches, boundary values, empty collections.
+- **Check edge cases explicitly.** For every conditional branch, verify: null, empty string, empty array, zero, negative numbers, concurrent access, boundary values (max int, max string length).
+- **Follow consumer impact.** When analyzing a file, identify all files that import/use it (consumers). Verify modifications don't break consumers' assumptions about return types, side effects, or error behavior.
+- **Verify test coverage per finding.** For each finding, check if existing tests cover the scenario. If not, include a "Test Gap" note in the finding.
+
 ## Confidence Filtering
 
 Only report issues with HIGH confidence. Ask yourself:
@@ -104,12 +111,21 @@ Output ONLY bugs found with severity. Do not report low-confidence issues.
 
 ### Critical
 - **[Bug type]:** [Description] - `file:line`
+  - **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+  - **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
+  - **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 ### High
 - **[Bug type]:** [Description] - `file:line`
+  - **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+  - **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
+  - **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 ### Medium
 - **[Bug type]:** [Description] - `file:line`
+  - **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+  - **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
+  - **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 
 **Total: X critical, Y high, Z medium**
 ```
