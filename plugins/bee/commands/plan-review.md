@@ -295,15 +295,18 @@ If 0 issues total, set Status to CLEAN. Otherwise set Status to ISSUES_FOUND.
      - `"Yes"` -> N=0
      - Empty or missing -> N=0
    - Increment: write `"Yes ({N+1})"` to the Plan Review column for this phase in STATE.md.
-   - Display:
-     ```
-     Plan review complete -- plan fully covers the spec!
-     No gaps or discrepancies found across all four reviewers.
-     Plan automatically approved. Plan Review set to Yes ({N+1}) in STATE.md.
+   - Present options to the user:
 
-     Proceed with `/bee:execute-phase {N}` when ready.
      ```
-   - Stop. Do NOT present the 3-option menu below.
+     AskUserQuestion(
+       question: "Plan review complet — zero issues. Plan Review set to Yes ({N+1}).",
+       options: ["Execute Phase", "Re-review", "Custom"]
+     )
+     ```
+
+     - **Execute Phase**: Proceed to `/bee:execute-phase {N}`
+     - **Re-review**: Re-run plan review pipeline from Step 1
+     - **Custom**: Free text
 
 3. If issues found, display a formatted summary:
    ```
