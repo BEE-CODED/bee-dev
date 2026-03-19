@@ -4,6 +4,39 @@ All notable changes to the Bee plugin are documented in this file.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## v3.2.0 — Optimization & Quality Upgrade
+
+### Interactive Flow Control
+- Added AskUserQuestion menus with selectable options at every step in all workflows
+- Re-review loops available after any review/fix cycle — no iteration limit
+- Custom option (free text) always available as last menu option
+- Removed all /clear and /compact suggestions — user controls context management
+
+### Deep Review Quality
+- Review agents now trace data flow end-to-end with Evidence chain in findings
+- Impact and Test Gap fields added to all findings
+- plan-compliance-reviewer produces explicit per-AC checklist
+- Dependency scan expands review scope to consumers and dependencies of modified files
+
+### Parallelization
+- Audit quality mode: 8 agents in parallel (was 4+4 sequential batches)
+- Fixers run in parallel on different files (sequential only within same file)
+- Context packet caching reduces redundant file reads across agents
+
+### Memory Simplification
+- Removed per-agent memory system (.bee/memory/{agent}.md and shared.md)
+- user.md is the only persistent memory — contains user preferences and work style
+- Simplified inject-memory.sh and memory command
+
+### Firm Rules (R1-R7)
+- R1: No auto-commit
+- R2: No clear/compact suggestions
+- R3: Interactive menus everywhere
+- R4: Unlimited re-review
+- R5: Unlimited clarifying questions
+- R6: Execute on selection
+- R7: user.md only memory
+
 ## [3.1.0] - 2026-03-17
 
 ### Added

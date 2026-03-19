@@ -138,7 +138,7 @@ Updated:
 - {spec_path}/phases.md
 - .bee/STATE.md
 
-Next step: /bee:plan-phase {$PHASE_NUMBER} (/clear first if context is long)
+Next step: /bee:plan-phase {$PHASE_NUMBER}
 ```
 
 ---

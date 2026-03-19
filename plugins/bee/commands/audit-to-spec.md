@@ -189,7 +189,6 @@ Present the results:
 
 Start with critical fixes:
   /bee:new --from-discussion .bee/audit-specs/critical-{first-slug}.md
-(/clear first if context is long)
 ```
 
 ### Step 7: Update STATE.md

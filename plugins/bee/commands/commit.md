@@ -117,7 +117,7 @@ Act on the user's choice. If "Edit the message" is selected, wait for the user's
    ```
    Committed! Phase {N}: {phase_name}
 
-   Next step: {suggested command} (/clear first if context is long)
+   Next step: {suggested command}
    ```
 
 ---

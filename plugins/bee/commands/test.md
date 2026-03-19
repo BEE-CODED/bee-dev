@@ -117,7 +117,7 @@ This step loops until the developer confirms all scenarios pass.
    ```
    All {count} scenarios passed! Phase {N} testing complete.
 
-   Next step: /bee:commit (/clear first if context is long)
+   Next step: /bee:commit
    ```
 7. Stop.
 
