@@ -132,14 +132,24 @@ Next step: /bee:{suggested command} -- {reason}
 Display:
 
 ```
-Context preserved. Run /compact to compress the conversation.
-
 Your bee context is saved in:
 - .bee/COMPACT-CONTEXT.md (on disk, survives session crashes)
 - The message above (in conversation, survives compaction summary)
 
 After compacting, run /bee:resume if you need a full briefing.
 ```
+
+Then present an interactive menu:
+
+```
+AskUserQuestion(
+  question: "Context preserved. Ready to compact.",
+  options: ["Compact now", "Custom"]
+)
+```
+
+- **Compact now**: Execute /compact
+- **Custom**: Free text
 
 Stop here. Do NOT attempt to invoke `/compact` programmatically — it is a built-in CLI command that must be run by the user.
 

@@ -103,6 +103,17 @@ Only show the heading that has results (e.g., if there are agents but no skills,
 
 After the list, add the note: "These extensions are available for use in this session."
 
+After presenting all sections above, end with an interactive menu:
+
+```
+AskUserQuestion(
+  question: "Context restored. [briefing summary]",
+  options: ["[suggested next command]", "Custom"]
+)
+```
+
+The `[briefing summary]` is a one-line recap (e.g. "Phase 2 is implemented and ready to review."). The first option is the suggested next command from section 5. "Custom" is always last.
+
 ### Output Format
 
 The resume briefing should feel like a colleague catching you up after a break. Be thorough but structured -- use headers and short paragraphs, not walls of text. The developer should be able to read it in 30 seconds and know exactly where they are and what to do next.

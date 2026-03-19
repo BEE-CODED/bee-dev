@@ -99,12 +99,16 @@ Based on the current state, suggest exactly one next command. Use this logic:
 | Status is `COMPLETED` (all phases committed + reviewed) | `/bee:archive-spec` -- "All phases complete. Archive the spec or start a new feature." |
 | Status is `ARCHIVED` | `/bee:new-spec` -- "Spec archived. Start a new feature." |
 
-Present the suggestion clearly:
+Present the suggestion using an interactive menu:
 
 ```
-Next step: /bee:{command}
-{brief explanation of why this is the next step}
+AskUserQuestion(
+  question: "[status summary]. Suggested next: [command]",
+  options: ["[suggested command]", "Custom"]
+)
 ```
+
+The first option is the dynamically suggested command (e.g. `/bee:execute-phase 2`). "Custom" is always last.
 
 ### Output Format
 

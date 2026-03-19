@@ -56,7 +56,18 @@ Then display:
 
 "CONTEXT.md updated. Run `/bee:resume` to start a session with full codebase context."
 
-### Step 5: Update STATE.md Last Action
+### Step 5: Present Completion Menu
+
+After updating STATE.md, present an interactive menu:
+
+```
+AskUserQuestion(
+  question: "CONTEXT.md refreshed.",
+  options: ["Accept", "Custom"]
+)
+```
+
+### Step 6: Update STATE.md Last Action
 
 Re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern -- always read the current version before writing to avoid stale overwrites).
 

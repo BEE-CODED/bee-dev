@@ -65,3 +65,14 @@ Global statusline: v{version} (updated)
 
 The statusline auto-updates on every session start via the plugin's SessionStart hook.
 ```
+
+Then present an interactive menu:
+
+```
+AskUserQuestion(
+  question: "Bee updated. [summary]",
+  options: ["Accept", "Custom"]
+)
+```
+
+The `[summary]` is a one-line recap of what changed (e.g. "Statusline updated to v1.2.3, legacy copy removed.").
