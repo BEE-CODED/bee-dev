@@ -60,9 +60,8 @@ Spawn audit agents in parallel batches. The order and grouping depends on `$IMPL
 **Economy mode:** Run agents sequentially (one at a time) to minimize token usage. Use sonnet for all agents.
 
 **Quality mode (default):** Run agents in two parallel batches:
-- **Batch 1** (spawn all at once): `security-auditor`, `database-auditor`, `error-handling-auditor`, `architecture-auditor`
-- **Batch 2** (after batch 1 completes): `api-auditor`, `frontend-auditor`, `performance-auditor`, `testing-auditor`
-- **Batch 3** (after batch 2): `audit-bug-detector` (runs last because it benefits from understanding the full codebase)
+- **Batch 1** (spawn all 8 at once): `security-auditor`, `database-auditor`, `error-handling-auditor`, `architecture-auditor`, `api-auditor`, `frontend-auditor`, `performance-auditor`, `testing-auditor`
+- **Batch 2** (after batch 1 completes): `audit-bug-detector` (runs last because it benefits from understanding the full codebase)
 
 **Premium mode:** Run ALL agents in parallel (single batch), including `audit-bug-detector`.
 
