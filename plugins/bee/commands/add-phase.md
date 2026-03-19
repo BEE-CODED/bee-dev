@@ -138,8 +138,12 @@ Updated:
 - {spec_path}/phases.md
 - .bee/STATE.md
 
-Next step: /bee:plan-phase {$PHASE_NUMBER}
 ```
+
+AskUserQuestion(
+  question: "Phase [N] added to spec.",
+  options: ["Plan Phase", "Custom"]
+)
 
 ---
 

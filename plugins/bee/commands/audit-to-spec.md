@@ -220,3 +220,10 @@ For quick individual fixes, you can also use:
 ```
 
 This is especially useful for LOW and MEDIUM findings that don't need a full spec pipeline.
+
+---
+
+AskUserQuestion(
+  question: "Specs generated from audit findings. [X] specs created.",
+  options: ["New Spec", "Accept", "Custom"]
+)

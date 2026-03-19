@@ -90,7 +90,11 @@ Detect stacks at the project root AND in first-level subdirectories. For each lo
    If only one stack is detected at root, show it the same way with path `"."`.
 
 4. **Ask the developer to confirm, adjust, or remove** any entries:
-   - "Does this look right? You can confirm, adjust any stack type, remove entries you don't want, or manually add stacks not auto-detected."
+
+   AskUserQuestion(
+     question: "Detected stack: [stack]. Linter: [linter]. Tests: [runner].",
+     options: ["Confirm", "Adjust", "Custom"]
+   )
 
 5. The developer can **manually add** stacks not auto-detected by specifying a stack name and path (e.g. "add react at 'client'").
 
@@ -360,7 +364,10 @@ Replace `{TIMESTAMP}` with the current ISO 8601 timestamp (e.g., `2026-02-20T14:
 
 ### Step 8: Optional CLAUDE.md Update
 
-Ask the user: "Should I add BeeDev instructions to your CLAUDE.md?"
+AskUserQuestion(
+  question: "Add BeeDev instructions to CLAUDE.md?",
+  options: ["Yes", "No", "Custom"]
+)
 
 If the user agrees:
 - If `CLAUDE.md` exists, **append** (do not overwrite) the following section:
@@ -380,7 +387,10 @@ If the user declines, skip this step.
 
 ### Step 9: Optional .gitignore Update
 
-Ask the user: "Should I add the `.bee/` directory to .gitignore? This keeps all bee state, reports, and config local to your machine."
+AskUserQuestion(
+  question: "Add .bee/ to .gitignore?",
+  options: ["Yes", "No", "Custom"]
+)
 
 If the user agrees:
 - Add `.bee/` to `.gitignore` (the entire directory).
@@ -391,7 +401,10 @@ If the user declines, skip this step.
 
 ### Step 9.5: Optional User Preferences File
 
-Ask the user: "Would you like to create a `.bee/user.md` file for your personal preferences? This is a freeform markdown file where you can note your working style, communication preferences, and workflow overrides. It's loaded into every session and agent context."
+AskUserQuestion(
+  question: "Create .bee/user.md for user preferences?",
+  options: ["Yes", "No", "Custom"]
+)
 
 If the user agrees, create `.bee/user.md` with this minimal template:
 
@@ -440,8 +453,12 @@ Created:
 {If any stack has ⚠ no skill:}
 Tip: Run /bee:create-skill to create custom stack skills for unsupported stacks.
 
-Next step: /bee:new-spec
 ```
+
+AskUserQuestion(
+  question: "Bee initialized for [project].",
+  options: ["New Spec", "Discuss", "Quick Task", "Custom"]
+)
 
 ### Step 10.5: Notification Setup
 

@@ -41,8 +41,11 @@ Read the Phases table from STATE.md. Check each phase row:
    - Phase {M}: {name} (Status: {status})
    ...
    ```
-   Ask the user: "Archive anyway? Some phases have not been committed. (yes/no)"
-   If the user says no, display "Archive cancelled." and stop.
+   AskUserQuestion(
+     question: "Some phases not committed. Archive anyway?",
+     options: ["Archive", "Cancel", "Custom"]
+   )
+   If the user selects "Cancel", display "Archive cancelled." and stop.
 3. If all phases are COMMITTED (or no phases exist), proceed without warning.
 
 ### Step 3: Confirm Archive
@@ -56,9 +59,12 @@ Ready to archive:
 - Archive destination: .bee/archive/{spec-folder-name}/
 ```
 
-Ask the user: "Proceed with archive? (yes/no)"
+AskUserQuestion(
+  question: "Ready to archive spec '[name]'.",
+  options: ["Archive", "Cancel", "Custom"]
+)
 
-If the user says no, display "Archive cancelled." and stop.
+If the user selects "Cancel", display "Archive cancelled." and stop.
 
 ### Step 4: Move Spec to Archive
 
@@ -114,8 +120,12 @@ Spec archived!
 - State: NO_SPEC
 - Plugin version: {new-version}
 
-Next step: /bee:new-spec -- start a new feature
 ```
+
+AskUserQuestion(
+  question: "Spec archived.",
+  options: ["New Spec", "Custom"]
+)
 
 ---
 
