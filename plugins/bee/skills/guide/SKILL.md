@@ -170,6 +170,7 @@ Proactively suggest these when conditions are met -- don't wait for the user to 
 10. NEVER sort decimal phases lexicographically. Sort numerically: 2, 2.1, 2.2, 3 (not 2, 2.1, 3, 2.2).
 11. NEVER run `/bee:ship` on unplanned phases. All must be PLAN_REVIEWED first.
 12. NEVER suggest `/bee:compact` or `/clear` as blockers. Execute directly with available context.
+13. NEVER run full test suite, linter, or static analysis inside parallel agents. Agents test ONLY their files; conductor validates ONCE per wave (~70% time savings).
 
 ## 5. Ecosystem Model
 

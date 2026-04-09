@@ -318,6 +318,41 @@ Note: Cascading failure detection runs AFTER all retries are exhausted and AFTER
 
 **5d. After all agents in the wave complete:**
 
+**5d.0. Post-wave full validation (ONCE per wave):**
+
+Since agents run ONLY their task-specific tests during TDD (to avoid resource contention), the conductor runs the full validation suite ONCE after all agents in the wave complete:
+
+1. **Full test suite:** Read `config.stacks` to determine the test runner. Run the appropriate command ONCE:
+   - Laravel: `php artisan test --parallel` (uses the project's test runner)
+   - Jest: `npx jest`
+   - Vitest: `npx vitest run`
+   - pytest: `pytest`
+   - If no test runner configured: skip
+
+   If the full suite fails but all agent-specific tests passed, identify which cross-task interaction broke:
+   - Display: "Wave {M} full suite: {failed_count} failures detected (agent-specific tests all passed)"
+   - List failing test files and compare against tasks in this wave to identify the responsible task
+   - Present to user as part of the wave completion checkpoint
+
+   If the full suite passes: log "Full suite: all passing" and continue.
+
+2. **Linter (if configured):** Run once per stack:
+   - Laravel: `vendor/bin/pint --test`
+   - ESLint: `npx eslint .`
+   - Prettier: `npx prettier --check .`
+   - If linter fails: display failures, continue (non-blocking — findings are informational)
+
+3. **Static analysis (if available):** Run once if detected:
+   - PHPStan: `vendor/bin/phpstan analyse --no-progress`
+   - TypeScript: `npx tsc --noEmit`
+   - If not installed: skip silently
+
+Display: "Post-wave validation: {test_result} | {lint_result} | {static_result}"
+
+This single post-wave run replaces what would otherwise be N parallel full-suite runs (one per agent), reducing wave execution time by ~70% and eliminating resource contention.
+
+**5d.1. State update:**
+
 1. Read current `.bee/STATE.md` from disk
 2. Update the Executed column to `Wave {M}/{total_waves}` (where M is the current wave number)
 3. Update Last Action:

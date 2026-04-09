@@ -26,6 +26,8 @@ Write code before the test? **Delete it. Start over.**
 2. **Green:** Write the MINIMAL code to make the test pass. Nothing extra.
 3. **Refactor:** Clean up with passing tests as safety net. Tests must pass after every change.
 
+**Scoped testing in parallel agents:** Agents run ONLY their task's test file(s) (`--filter`, `--testPathPattern`). NEVER run the full suite, linter, or static analysis from inside an agent. The conductor runs these ONCE per wave after all agents complete. This prevents resource contention and reduces wave execution time by ~70%.
+
 **Watch It Fail (MANDATORY):**
 After writing a test, run it and confirm:
 - Test FAILS (not errors — actual assertion failure)

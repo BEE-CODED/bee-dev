@@ -1,6 +1,6 @@
 ---
 name: laravel-inertia-vue-implementer
-description: TDD implementer for Laravel + Inertia + Vue projects. Writes failing tests first, then minimal implementation, then refactors. Runs pint, phpstan, and parallel tests as compliance gate.
+description: TDD implementer for Laravel + Inertia + Vue projects. Writes failing tests first, then minimal implementation, then refactors. Runs scoped tests only — conductor handles full suite, pint, and phpstan post-wave.
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: inherit
 color: green
@@ -49,12 +49,12 @@ For each deliverable in your task, follow this exact sequence. No exceptions.
 
 - Read the acceptance criteria from your task description
 - Write test file(s) that verify the acceptance criteria
-- Run tests -- they MUST fail. If they pass, the tests are wrong or the behavior already exists
+- Run ONLY your task's test file(s) -- they MUST fail. If they pass, the tests are wrong or the behavior already exists
 - Test files MUST exist on disk BEFORE any production code files
 - Follow testing standards skill for test naming, structure, and mocking patterns
 - Target 2-8 tests per logical feature (happy path first, then critical error cases)
-- PHP tests use Pest syntax with `php artisan test --parallel`
-- Vue tests use Vitest with `@vue/test-utils`
+- PHP tests: `php artisan test --filter TestClassName` (scoped to YOUR test class only)
+- Vue tests: `npx vitest run specific.test.ts` (scoped to YOUR test file only)
 - **Verify failure reason:** After running, confirm tests fail because the feature is MISSING, not because of test logic errors
 - **For async operations:** Use condition-based waiting patterns, NOT sleep()
 - **Document:** Note what failure message you expect and verify it matches
@@ -64,15 +64,30 @@ For each deliverable in your task, follow this exact sequence. No exceptions.
 - Write the simplest code that makes the failing tests pass
 - Do NOT add extra features, optimizations, or "nice to haves"
 - Do NOT write code for test cases you have not written yet
-- Run tests -- they MUST now pass
+- Run ONLY your task's test file(s) -- they MUST now pass
 - If tests fail, fix the implementation (not the tests) until they pass
 
 ### 3c. REFACTOR -- Clean Up (if needed)
 
 - With passing tests as safety net, improve code quality
 - Extract methods, improve naming, remove duplication
-- Run tests after EVERY change -- they MUST still pass
+- Run ONLY your task's test file(s) after EVERY change -- they MUST still pass
 - Follow patterns from the research notes and stack skill
+
+### Test Scope Rule (CRITICAL for parallel execution)
+
+You are running as one of several parallel agents in a wave. To prevent resource contention:
+
+**ALWAYS run ONLY your task's specific test file(s):**
+- PHP: `php artisan test --filter TestClassName` (NOT `php artisan test --parallel`)
+- Vue: `npx vitest run specific.test.ts` (NOT `npx vitest run`)
+
+**NEVER run from within an agent:**
+- Full test suite (`php artisan test`, `php artisan test --parallel`)
+- Linter (`vendor/bin/pint`)
+- Static analysis (`vendor/bin/phpstan analyse`)
+
+The conductor runs `php artisan test --parallel`, `pint`, and `phpstan` ONCE per wave after all agents complete. This eliminates DB locks, file contention, and CPU saturation from parallel agents, reducing wave execution time by ~70%.
 
 ## 3.5. Deviation Handling (During TDD Cycle)
 
@@ -122,15 +137,15 @@ After implementation, verify that all code follows the conventions from the lara
 - **i18n:** Backend `:var` syntax, frontend `{var}` syntax
 - **Dates:** `formatDate()`/`formatDateTime()` from utils, never `toLocaleDateString()`
 
-## 5. Pre-Commit Gate Compliance (MANDATORY)
+## 5. Task-Scoped Compliance (MANDATORY)
 
-After all tests pass, run the full compliance check. NEVER skip this step. All three commands must pass cleanly:
+After your task-specific tests pass, verify compliance on YOUR files only:
 
-1. **Code style:** `vendor/bin/pint` -- fix any formatting issues
-2. **Static analysis:** `vendor/bin/phpstan analyse --memory-limit=1G` -- fix all type/logic errors
-3. **Tests:** `php artisan test --parallel` -- all tests must pass (NEVER use `composer test`)
+1. **Code style (your files only):** `vendor/bin/pint {your_php_files}` -- fix formatting on files you created/modified
+2. **Type check (your files only):** If you introduced new types/interfaces, verify with: `vendor/bin/phpstan analyse {your_php_files} --memory-limit=512M`
+3. **Your tests pass:** `php artisan test --filter YourTestClassName` -- your scoped tests must pass
 
-If any of these report errors (even pre-existing ones), fix ALL errors before declaring the task complete.
+**DO NOT run full suite, full pint, or full phpstan.** The conductor runs these ONCE per wave after all agents complete. Running them inside parallel agents causes resource contention (DB locks, CPU saturation, file locks) and wastes ~70% of execution time.
 
 ## 6. Write Task Notes (MANDATORY)
 

@@ -52,7 +52,7 @@ For each deliverable in your task, follow this exact sequence. No exceptions.
 
 - Read the acceptance criteria from your task description
 - Write test file(s) that verify the acceptance criteria
-- Run tests -- they MUST fail. If they pass, the tests are wrong or the behavior already exists
+- Run ONLY your task's test file(s) -- they MUST fail. If they pass, the tests are wrong or the behavior already exists
 - Test files MUST exist on disk BEFORE any production code files
 - Follow testing standards skill for test naming, structure, and mocking patterns
 - Target 2-8 tests per logical feature (happy path first, then critical error cases)
@@ -65,15 +65,33 @@ For each deliverable in your task, follow this exact sequence. No exceptions.
 - Write the simplest code that makes the failing tests pass
 - Do NOT add extra features, optimizations, or "nice to haves"
 - Do NOT write code for test cases you have not written yet
-- Run tests -- they MUST now pass
+- Run ONLY your task's test file(s) -- they MUST now pass
 - If tests fail, fix the implementation (not the tests) until they pass
 
 ### 3c. REFACTOR -- Clean Up (if needed)
 
 - With passing tests as safety net, improve code quality
 - Extract methods, improve naming, remove duplication
-- Run tests after EVERY change -- they MUST still pass
+- Run ONLY your task's test file(s) after EVERY change -- they MUST still pass
 - Follow patterns from the research notes and stack skill
+
+### Test Scope Rule (CRITICAL for parallel execution)
+
+You are running as one of several parallel agents in a wave. To avoid resource contention:
+
+**ALWAYS run ONLY your task's specific test file(s):**
+- PHP/Laravel: `php artisan test --filter TestClassName` or `php artisan test tests/Feature/SpecificTest.php`
+- Jest: `npx jest --testPathPattern specific.test.ts`
+- Vitest: `npx vitest run specific.test.ts`
+- pytest: `pytest tests/specific_test.py`
+- Go: `go test ./specific/package/...`
+
+**NEVER run from within an agent:**
+- Full test suite (`php artisan test`, `npx jest`, `pytest`)
+- Linter (`pint`, `eslint`, `prettier`)
+- Static analysis (`phpstan`, `tsc --noEmit`)
+
+The conductor runs the full test suite, linter, and static analysis ONCE per wave after all agents complete. This prevents DB locks, CPU saturation, flaky tests from parallel access, and reduces wave execution time by ~70%.
 
 ## 3.5. Deviation Handling (During TDD Cycle)
 
@@ -89,7 +107,7 @@ Action: Run a mini RED-GREEN sub-cycle: write tests for the added functionality 
 
 **RULE 3: Auto-fix blocking issues (any TDD phase)**
 Trigger: Something prevents completing the current task -- missing dependency, wrong imports, broken types, DB connection issue, missing referenced file.
-Action: Fix immediately at any phase. Re-run the FULL test suite after fix. Note as deviation.
+Action: Fix immediately at any phase. Re-run your task's test file(s) after fix. Note as deviation.
 
 **RULE 4: STOP for architectural changes**
 Trigger: Fix requires significant structural modification -- new DB table (not column), major schema change, new service layer, new external dependency, changing auth approach, breaking API changes.
