@@ -46,15 +46,36 @@ Read `CLAUDE.md` at project root if it exists. When CLAUDE.md conflicts with sta
 - **Division by zero:** Calculations where the divisor could be zero.
 - **Missing default cases:** Switch statements without default, or if/else chains that don't cover all cases.
 
-## 3. Output
+### Phase E: Async and Concurrency Patterns
+- **Promise chains without terminal `.catch()`:** Find `.then().then()` chains with no `.catch()` at the end.
+- **`async` event handlers without try/catch:** Event listeners (`onClick`, `onSubmit`, Express middleware) that are `async` but don't wrap in try/catch — unhandled rejections crash the process in Node.js.
+- **Missing `AbortController` cleanup:** Fetch calls in React `useEffect` or Vue `onMounted` without abort on unmount — causes state updates on unmounted components.
+- **Timeout handling absent:** External API calls without `signal: AbortSignal.timeout(10_000)` or equivalent — requests hang indefinitely on network issues.
+- **Stream/iterator cleanup missing:** Readable streams, async generators opened but never `.destroy()`/`.return()` — resource leak.
+
+### Phase F: Error Propagation
+- **Error swallowed between layers:** Service catches error, logs it, returns `null` — controller doesn't know the operation failed and returns 200 to client.
+- **Generic error messages:** All errors return same message ("Something went wrong") — no distinction between validation errors, auth errors, server errors.
+- **Stack traces exposed to client:** Error responses include `error.stack` or `error.message` with internal paths — information disclosure.
+- **Missing error context:** Errors thrown without attaching request ID, user ID, or operation context — makes debugging impossible.
+
+## 3. Severity Mapping
+
+Map each finding's effect to severity:
+
+| Effect | Severity | Why |
+|--------|----------|-----|
+| CRASH (app terminates, white screen) | CRITICAL if in core user flow, HIGH otherwise | Direct user impact |
+| DATA LOSS (user's work lost) | CRITICAL always | Irreversible |
+| SILENT FAILURE (no user feedback) | HIGH | User thinks action succeeded when it didn't |
+| DEGRADED UX (unhelpful error) | MEDIUM | User sees error but can't act on it |
+| Stack traces exposed to client | HIGH (security) | Information disclosure |
+
+## 4. Output
 
 Use the audit skill finding format. Prefix all finding IDs with `ERR`.
 
-For each finding, specify whether it causes:
-- **CRASH**: Application terminates or page goes blank
-- **SILENT FAILURE**: Operation fails but user sees no feedback
-- **DATA LOSS**: User's input/work is lost due to unhandled error
-- **DEGRADED UX**: Error message shown but not helpful (stack traces, "undefined", etc.)
+For each finding, specify which effect it causes (CRASH / SILENT FAILURE / DATA LOSS / DEGRADED UX) and map to severity using the table above.
 
 End with summary:
 

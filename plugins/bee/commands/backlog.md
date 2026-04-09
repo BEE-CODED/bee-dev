@@ -66,13 +66,29 @@ AskUserQuestion(
 
 #### promote S-NNN
 
-1. Find seed file by ID: map `S-NNN` to `seed-NNN.md` (e.g., `S-003` maps to `.bee/seeds/seed-003.md`).
-2. If the file does not exist: display "Seed S-{NNN} not found." Stop.
-3. Read the seed content (idea + trigger from frontmatter).
-4. Display: "Promoting seed S-{NNN}: {idea}"
-5. Display: "Run `/bee:new-spec {idea}` to create a spec from this seed."
+1. **If no seed ID in arguments** (arrived from the list menu's "Promote a seed" option): read all active seeds from `.bee/seeds/`, then present:
+   ```
+   AskUserQuestion(
+     question: "Which seed to promote?",
+     options: ["S-001: {idea}", "S-002: {idea}", ..., "Custom"]
+   )
+   ```
+   Parse the selected seed ID.
+
+2. Find seed file by ID: map `S-NNN` to `seed-NNN.md` (e.g., `S-003` maps to `.bee/seeds/seed-003.md`).
+3. If the file does not exist: display "Seed S-{NNN} not found." Stop.
+4. Read the seed content (idea + trigger from frontmatter).
+5. Confirm before promoting:
+   ```
+   AskUserQuestion(
+     question: "Promote seed S-{NNN}: {idea}?",
+     options: ["Yes, promote", "Cancel", "Custom"]
+   )
+   ```
+   If "Cancel": stop.
 6. Update the seed frontmatter: set `status: promoted`.
-7. Do NOT auto-invoke `/bee:new-spec` -- the developer decides when to act.
+7. Display: "Seed S-{NNN} promoted. Run `/bee:new-spec {idea}` to create a spec from this seed."
+8. Do NOT auto-invoke `/bee:new-spec` -- the developer decides when to act.
 
 ---
 

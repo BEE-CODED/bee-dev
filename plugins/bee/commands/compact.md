@@ -164,10 +164,10 @@ AskUserQuestion(
 )
 ```
 
-- **Compact now**: Execute /compact
+- **Compact now**: Display "Run `/compact` to compress the conversation." Do NOT attempt to invoke `/compact` programmatically — it is a built-in CLI command that must be run by the user.
 - **Custom**: Free text
 
-Stop here. Do NOT attempt to invoke `/compact` programmatically — it is a built-in CLI command that must be run by the user.
+Stop here.
 
 ---
 

@@ -227,11 +227,12 @@ This step reuses the same logic as `/bee:archive-spec` Steps 5-6:
 7. Write STATE.md to disk.
 
 **Bump plugin version:**
-1. Read the plugin manifest at `plugins/bee/.claude-plugin/plugin.json` (adjust path relative to project root; if running within a project that uses the bee plugin, use `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` via Bash to resolve).
-2. Parse the `version` field (semver format: `MAJOR.MINOR.PATCH`).
-3. Increment the PATCH number by 1 (e.g., `2.1.0` becomes `2.1.1`, `1.0.9` becomes `1.0.10`).
-4. Write the updated plugin.json back to disk with the new version, preserving all other fields.
-5. Display: "Plugin version bumped: {old-version} -> {new-version}"
+1. Attempt to read the plugin manifest: try `plugins/bee/.claude-plugin/plugin.json` first, then `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` via Bash if the first path does not exist.
+2. If neither path resolves to a file, display: "Plugin version bump skipped — plugin.json not found. Bump manually if needed." and continue to Step 9.
+3. Parse the `version` field (semver format: `MAJOR.MINOR.PATCH`).
+4. Increment the PATCH number by 1 (e.g., `2.1.0` becomes `2.1.1`, `1.0.9` becomes `1.0.10`).
+5. Write the updated plugin.json back to disk with the new version, preserving all other fields.
+6. Display: "Plugin version bumped: {old-version} -> {new-version}"
 
 ### Step 9: Summary
 

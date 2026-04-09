@@ -76,8 +76,8 @@ Determine the subcommand from `$ARGUMENTS`:
 2. If N > 10: display "Note {N} is beyond the visible list (showing 10 most recent). Run `/bee:note list` to see available notes, then promote by number." and stop.
 3. Use the Glob tool for `.bee/notes/*.md`, sort filenames descending (newest first), and select the Nth entry (1-indexed).
 4. If N is out of range: display "Note {N} not found. Run `/bee:note list` to see available notes." and stop.
-4. Read the selected note file content. Extract the first line of body content after the frontmatter.
-5. Present the promotion menu:
+5. Read the selected note file content. Extract the first line of body content after the frontmatter.
+6. Present the promotion menu:
 
 ```
 AskUserQuestion(
@@ -86,7 +86,7 @@ AskUserQuestion(
 )
 ```
 
-6. Handle the user's choice:
+7. Handle the user's choice:
    - **Create spec**: Display "Run `/bee:new-spec` with this context:" followed by the full note content. Do NOT auto-invoke the command.
    - **Create quick task**: Display "Run `/bee:quick {note content}`" as a ready-to-use suggestion. Do NOT auto-invoke the command.
    - **Custom**: Wait for free-text input from the user and act on it.

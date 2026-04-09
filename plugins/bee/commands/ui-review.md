@@ -9,7 +9,7 @@ Read these files using the Read tool:
 - `.bee/STATE.md` -- if not found: NOT_INITIALIZED
 - `.bee/config.json` -- if not found: use `{}`
 
-Read `config.implementation_mode` and store as `$IMPL_MODE`. If not set, defaults to `"quality"`. Valid values: `"economy"`, `"quality"`, `"premium"`.
+Read `config.implementation_mode` and store as `$IMPLEMENTATION_MODE`. If not set, defaults to `"premium"`. Valid values: `"economy"`, `"quality"`, `"premium"`.
 
 ## Instructions
 
@@ -56,14 +56,14 @@ Read the target phase's artifacts to build context for the auditor:
 
 Build the audit prompt with phase context, UI-SPEC.md reference (if exists), and file scope.
 
-**Model selection:** Read `$IMPL_MODE` from config:
-- If `$IMPL_MODE` is `"economy"`: pass `model: "sonnet"`
-- If `$IMPL_MODE` is `"quality"` or `"premium"`: omit model parameter (inherit parent model)
+**Model selection:** Read `$IMPLEMENTATION_MODE` from config:
+- If `$IMPLEMENTATION_MODE` is `"economy"`: pass `model: "sonnet"`
+- If `$IMPLEMENTATION_MODE` is `"quality"` or `"premium"`: omit model parameter (inherit parent model)
 
 ```
 Task(
   subagent_type="bee:ui-auditor",
-  {$IMPL_MODE == "economy" ? 'model: "sonnet",' : ''}
+  {$IMPLEMENTATION_MODE == "economy" ? 'model: "sonnet",' : ''}
   description="UI Review: Phase {$PHASE_NUM}",
   prompt="
     Audit the frontend implementation for Phase {$PHASE_NUM}.

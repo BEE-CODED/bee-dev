@@ -89,7 +89,11 @@ Based on the role selection, derive the tools list:
 
 Store the tools list as `$TOOLS`.
 
-### Step 5: Select Tools Preset
+### Step 5: Confirm or Select Tools
+
+**If the role selected in Step 4 was one of the named presets** (Read-only scanner, Writer, Conversational), skip this step — `$TOOLS` is already set from the role selection.
+
+**If the role was "Other"**, present the tools selection:
 
 Use AskUserQuestion to ask the user:
 
@@ -102,8 +106,6 @@ Options:
 - **Custom selection** — Choose exactly which tools the agent should have access to.
 
 If "Custom selection" is chosen, use AskUserQuestion to ask which tools to include from: `Read, Write, Edit, Bash, Grep, Glob`.
-
-If the user already specified tools in Step 4 via the "Other" role, present the current tools list and ask: "The role selection set tools to: `{$TOOLS}`. Would you like to keep these or adjust?"
 
 Store the final tools list as `$TOOLS`.
 

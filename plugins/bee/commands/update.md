@@ -52,6 +52,22 @@ After running, verify the copy was successful by checking `~/.claude/hooks/bee-s
    - If the file has no other keys after removal, delete the file entirely.
    - If it has other keys, write it back without the `statusLine` key.
 
+### Step 4b: Implementation Mode Recommendation
+
+Read `.bee/config.json`. If `implementation_mode` is `"quality"` or `"economy"`:
+
+```
+AskUserQuestion(
+  question: "Your implementation mode is set to \"{current_mode}\". Premium mode (opus for all agents) is now the recommended default for maximum quality. Switch to premium?",
+  options: ["Yes, switch to premium", "Keep {current_mode}", "Custom"]
+)
+```
+
+If "Yes, switch to premium": update `config.implementation_mode` to `"premium"` in `.bee/config.json` and note in the summary.
+If "Keep": leave unchanged.
+
+If `implementation_mode` is already `"premium"` or absent (defaults to premium): skip this step silently.
+
 ### Step 5: Summary
 
 Display the result:

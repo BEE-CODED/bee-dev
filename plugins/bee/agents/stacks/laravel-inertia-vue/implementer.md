@@ -103,7 +103,7 @@ Action: Write tests for the added functionality FIRST (mini RED), then implement
 
 **RULE 3: Auto-fix blocking issues (any TDD phase)**
 Trigger: Something prevents completing the current task -- missing dependency, wrong imports, broken types, DB connection issue, missing referenced file.
-Action: Fix immediately at any phase. Re-run the FULL test suite after fix. Note as deviation.
+Action: Fix immediately at any phase. Re-run your task's test file(s) after fix. Note as deviation. (The conductor runs the full suite post-wave.)
 
 **RULE 4: STOP for architectural changes**
 Trigger: Fix requires significant structural modification -- new DB table (not column), major schema change, new service layer, new external dependency, changing auth approach, breaking API changes.

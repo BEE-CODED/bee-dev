@@ -68,7 +68,7 @@ Check these guards in order. Stop immediately if any fails:
 
 ### Step 3: Spawn Four Specialized Agents in Parallel
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent). This determines the model tier for the four review agents spawned in Step 3.2.
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent). This determines the model tier for the four review agents spawned in Step 3.2.
 
 #### 3.1: Build context packets
 
@@ -160,7 +160,7 @@ Spawn all four agents via four Task tool calls in a SINGLE message (parallel exe
 
 **Economy mode** (`implementation_mode: "economy"`): Pass `model: "sonnet"` for all agents.
 
-**Quality or Premium mode** (default `"quality"`, or `"premium"`): Omit the model parameter for all agents (they inherit the parent model).
+**Quality or Premium mode** (default): Omit the model parameter for all agents (they inherit the parent model).
 
 Wait for all four agents to complete.
 

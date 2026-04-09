@@ -51,11 +51,11 @@ mkdir -p .bee/eod-reports
 
 Spawn ALL 4 agents simultaneously using the Task tool. Do NOT wait for one to finish before spawning the next. All 4 audits are independent.
 
-**Model selection for EOD agents:** Read `config.implementation_mode` from `.bee/config.json` (defaults to `"quality"` if absent). EOD audits are structured validation, comparison, and reporting tasks -- not creative work.
+**Model selection for EOD agents:** Read `config.implementation_mode` from `.bee/config.json` (defaults to `"premium"` if absent). EOD audits are structured validation, comparison, and reporting tasks -- not creative work.
 
 **Premium mode** (`implementation_mode: "premium"`): Omit the model parameter for all 4 agents (inherit parent model).
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` for all 4 agents. This keeps the audit fast and cost-efficient.
+**Economy or Quality mode**: Pass `model: "sonnet"` for all 4 agents. This keeps the audit fast and cost-efficient.
 
 **Agent 1: integrity-auditor** (economy/quality: `model: "sonnet"`, premium: omit)
 Use the Task tool to spawn the `integrity-auditor` agent. Provide context:

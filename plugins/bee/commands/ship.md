@@ -53,7 +53,7 @@ Check these guards in order. Stop immediately if any fails:
 2. Read phases.md from the Spec Context above to get full phase names and descriptions.
 3. Read `config.ship.max_review_iterations` from config.json (default: 3). Store as `$MAX_REVIEW_ITERATIONS`.
 4. Read `config.ship.final_review` from config.json (default: true). Store as `$FINAL_REVIEW_ENABLED`.
-5. Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent). Store as `$IMPLEMENTATION_MODE`.
+5. Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent). Store as `$IMPLEMENTATION_MODE`.
 6. Read `config.autonomous.discuss` from config.json (default: true). Store as `$DISCUSS_ENABLED`.
 7. Read `config.autonomous.auto_approve_confidence` from config.json (default: `"high"`). Store as `$AUTO_APPROVE_CONFIDENCE`.
 8. Count completed prior phases. Count how many phases have status REVIEWED, TESTED, or COMMITTED. Store as `$COMPLETED_PHASE_COUNT`.

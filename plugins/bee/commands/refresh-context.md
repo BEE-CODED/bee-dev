@@ -31,11 +31,11 @@ Proceed immediately -- do not ask for confirmation or wait for user input.
 
 ### Step 3: Spawn Context-Builder Agent
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
 **Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
+**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
 
 Use the Task tool to spawn the `context-builder` agent with the model determined above. Context-building is structured scanning work -- it reads files, classifies patterns, and writes 5 structured context documents.
 

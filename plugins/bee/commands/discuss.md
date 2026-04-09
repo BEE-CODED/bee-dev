@@ -152,11 +152,11 @@ After batch mode completes, update STATE.md Last Action and stop. Do NOT proceed
 
 ### Step 3: Spawn Discuss-Partner Scan Mode
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
 **Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
+**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
 
 Spawn the `discuss-partner` agent via the Task tool with the model determined above. Provide the following context:
 
@@ -206,7 +206,7 @@ AskUserQuestion(
 If "Skip": proceed to Step 4.
 
 If "Yes":
-1. Read config.implementation_mode from config.json (defaults to "quality" if absent)
+1. Read config.implementation_mode from config.json (defaults to "premium" if absent)
    - Premium mode: Omit model parameter.
    - Economy or Quality mode: Pass model: "sonnet".
 2. Spawn the assumptions-analyzer agent as a subagent with the model determined above. Provide:
@@ -396,7 +396,7 @@ Then use AskUserQuestion for the next step:
 
 ```
 AskUserQuestion(
-  question: "Discussion notes scrise: {$NOTES_PATH}",
+  question: "Discussion notes saved: {$NOTES_PATH}",
   options: ["Accept", "Continue discussing", "New Spec", "Custom"]
 )
 ```

@@ -55,7 +55,11 @@ End your final message with a structured classification:
 - **Reason:** {Brief explanation of why this classification}
 ```
 
-If your confidence is MEDIUM, explain what is ambiguous and what additional context would clarify the classification. MEDIUM confidence findings will be escalated by the parent command to the specialist agent identified in `Source Agent` for a second opinion before final classification.
+**Confidence thresholds:**
+- **HIGH** (>80% certain): Code clearly violates a rule, produces wrong output, or misses a requirement. You can point to specific evidence.
+- **MEDIUM** (50-80%): Reasonable interpretation but ambiguous. Could be correct depending on context you can't see. Explain what is ambiguous and what additional context would clarify. MEDIUM findings are escalated to the specialist agent for a second opinion.
+
+Do not assign LOW confidence — if you're below 50%, classify as FALSE POSITIVE with the note "Insufficient evidence to confirm."
 
 ---
 
@@ -65,7 +69,7 @@ IMPORTANT: You do NOT fix the code. Classify only.
 
 IMPORTANT: You do NOT modify any files. Read-only analysis.
 
-IMPORTANT: If you cannot determine with reasonable confidence, classify as REAL BUG -- better to have the fixer evaluate than to miss a genuine issue.
+IMPORTANT: When uncertain, prefer MEDIUM confidence over defaulting to REAL BUG. False positives sent to fixer waste more time than escalations sent to specialist. The specialist exists precisely for ambiguous cases.
 
 IMPORTANT: Do not second-guess the severity assigned by the reviewer. You classify the nature (real/false/stylistic), not the severity.
 

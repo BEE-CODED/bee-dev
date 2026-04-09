@@ -104,7 +104,9 @@ uncommitted: {count of uncommitted files}
 
 ### Step 3.5: Update STATE.md Last Action
 
-Update `.bee/STATE.md` Last Action section:
+Re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern -- always read the current version before writing to avoid stale overwrites).
+
+Update Last Action section:
 - Command: `/bee:pause`
 - Timestamp: current ISO 8601 timestamp
 - Result: "Work paused. Handoff saved to .bee/pause-handoff.md"

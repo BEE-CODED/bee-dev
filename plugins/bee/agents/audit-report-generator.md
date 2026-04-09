@@ -33,12 +33,12 @@ Follow the report template from the audit skill EXACTLY. The report structure is
 - Calculate totals
 
 ### Risk Assessment
-- Determine overall risk level:
+- Determine overall risk level (check in this order, first match wins):
+  - Zero confirmed findings → Risk level: CLEAN
   - Any CONFIRMED CRITICAL → Risk level: CRITICAL
   - No CRITICAL but CONFIRMED HIGH > 3 → Risk level: HIGH
   - No CRITICAL, HIGH ≤ 3, MEDIUM > 5 → Risk level: MODERATE
   - Everything else → Risk level: LOW
-  - Zero confirmed findings → Risk level: CLEAN
 - Write 1-3 sentence summary focusing on the most impactful findings
 
 ### Finding Sections

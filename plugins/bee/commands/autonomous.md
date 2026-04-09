@@ -63,7 +63,7 @@ Check these guards in order. Stop immediately if any fails:
 
 Parse phase numbers from ROADMAP.md headings. Phase numbers can be integers (e.g., `### Phase 3:`) or decimals (e.g., `### Phase 3.1:`). Decimal phases created by `/bee:insert-phase` are marked with `(INSERTED)` in their heading. Sort all phases numerically (not lexicographically) for correct ordering: by parent integer first, then by decimal suffix (e.g., 1, 2, 2.1, 2.2, 3, 3.1, 4).
 
-**2c. Read `implementation_mode`** from config.json (defaults to `"quality"` if absent). Store as `$IMPLEMENTATION_MODE`.
+**2c. Read `implementation_mode`** from config.json (defaults to `"premium"` if absent). Store as `$IMPLEMENTATION_MODE`.
 
 **2c-bis. Read `research_policy`** from config.json (defaults to `"recommended"` if absent). Store as `$RESEARCH_POLICY`. In autonomous mode, the research_policy controls pre-planning intelligence per phase without interactive prompts:
 - `"required"`: plan-phase subagent runs full research and assumptions analysis automatically (no prompts)
@@ -280,7 +280,7 @@ Spawn a subagent (via Task tool) that:
 
 Wait for completion. Then verify TASKS.md was created:
 ```bash
-ls .bee/specs/*/phases/{NN}-*/TASKS.md 2>/dev/null
+ls {spec_path}/phases/{NN}-*/TASKS.md 2>/dev/null
 ```
 
 If TASKS.md not found (plan-phase failed):
@@ -414,7 +414,9 @@ After each phase completes (and before starting the next), check if the just-com
 
 After all phases in range have been processed:
 
-If at least one phase was executed in this run, run a final review:
+Read `config.ship.final_review` from config.json (default: `true`). If `false`, skip the final review and proceed to Step 5.
+
+If at least one phase was executed in this run AND `config.ship.final_review` is `true`, run a final review:
 - Read `config.ship.max_review_iterations` from config.json (default: 3). Store as `$MAX_REVIEW_ITERATIONS`.
 - Spawn a subagent that reads `plugins/bee/commands/review-implementation.md` and follows its instructions
 - Model: if `$IMPLEMENTATION_MODE` is "economy", pass `model: "sonnet"`. Otherwise omit model (inherit parent).

@@ -9,7 +9,7 @@ Read these files using the Read tool:
 - `.bee/STATE.md` -- if not found: NOT_INITIALIZED
 - `.bee/config.json` -- if not found: use `{}`
 
-Read `config.implementation_mode` and store as `$IMPL_MODE`. If not set, defaults to `"quality"`. Valid values: `"economy"`, `"quality"`, `"premium"`.
+Read `config.implementation_mode` and store as `$IMPLEMENTATION_MODE`. If not set, defaults to `"premium"`. Valid values: `"economy"`, `"quality"`, `"premium"`.
 
 ## Instructions
 
@@ -27,7 +27,7 @@ Do NOT proceed. Stop here.
 - Extract the slug from the arguments (e.g., `--resume my-bug-slug` -> `my-bug-slug`)
 - Look for `.bee/debug/sessions/{slug}/state.json` first (new format)
 - If not found, fall back to `.bee/debug/{slug}.md` (legacy format)
-- If found in new format: load state.json, set `$SESSION_DIR` to `.bee/debug/sessions/{slug}`, set `$DEBUG_FILE` to `.bee/debug/sessions/{slug}/state.json`, set `$REPORT_FILE` to `.bee/debug/sessions/{slug}/report.md`, then check for forensics source (below) before proceeding to Step 5
+- If found in new format: load state.json, set `$SESSION_DIR` to `.bee/debug/sessions/{slug}`, set `$DEBUG_FILE` to `.bee/debug/sessions/{slug}/state.json`, set `$REPORT_FILE` to `.bee/debug/sessions/{slug}/report.md`. Also populate symptom variables from state.json: `$DESCRIPTION = state.symptoms.description`, `$EXPECTED = state.symptoms.expected`, `$ACTUAL = state.symptoms.actual`, `$ERRORS = state.symptoms.errors`, `$TIMELINE = state.symptoms.timeline`, `$REPRODUCTION = state.symptoms.reproduction`. Then check for forensics source (below) before proceeding to Step 5
 - If found in legacy format: read the debug file, set `$DEBUG_FILE` to `.bee/debug/{slug}.md`, proceed to Step 5 (spawn debug-investigator with existing debug file path)
 - If not found in either location: tell user "No debug session found for slug '{slug}'." and stop.
 
@@ -242,14 +242,14 @@ suggested_fix: pending
 
 Build the investigation prompt with symptoms, session paths, and mode.
 
-**Model selection:** Read `$IMPL_MODE` from config:
-- If `$IMPL_MODE` is `"economy"`: pass `model: "sonnet"`
-- If `$IMPL_MODE` is `"quality"` or `"premium"`: omit model parameter (inherit parent model)
+**Model selection:** Read `$IMPLEMENTATION_MODE` from config:
+- If `$IMPLEMENTATION_MODE` is `"economy"`: pass `model: "sonnet"`
+- If `$IMPLEMENTATION_MODE` is `"quality"` or `"premium"`: omit model parameter (inherit parent model)
 
 ```
 Task(
   subagent_type="bee:debug-investigator",
-  {$IMPL_MODE == "economy" ? 'model: "sonnet",' : ''}
+  {$IMPLEMENTATION_MODE == "economy" ? 'model: "sonnet",' : ''}
   description="Debug: {$DESCRIPTION}",
   prompt="
     Investigate this bug systematically.
@@ -399,7 +399,7 @@ Use the same model selection as Step 5.
 ```
 Task(
   subagent_type="bee:debug-investigator",
-  {$IMPL_MODE == "economy" ? 'model: "sonnet",' : ''}
+  {$IMPLEMENTATION_MODE == "economy" ? 'model: "sonnet",' : ''}
   description="Debug (continuation): {$DESCRIPTION}",
   prompt="
     Continue investigating this bug.

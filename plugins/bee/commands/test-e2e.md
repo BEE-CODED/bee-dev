@@ -41,7 +41,7 @@ Check `$ARGUMENTS`:
 
 ### Step 3: Research and Plan
 
-**3a. Read the Playwright skill** from `skills/testing/playwright/SKILL.md` for conventions (POM, fixtures, selectors, assertions).
+**3a. Apply Playwright skill conventions** (already loaded in the Current State preamble above — POM, fixtures, selectors, assertions). Do NOT re-read the skill file.
 
 **3b. Understand the feature:**
 - If spec is active: read `spec.md` to understand the feature's user stories and requirements

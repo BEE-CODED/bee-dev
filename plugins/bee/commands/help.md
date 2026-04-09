@@ -19,7 +19,7 @@ Parse `$ARGUMENTS`:
 
 Use the Glob tool to discover all files matching `plugins/bee/commands/*.md`. For each file, read the frontmatter to extract the `description` field.
 
-Display commands grouped into these categories. For each command, show its name and description from frontmatter. Format as:
+Display commands grouped into these categories. For each command, show its name and description from frontmatter. Commands with hardcoded descriptions below (debug, forensics, health, workspace) use those static descriptions intentionally — do NOT read frontmatter for those. All other `{description}` placeholders must be substituted from frontmatter. Format as:
 
 ```
 BeeDev Command Reference

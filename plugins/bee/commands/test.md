@@ -61,11 +61,11 @@ Display to user: "Starting testing of Phase {N}: {phase-name}..."
    - Phase name: `{phase_name}`
    - Instruction: "Generate manual test scenarios for this phase. Read the spec, TASKS.md, and implementation files. Write TESTING.md to the phase directory."
 
-2. **Model selection for test-planner:** Read `config.implementation_mode` from `.bee/config.json` (defaults to `"quality"` if absent). Scenario generation is structured work.
+2. **Model selection for test-planner:** Read `config.implementation_mode` from `.bee/config.json` (defaults to `"premium"` if absent). Scenario generation is structured work.
 
    **Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model).
 
-   **Economy or Quality mode** (default): Pass `model: "sonnet"`.
+   **Economy or Quality mode**: Pass `model: "sonnet"`.
 
    Spawn the `test-planner` agent via Task tool with the resolved model setting and the context packet above. Wait for it to complete.
 

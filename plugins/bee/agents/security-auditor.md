@@ -60,13 +60,15 @@ You audit the ENTIRE codebase, not just recent changes. Scan systematically in t
 - Look for information leakage in error messages
 - Check for verbose logging of sensitive data
 
-### Phase E: Infrastructure Security
+### Phase E: Infrastructure & Network Security
 - Check CORS configuration (wildcard origins, credentials with wildcard)
 - Check rate limiting on auth endpoints (login, register, password reset)
 - Check file upload handling (type validation, size limits, storage location)
 - Check HTTPS enforcement (redirect HTTP to HTTPS, HSTS headers)
 - Check CSP headers
 - Verify dependency versions against known CVEs using `npm audit` or `composer audit` where available
+- **SSRF (Server-Side Request Forgery):** Find all places the server makes outbound HTTP requests with user-influenced URLs (webhook URLs, image proxy, OAuth callbacks, URL preview/unfurl). Verify URL validation (allowlist domains, block internal IPs 127.0.0.1/10.x/172.16.x/192.168.x). SSRF allows attackers to reach internal services.
+- **Insecure deserialization:** Check for deserialization of untrusted input (unserialize, JSON.parse on raw user data without schema validation). Especially in cookies, JWT payloads, or message queue consumers.
 
 ## 4. Output
 

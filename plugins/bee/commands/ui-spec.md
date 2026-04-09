@@ -65,8 +65,8 @@ Store the selected phase identifier as `$TARGET_PHASE`.
 Read the target phase's artifacts to understand what is being built:
 
 1. **TASKS.md** -- the execution contract for the phase:
-   - `.bee/specs/{spec}/phases/{phase}/TASKS.md`
-   - Use Glob to discover: `Glob .bee/specs/*/phases/*/TASKS.md`
+   - Use the resolved `$TARGET_PHASE` from Step 2 to construct the path directly: `.bee/specs/{spec}/phases/{NN}-{phase-slug}/TASKS.md`
+   - If the phase number is known, scope the Glob: `Glob .bee/specs/*/phases/{NN}-*/TASKS.md`
 
 2. **spec.md** -- the feature specification (if it exists):
    - `.bee/specs/{spec}/spec.md`

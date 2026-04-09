@@ -42,11 +42,10 @@ Display: "Analyzing behavioral patterns. This reads git history and session arti
 ### Step 3: Gather Evidence
 
 Read these sources (skip any that don't exist):
-- `git log --oneline -50` (commit patterns, message style)
+- `git log --format="%H %ai %s" -50` (commit patterns, message style, and time patterns in a single call)
 - `.bee/user.md` (existing preferences)
 - `.bee/notes/*.md` via Glob (note patterns)
 - `.bee/config.json` (configuration choices)
-- `git log --format="%H %ai" -20` (commit time patterns)
 
 ### Step 4: Profile 8 Dimensions
 

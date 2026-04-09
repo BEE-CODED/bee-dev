@@ -23,7 +23,7 @@ Detect invocation path from `$ARGUMENTS`:
 
 1. **`--pre-commit` path:** Review staged changes only. Run `git diff --cached --name-only` to get files. No `.bee/` required. Filter to source files only (exclude lock files, generated files, `.bee/` directory files).
 
-2. **`--phase N` path (post-phase):** Review a specific phase's files. Requires `.bee/STATE.md` with the phase in EXECUTED+ status. Read TASKS.md for the phase to identify files created/modified. If phase not found or not in EXECUTED+ status, tell user and stop.
+2. **`--phase N` path (post-phase):** Review a specific phase's files. Requires `.bee/STATE.md` with the phase in EXECUTED+ status. Read TASKS.md for the phase to identify files created/modified. If phase not found or not in EXECUTED+ status, tell user and stop. **Empty file guard:** After extracting the file list from TASKS.md, filter to source files only. If the resulting list is empty, display: "Phase {N} has no source files in TASKS.md. Nothing to review." and stop.
 
 3. **`--cross-phase N-M` path:** Review files across phases N through M. Requires `.bee/STATE.md`. Collect all files from TASKS.md for each phase in the range. Phases must exist and have EXECUTED+ status.
 
@@ -66,7 +66,7 @@ Read `.bee/config.json` (or auto-detect from manifest files for external repos):
 - Fall back to auto-detect from package.json/composer.json at project root or target path
 - If no stack detected, proceed without stack-specific agents
 
-Read `config.implementation_mode` and store as `$IMPL_MODE`. If not set, defaults to `"quality"`.
+Read `config.implementation_mode` and store as `$IMPLEMENTATION_MODE`. If not set, defaults to `"premium"`.
 
 **Context Cache (read once, pass to all agents):**
 
@@ -158,13 +158,13 @@ Dispatch plan: {total_agents} agent instances across {N} segments
 
 ### Step 6: Dispatch Review Agents
 
-Spawn agents in parallel batches per `$IMPL_MODE`:
+Spawn agents in parallel batches per `$IMPLEMENTATION_MODE`:
 
 **Economy mode:** Spawn agents sequentially per segment (one segment at a time, agents within segment are parallel). Pass `model: "sonnet"` for all agents.
 
-**Quality mode (default):** Spawn ALL agents for ALL segments in parallel (single batch). Omit model parameter (inherit parent). Maximum concurrent agents: 15. If more agents needed, batch into groups of 15.
+**Quality mode:** Spawn ALL agents for ALL segments in parallel (single batch). Omit model parameter (inherit parent). Maximum concurrent agents: 15. If more agents needed, batch into groups of 15.
 
-**Premium mode:** Same as quality but with higher concurrent limit (25) and secondary agents always included.
+**Premium mode (default):** Same as quality but with higher concurrent limit (25) and secondary agents always included.
 
 Model tier per agent:
 
@@ -352,11 +352,11 @@ AskUserQuestion(
 
 ### Implementation Mode Delegation
 
-The `$IMPL_MODE` (stored as `implementation_mode` in `.bee/config.json`) affects agent dispatch behavior:
+The `$IMPLEMENTATION_MODE` (stored as `implementation_mode` in `.bee/config.json`) affects agent dispatch behavior:
 
 - **Economy:** Sequential segment processing, sonnet for all agents, primary agents only
-- **Quality (default):** Parallel all-at-once dispatch, mixed model tiers, primary + secondary agents
-- **Premium:** Parallel with higher concurrency (25), all agents opus tier, secondary agents always included
+- **Quality:** Parallel all-at-once dispatch, mixed model tiers, primary + secondary agents
+- **Premium (default):** Parallel with higher concurrency (25), all agents opus tier, secondary agents always included
 
 ### Handling Multi-Stack Projects
 

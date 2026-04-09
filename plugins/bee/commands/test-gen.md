@@ -9,7 +9,7 @@ Read these files using the Read tool:
 - `.bee/STATE.md` -- if not found: NOT_INITIALIZED
 - `.bee/config.json` -- if not found: use `{}`
 
-Read `config.implementation_mode` and store as `$IMPL_MODE`. If not set, defaults to `"quality"`. Valid values: `"economy"`, `"quality"`, `"premium"`.
+Read `config.implementation_mode` and store as `$IMPLEMENTATION_MODE`. If not set, defaults to `"premium"`. Valid values: `"economy"`, `"quality"`, `"premium"`.
 
 ## Instructions
 
@@ -83,14 +83,14 @@ Build the context packet for the testing-auditor agent:
 - **Config.json path:** `.bee/config.json`
 - **Instruction:** "MODE: generate -- Map acceptance criteria from TASKS.md to existing tests. For UNCOVERED criteria, generate minimal behavioral tests. Run generated tests (max 3 debug iterations per test). ESCALATE implementation bugs -- do NOT fix implementation code. Report results with F-TEST-NNN findings and Requirement Coverage Map."
 
-**Model selection:** Use `$IMPL_MODE` from Current State:
-- If `$IMPL_MODE` is `"economy"`: pass `model: "sonnet"`
-- If `$IMPL_MODE` is `"quality"` or `"premium"`: omit model parameter (inherit parent model — generate mode writes code and debugs, requiring full reasoning capability)
+**Model selection:** Use `$IMPLEMENTATION_MODE` from Current State:
+- If `$IMPLEMENTATION_MODE` is `"economy"`: pass `model: "sonnet"`
+- If `$IMPLEMENTATION_MODE` is `"quality"` or `"premium"`: omit model parameter (inherit parent model — generate mode writes code and debugs, requiring full reasoning capability)
 
 ```
 Task(
   subagent_type="bee:testing-auditor",
-  {$IMPL_MODE == "economy" ? 'model: "sonnet",' : ''}
+  {$IMPLEMENTATION_MODE == "economy" ? 'model: "sonnet",' : ''}
   description="Test Gen: Phase {$PHASE_NUM}",
   prompt="
     MODE: generate -- Map acceptance criteria from TASKS.md to existing tests.
@@ -110,9 +110,13 @@ Task(
 
 Wait for agent completion.
 
-### Step 7: Present Results
+### Step 7: Present Results and Persist
 
-After the testing-auditor agent completes, display a summary:
+After the testing-auditor agent completes:
+
+1. **Write the coverage map to disk:** Save the Requirement Coverage Map and escalated findings to `{phase_directory}/TEST-GEN.md`. This ensures the results survive session crashes and can be referenced later.
+
+2. **Display a summary:**
 
 ```
 Test Generation Complete for Phase {N}: {phase-name}
@@ -124,6 +128,7 @@ Tests generated: {count}
 Tests passing: {count}
 Implementation bugs escalated: {count}
 
+Results saved to: {phase_directory}/TEST-GEN.md
 Note: Generated test files are uncommitted. Review them before committing.
 ```
 

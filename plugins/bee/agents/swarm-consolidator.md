@@ -41,19 +41,17 @@ For findings with identical descriptions but different files, check if they desc
 
 After deduplication, score each finding based on how many agents independently flagged it:
 
-| Independent Agents | Consensus | Confidence Effect |
-|-------------------|-----------|-------------------|
-| 1 agent | 1/N | No change -- original severity applies |
-| 2 agents | 2/N | Confidence boost -- if Medium, consider escalating to High |
-| 3+ agents | 3+/N | Strong consensus -- escalate severity by one level (Medium->High, High->Critical) unless already Critical |
+| Independent Agents | Consensus | Effect |
+|-------------------|-----------|--------|
+| 1 agent | 1/N | Original severity + original confidence |
+| 2 agents | 2/N | Original severity + HIGH confidence (multi-agent agreement confirms the finding) |
+| 3+ agents | 3+/N | Original severity + HIGH confidence + mark as "strongly confirmed" |
 
 N = total number of agents that reviewed the segment containing this finding.
 
-Escalation rules:
-- Medium -> High: when 2+ agents flagged the same issue independently (not just overlapping line ranges -- the descriptions must address the same concern)
-- High -> Critical: when 3+ agents flagged the same issue independently
-- Critical stays Critical (no further escalation)
-- Record original severity and escalated severity in the finding
+**Severity stays the same.** Multi-agent agreement means the finding is MORE CONFIRMED, not MORE SEVERE. A Medium bug reported by 3 agents is still a Medium bug — it's just definitely real. Severity reflects impact on the system, not how many agents noticed it.
+
+Record consensus count in the finding: `Consensus: 3/5 (strongly confirmed)`
 
 ## 4. Evidence Chain Construction
 

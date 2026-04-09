@@ -74,11 +74,13 @@ The first entry in the output is the main worktree. Extract its path from the fi
 
 Store as `$MAIN_PROJECT_PATH`.
 
-**Nested worktree guard:** Compare the current working directory against `$MAIN_PROJECT_PATH`. If the current directory is NOT within `$MAIN_PROJECT_PATH` (i.e., the user is inside a workspace worktree), warn:
+**Nested worktree guard:** Compare the current working directory against `$MAIN_PROJECT_PATH`. If the current directory is NOT within `$MAIN_PROJECT_PATH` (i.e., the user is inside a workspace worktree) AND the parsed subcommand is NOT `status`:
 
-"You are inside a workspace worktree. Workspace commands must be run from the main project at `{$MAIN_PROJECT_PATH}`. Switch there first, or run `cd {$MAIN_PROJECT_PATH}` before retrying."
+Warn: "You are inside a workspace worktree. Workspace commands must be run from the main project at `{$MAIN_PROJECT_PATH}`. Switch there first, or run `cd {$MAIN_PROJECT_PATH}` before retrying."
 
 Do NOT proceed. Stop here.
+
+(The `status` subcommand is exempt — it is designed to work from inside a workspace to show that workspace's details.)
 
 All subsequent references to `workspaces.json` use `$MAIN_PROJECT_PATH/.bee/workspaces.json`.
 
@@ -352,7 +354,7 @@ Find the workspace by name in workspaces.json. If not found: "Workspace '{name}'
 
 If workspace status is `completed`: "Workspace '{name}' has already been completed." Stop.
 If workspace status is `stale`: "Workspace '{name}' is stale (directory no longer exists). Remove it from workspaces.json with `/bee:workspace list`." Stop.
-If workspace status is `conflicted`: Jump directly to the Conflict Recovery section (Step 4g) — skip Steps 4c through 4f.
+If workspace status is `conflicted`: Jump directly to the **Conflict recovery** paragraph WITHIN Step 4g (skip the merge command at the top of 4g — it already ran and produced the conflict). Skip Steps 4c through 4f.
 
 **4c. Check for uncommitted changes in workspace:**
 
@@ -849,7 +851,7 @@ AskUserQuestion(
 )
 ```
 
-**After `list`, `switch`, or `status`:**
+**After `list`, `switch`, `status`, `check`, or `dashboard`:**
 
 ```
 AskUserQuestion(

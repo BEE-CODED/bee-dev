@@ -115,11 +115,11 @@ Wait for the user to confirm they are ready to proceed (they may need time to ad
 
 ### Step 5: Research Codebase
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
 **Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
+**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
 
 Spawn the `researcher` agent via Task tool with the model determined above. Provide this context:
 
@@ -280,9 +280,9 @@ Use AskUserQuestion to ask about implementation mode. Store the user's choice as
 question: "How should this feature be implemented?"
 header: "Implementation Mode"
 options:
-  - "Quality mode (default) -- opus for implementation and review, sonnet for scanning" → $IMPLEMENTATION_MODE = "quality"
+  - "Premium mode (default) -- opus for everything (maximum quality)" → $IMPLEMENTATION_MODE = "premium"
+  - "Quality mode -- opus for implementation and review, sonnet for scanning" → $IMPLEMENTATION_MODE = "quality"
   - "Economy mode -- sonnet for everything (faster, lower cost)" → $IMPLEMENTATION_MODE = "economy"
-  - "Premium mode -- opus for everything (maximum quality)" → $IMPLEMENTATION_MODE = "premium"
   - "Custom"
 ```
 
@@ -358,11 +358,11 @@ Display to user: "Requirements written to `{spec_folder}/requirements.md`"
 
 ### Step 9: Spawn spec-writer Agent
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Use `$IMPLEMENTATION_MODE` (set by Phase 5 of the discovery conversation). If not set, read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
-**Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
+**Premium mode** (`$IMPLEMENTATION_MODE: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
+**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
 
 Spawn the `spec-writer` agent as a subagent with the model determined above. Provide the following context:
 
@@ -385,11 +385,11 @@ After the spec-writer completes, validate the generated spec for completeness an
 
 #### 9.5.1: Spawn spec-reviewer
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Use `$IMPLEMENTATION_MODE` (set by Phase 5). If not set, read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
-**Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
+**Premium mode** (`$IMPLEMENTATION_MODE: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
+**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
 
 Spawn the `spec-reviewer` agent via Task tool with the model determined above. Provide the following context:
 
@@ -509,7 +509,7 @@ After spec review passes and implementation mode is saved, generate ROADMAP.md t
 
 7. Display: "ROADMAP.md generated with {N} requirements mapped across {M} phases."
 
-After generating ROADMAP.md, proceed to **Step 11: Update STATE.md**. (Note: If this step was reached from the Amend Flow, return to Step 10's caller — do NOT re-enter Step 10 from here.)
+After generating ROADMAP.md, proceed to **Step 11: Update STATE.md**. (Note: If this step was reached from the Amend Flow, proceed directly to Step 11 — do NOT re-enter Step 10 from here.)
 
 ### Step 10: Amend Flow
 
@@ -549,8 +549,6 @@ After all steps complete successfully (in either the new or amend flow), update 
    - Result: "Spec created" (or "Spec amended") with the spec name
 
 ### Step 12: Completion Summary
-
-Display the following summary to the user:
 
 Display the following summary to the user:
 

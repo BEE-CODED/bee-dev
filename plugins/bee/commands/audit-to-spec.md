@@ -11,7 +11,7 @@ Read these files using the Read tool:
 - `.bee/AUDIT-REPORT.md` — if not found: NO_AUDIT
 - `.bee/audit-findings.json` — if not found: NO_AUDIT_JSON
 
-Read `config.implementation_mode` and store as `$IMPL_MODE`. If not set, defaults to `"quality"`.
+Read `config.implementation_mode` and store as `$IMPLEMENTATION_MODE`. If not set, defaults to `"premium"`.
 
 ## Instructions
 

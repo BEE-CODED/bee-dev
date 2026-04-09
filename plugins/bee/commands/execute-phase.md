@@ -109,11 +109,13 @@ This checkpoint-based resume is the crash recovery mechanism. If the session end
   "review": null
 }
 ```
-If the file already exists (re-execution), read the existing file first. Preserve the `planning` and `review` sections. Only reset the `execution` section.
+If the file already exists (re-execution), read the existing file first. Preserve the `planning` and `review` sections. Only reset the `execution` section. **Important:** Save the existing `execution.failure_types` values before resetting — they will be used to initialize `$FAILURE_TYPE_COUNTS` in Step 5 so cumulative failure data survives crash+resume.
 
 Metrics writes happen at phase boundaries only (start and end), NOT per-wave intermediate writes. This avoids metrics overhead during execution. Per-wave durations are tracked in memory and written at completion.
 
 ### Step 5: Execute Waves
+
+Initialize `$FAILURE_TYPE_COUNTS` before entering the wave loop: if this is a re-execution and Step 4b preserved existing `execution.failure_types` values, use those as starting counts; otherwise initialize to `{ transient: 0, persistent: 0, architectural: 0 }`.
 
 For each wave starting from the resume point, repeat the following:
 
@@ -173,9 +175,9 @@ Include in each context packet:
 
   Store the learnings content as `$PHASE_LEARNINGS` for reuse across all context packets in the phase (read once, inject into every task).
 
-**Model tier resolution (implementation_mode):** Read `config.implementation_mode` from `.bee/config.json` (defaults to `"quality"` if the field is absent). This determines which model tier the implementer agents receive:
+**Model tier resolution (implementation_mode):** Read `config.implementation_mode` from `.bee/config.json` (defaults to `"premium"` if the field is absent). This determines which model tier the implementer agents receive:
 - **economy** mode: pass `model: "sonnet"` -- faster and cheaper, suitable when tasks are straightforward or the user opts for speed over depth
-- **quality or premium** mode (default `"quality"`, or `"premium"`): omit the model parameter (agents inherit the parent model) -- full reasoning capability for production code
+- **quality or premium** mode (default): omit the model parameter (agents inherit the parent model) -- full reasoning capability for production code
 
 Store the resolved model tier for use in Step 5b when spawning agents.
 
@@ -225,7 +227,7 @@ As each implementer agent completes, process its result:
    | **Architectural** | "schema mismatch", "missing migration", "missing dependency", "no such table", "column does not exist", "module not found", "Cannot find module", "import error", "dependency conflict" | 1 attempt then escalate to user decision |
    | **Persistent** | All other failures (logic error, assertion failure, test failure, wrong approach, type error) | Standard 3-attempt budget |
 
-   If the error matches multiple classifications, use the FIRST match in priority order: Transient > Architectural > Persistent. Increment the in-memory `$FAILURE_TYPE_COUNTS` counter for the matched type (initialized to `{ transient: 0, persistent: 0, architectural: 0 }` at the start of Step 5).
+   If the error matches multiple classifications, use the FIRST match in priority order: Transient > Architectural > Persistent. Increment the in-memory `$FAILURE_TYPE_COUNTS` counter for the matched type. Initialize `$FAILURE_TYPE_COUNTS` at the start of Step 5: if resuming a re-execution and Step 4b preserved existing `execution.failure_types` values, use those as the starting counts; otherwise initialize to `{ transient: 0, persistent: 0, architectural: 0 }`.
 
 3. **Apply failure-type-specific retry strategy:**
 

@@ -22,9 +22,11 @@ Read the stack skill file at `skills/stacks/laravel-inertia-vue/SKILL.md`. This 
 
 Use these conventions to understand what "correct" looks like for each file type in this stack.
 
-### Step 2: Read CLAUDE.md Overrides
+### Step 2: Read CLAUDE.md + CONTEXT.md
 
-Read `CLAUDE.md` at the project root if it exists. CLAUDE.md takes precedence over the stack skill -- when both define a convention for the same concern, the CLAUDE.md version overrides the stack skill. CLAUDE.md captures project-specific decisions, domain knowledge, and refined patterns that may narrow or extend the general stack conventions.
+Read `CLAUDE.md` at the project root if it exists. CLAUDE.md takes precedence over the stack skill -- when both define a convention for the same concern, the CLAUDE.md version overrides the stack skill.
+
+Read `.bee/CONTEXT.md` if it exists. This contains codebase patterns discovered by the context-builder agent. Use these as the baseline for "what this project does" when comparing against new code. CONTEXT.md patterns supplement the stack skill with project-specific conventions.
 
 If CLAUDE.md does not exist, proceed with stack skill conventions only.
 
@@ -69,7 +71,7 @@ Compare the reviewed code against these established patterns. Cross-reference ea
 
 ## Deep Analysis Requirements
 
-- **Compare against CONTEXT.md patterns.** Read `.bee/CONTEXT.md` first. Flag deviations only when they break consistency or could confuse other developers — not for stylistic preference.
+- **Compare against CONTEXT.md patterns.** CONTEXT.md was loaded in Step 2. Flag deviations only when they break consistency or could confuse other developers — not for stylistic preference.
 - **Trace consumer impact.** When a pattern deviation is found, check if other files depend on the pattern being consistent (e.g., shared imports, naming conventions used in dynamic lookups).
 - **Verify test patterns.** Check if test files follow the same patterns as the files they test (naming, structure, assertion style).
 

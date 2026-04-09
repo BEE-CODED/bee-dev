@@ -51,7 +51,7 @@ Check these guards in order. Stop immediately if any fails:
 
 1. Read the Phases table from STATE.md. Extract all phase rows: phase number, phase name, Status, Plan column, Plan Review column.
 2. Read phases.md from the Spec Context above to get full phase names and descriptions.
-3. Build a work list of phases in phase order (ascending by phase number). For each phase, classify its state:
+3. Build a work list of phases in phase order (ascending NUMERICALLY by phase number — not lexicographically. Decimal phases sort after their parent: 1, 2, 2.1, 2.2, 3, 3.1, 4). For each phase, classify its state:
    - **needs_planning:** Plan column is empty (not "Yes") -- needs the full three-pass planning pipeline
    - **needs_review:** Plan column is "Yes" but Plan Review column is empty -- skip planning, go directly to plan review
    - **complete:** Plan column is "Yes" AND Plan Review column is non-empty -- fully skip this phase
@@ -83,11 +83,11 @@ Skip this step if the phase is classified as "needs_review" (directory already e
 
 Skip this step if the phase is classified as "needs_review".
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
 **Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
+**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
 
 Spawn the `phase-planner` agent as a subagent with the model determined above. Provide the following context:
 
@@ -111,11 +111,11 @@ If TASKS.md was not created, tell the user the planner failed for phase {N} and 
 
 Skip this step if the phase is classified as "needs_review".
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
 **Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
+**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
 
 After the phase-planner completes, spawn the `researcher` agent as a subagent with the model determined above. Provide the following context:
 
@@ -134,11 +134,11 @@ If no research notes were added, warn but continue (research enrichment is valua
 
 Skip this step if the phase is classified as "needs_review".
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
 **Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
+**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
 
 Re-spawn the `phase-planner` agent as a subagent with the model determined above. Provide the following context:
 
@@ -249,11 +249,11 @@ Read TASKS.md to understand the planned tasks. Load the stack skill dynamically 
 
 **3f.2: Spawn all four agents in parallel**
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
 **Economy mode** (`implementation_mode: "economy"`): Pass `model: "sonnet"` for all agents.
 
-**Quality or Premium mode** (default `"quality"`, or `"premium"`): Omit the model parameter for all agents (they inherit the parent model).
+**Quality or Premium mode** (default): Omit the model parameter for all agents (they inherit the parent model).
 
 Spawn all four agents via four Task tool calls in a SINGLE message (parallel execution).
 
@@ -374,11 +374,11 @@ Review ALL phase plans simultaneously. Look for potential bugs that span multipl
 
 **4c. Spawn both agents in parallel**
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
 **Economy mode** (`implementation_mode: "economy"`): Pass `model: "sonnet"` for both agents.
 
-**Quality or Premium mode** (default `"quality"`, or `"premium"`): Omit the model parameter for both agents (they inherit the parent model).
+**Quality or Premium mode** (default): Omit the model parameter for both agents (they inherit the parent model).
 
 Spawn both agents via two Task tool calls in a SINGLE message (parallel execution).
 

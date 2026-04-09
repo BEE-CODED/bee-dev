@@ -139,7 +139,7 @@ Read `config.stacks` from `config.json`. Build the stack list:
 - If `config.stacks` is absent but `config.stack` exists (legacy v2 config): create a single-entry list: `[{ name: config.stack, path: "." }]`.
 - If neither exists: stop with error "No stack configured in config.json."
 
-Also read `config.implementation_mode` (defaults to `"quality"` if absent).
+Also read `config.implementation_mode` (defaults to `"premium"` if absent).
 
 **4.1b: Build shared context base**
 
@@ -340,7 +340,7 @@ In ad-hoc mode, the total number of agents is `3 x N` where N is the number of s
 1. In full spec mode: spawn the global plan-compliance-reviewer first (single Task tool call, `model: "sonnet"`). Wait for it to complete.
 2. For each stack in order: spawn that stack's per-stack agents (bug-detector, pattern-reviewer, stack-reviewer) via Task tool calls in a single message (parallel within the stack, all `model: "sonnet"`). Wait for all to complete before proceeding to the next stack.
 
-**Quality or Premium mode** (default `"quality"`, or `"premium"`): Spawn ALL agents via Task tool calls in a SINGLE message (parallel execution). Omit the model parameter for all agents (they inherit the parent model) -- quality/premium mode uses the stronger model for deeper, more thorough review analysis. Wait for all agents to complete.
+**Quality or Premium mode** (default): Spawn ALL agents via Task tool calls in a SINGLE message (parallel execution). Omit the model parameter for all agents (they inherit the parent model) -- quality/premium mode uses the stronger model for deeper, more thorough review analysis. Wait for all agents to complete.
 
 Wait for all agents to complete before proceeding.
 

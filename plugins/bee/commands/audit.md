@@ -10,7 +10,7 @@ Read these files using the Read tool:
 - `.bee/config.json` — if not found: use `{}`
 - `.bee/PROJECT.md` — if not found: skip
 
-Read `config.implementation_mode` and store as `$IMPL_MODE`. If not set, defaults to `"quality"`.
+Read `config.implementation_mode` and store as `$IMPLEMENTATION_MODE`. If not set, defaults to `"premium"`.
 
 ## Instructions
 
@@ -79,15 +79,15 @@ Before spawning review agents, expand the file scope:
 
 ### Step 4: Run Audit Agents
 
-Spawn audit agents in parallel batches. The order and grouping depends on `$IMPL_MODE`:
+Spawn audit agents in parallel batches. The order and grouping depends on `$IMPLEMENTATION_MODE`:
 
 **Economy mode:** Run agents sequentially (one at a time) to minimize token usage. Use sonnet for all agents.
 
-**Quality mode (default):** Run agents in two parallel batches:
+**Quality mode:** Run agents in two parallel batches:
 - **Batch 1** (spawn all 8 at once): `security-auditor`, `database-auditor`, `error-handling-auditor`, `architecture-auditor`, `api-auditor`, `frontend-auditor`, `performance-auditor`, `testing-auditor`
 - **Batch 2** (after batch 1 completes): `audit-bug-detector`, `integration-checker` (run last because they benefit from understanding the full codebase)
 
-**Premium mode:** Run ALL 10 agents in parallel (single batch), including `audit-bug-detector` and `integration-checker`.
+**Premium mode (default):** Run ALL 10 agents in parallel (single batch), including `audit-bug-detector` and `integration-checker`.
 
 For each agent spawn, provide this context:
 ```
@@ -240,7 +240,7 @@ AskUserQuestion(
 
 ### Implementation Mode Delegation
 
-The `$IMPL_MODE` affects which model tier each agent uses:
+The `$IMPLEMENTATION_MODE` affects which model tier each agent uses:
 
 | Agent | Economy | Quality | Premium |
 |-------|---------|---------|---------|

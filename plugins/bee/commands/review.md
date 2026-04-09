@@ -166,7 +166,7 @@ Read `config.stacks` from `config.json`. Build the stack list:
 - If `config.stacks` is absent but `config.stack` exists (legacy v2 config): create a single-entry list: `[{ name: config.stack, path: "." }]`.
 - If neither exists: stop with error "No stack configured in config.json."
 
-Also read `config.implementation_mode` (defaults to `"quality"` if absent).
+Also read `config.implementation_mode` (defaults to `"premium"` if absent).
 
 **4.1b: Build shared context base**
 
@@ -271,7 +271,7 @@ The total number of agents is `(3 x N) + 1` where N is the number of stacks. For
 2. For each stack in order: spawn that stack's 3 per-stack agents (bug-detector, pattern-reviewer, stack-reviewer) via three Task tool calls in a single message (parallel within the stack, all `model: "sonnet"`). Wait for all three to complete before proceeding to the next stack.
 In economy mode with a single stack, this results in the same 4 agents but spawned in two sequential batches instead of one parallel batch.
 
-**Quality or Premium mode** (default `"quality"`, or `"premium"`): Spawn ALL agents (all per-stack agents + the global plan-compliance-reviewer) via Task tool calls in a SINGLE message (parallel execution). Omit the model parameter for all agents (they inherit the parent model) -- quality/premium mode uses the stronger model for deeper, more thorough review analysis. Wait for all agents to complete.
+**Quality or Premium mode** (default): Spawn ALL agents (all per-stack agents + the global plan-compliance-reviewer) via Task tool calls in a SINGLE message (parallel execution). Omit the model parameter for all agents (they inherit the parent model) -- quality/premium mode uses the stronger model for deeper, more thorough review analysis. Wait for all agents to complete.
 
 Wait for all agents to complete before proceeding.
 
@@ -325,6 +325,7 @@ For each pair of findings from different agents, check if they reference the sam
 1. Count total findings, count by severity (critical, high, medium), count by category.
 
 2. If 0 findings after consolidation:
+   - Set `$CLEAN_EXIT = true`
    - Read current STATE.md from disk
    - Set Reviewed column to "Yes ({iteration_counter})" where iteration_counter is the current cumulative iteration count
    - Set Status to REVIEWED
@@ -383,8 +384,8 @@ For each pair of findings from different agents, check if they reference the sam
    - Use the specialist's verdict as the FINAL classification, overriding the validator's uncertain MEDIUM confidence classification
    - If the specialist confirms REAL BUG: the finding stays with verdict REAL BUG
    - If the specialist says FALSE POSITIVE: the finding's verdict becomes FALSE POSITIVE
-   - Record the escalation: append " (Escalated to {source_agent} -- reclassified as {verdict})" to the finding's Validation field in REVIEW.md (e.g., "FALSE POSITIVE (Escalated to bug-detector -- reclassified as FALSE POSITIVE)" or "REAL BUG (Escalated to pattern-reviewer -- reclassified as REAL BUG)")
-   - Display each escalation: "Escalated F-{NNN} to {source_agent} -- reclassified as {verdict}"
+   - Record the escalation: append " (Escalated to finding-validator for second opinion -- reclassified as {verdict})" to the finding's Validation field in REVIEW.md
+   - Display each escalation: "Escalated F-{NNN} for second opinion -- reclassified as {verdict}"
 4. Read current REVIEW.md from disk (fresh read -- another validator batch may have been processed). Update REVIEW.md:
    - Set each finding's Validation field to the final classification:
      - HIGH confidence findings: the validator's verdict (REAL BUG / FALSE POSITIVE / STYLISTIC)
@@ -459,6 +460,7 @@ CRITICAL: Within the same file group, spawn fixers SEQUENTIALLY, one at a time. 
 
 1. If loop mode is NOT enabled: skip to Step 8 (completion)
 2. Track loop iterations separately from the cumulative iteration counter. Initialize `$LOOP_ITERATION = 1` on first entry to Step 7 (do NOT re-initialize on subsequent loops). Increment `$LOOP_ITERATION` on each re-entry. Also increment the cumulative `iteration_counter` (used for STATE.md and REVIEW.md naming).
+   - **Loop cap:** Read `config.review.max_loop_iterations` from config.json (default: 3). If `$LOOP_ITERATION > max_loop_iterations`: display "Max review loop iterations ({max}) reached. Stopping auto-loop." and skip to Step 8 (completion). The user can always re-run `/bee:review --loop` to continue manually.
 3. Display: "Starting re-review (loop iteration {$LOOP_ITERATION}, cumulative iteration {iteration_counter})..."
 
 #### 7.1: Archive current REVIEW.md
@@ -505,6 +507,8 @@ Apply the same consolidation and deduplication logic as Steps 4.3 through 4.5:
 
 After all steps complete (or early exit from clean review):
 
+1. **If `$CLEAN_EXIT` is true** (set by Step 4.6 item 2 — 0 findings path), skip items 1-2 below. STATE.md is already updated. Jump directly to "Update phase metrics with review data."
+
 1. Update STATE.md:
    - Reviewed column: "Yes ({iteration_counter})" where iteration_counter is the cumulative review iteration count (first review = 1, first re-review = 2, etc.)
    - Status: `REVIEWED`
@@ -528,7 +532,7 @@ After all steps complete (or early exit from clean review):
     "high": "{count_from_REVIEW_md}",
     "medium": "{count_from_REVIEW_md}"
   },
-  "false_positive_rate": "{false_positives / total_raw_findings}",
+  "false_positive_rate": "{total_raw_findings > 0 ? false_positives / total_raw_findings : 0}",
   "duration_seconds": "{seconds_from_REVIEW_START_TIME_to_now}"
 }
 ```

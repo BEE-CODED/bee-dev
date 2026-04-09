@@ -28,7 +28,14 @@ Detect mode from the parent command's instructions:
 - **Spec research** (signal: "SPEC RESEARCH MODE" in prompt): Return codebase findings inline. No TASKS.md write.
 - **Ecosystem research** (signal: "ECOSYSTEM RESEARCH MODE" in prompt): Investigate ecosystem patterns for a phase BEFORE tasks exist. Write RESEARCH.md to the phase directory. Follow the Ecosystem Research Workflow below.
 
-Exactly ONE mode must be active. If none detected, default to phase research mode.
+Exactly ONE mode must be active. If multiple signals are present, the FIRST match wins (phase > spec > ecosystem). If none detected, default to phase research mode. The parent command controls which signal is sent — mode detection should be unambiguous in practice.
+
+**Provenance tagging (all modes):** Tag claims in research notes:
+- `[VERIFIED]` — confirmed via Context7 docs or codebase evidence (file:line reference)
+- `[CITED]` — found in codebase as existing pattern (Grep result)
+- `[ASSUMED]` — from training knowledge, not verified against current codebase or docs
+
+If Context7 query fails or times out, downgrade from `[VERIFIED]` to `[ASSUMED]` and note "Context7 unavailable" in the research notes.
 
 ## Research Workflow
 

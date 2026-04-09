@@ -89,11 +89,12 @@ Act on the user's choice. If "Edit the message" is selected, wait for the user's
 
 1. Read TASKS.md to get the list of files created/modified by the phase.
 2. Stage phase-related files selectively:
-   - Stage the spec artifacts: `git add {spec-path}/`
+   - Stage the spec root files: `git add {spec-path}/spec.md {spec-path}/requirements.md {spec-path}/phases.md {spec-path}/ROADMAP.md` (only files that exist)
    - Stage the phase directory: `git add {phase_directory}/`
+   - Stage `.bee/STATE.md`
    - Stage implementation files listed in TASKS.md
    - Present the staged file list to the user: "Staging these files: {list}"
-3. NEVER use `git add -A`, `git add .`, or `git add --all`. Only stage phase-related files.
+3. NEVER use `git add -A`, `git add .`, `git add --all`, or `git add {spec-path}/` (overly broad — stages all phases). Only stage phase-related files.
 4. Run `git commit -m "{message}"`
 5. If commit succeeds: proceed to Step 6.
 6. If commit fails: display the error and suggest resolution. Do NOT retry automatically.

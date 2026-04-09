@@ -33,15 +33,15 @@ If the dynamic context above does NOT contain `NO_EXISTING_CONFIG` (meaning `.be
 - If the config has a `stack` key whose value is a **string** (not an array), it is **v2 format** -- run the migration:
   1. Read the current `stack` string value (e.g. `"nextjs"`).
   2. Replace the `stack` key with `stacks: [{ "name": "<value>", "path": "." }]`.
-  3. Add `"implementation_mode": "quality"` as a top-level field if not already present. Valid values are `"economy"`, `"quality"`, and `"premium"`.
+  3. Add `"implementation_mode": "premium"` as a top-level field if not already present. Valid values are `"economy"`, `"quality"`, and `"premium"`.
   4. Write the updated config back to `.bee/config.json`.
-  6. Show the user a migration summary:
+  5. Show the user a migration summary:
      ```
      Migrated config from v2 to v3:
      - Converted "stack": "<value>" to "stacks": [{ "name": "<value>", "path": "." }]
-     - Added "implementation_mode": "quality"
+     - Added "implementation_mode": "premium"
      ```
-  7. Do NOT touch `.bee/STATE.md`, `.bee/specs/`, or any other state files during migration.
+  6. Do NOT touch `.bee/STATE.md`, `.bee/specs/`, or any other state files during migration.
 - If the config already has a `stacks` key that is an **array**, it is already v3 format -- skip migration silently.
 
 - If the config has root-level `linter` or `testRunner` keys AND the `stacks` entries do NOT have `linter`/`testRunner` fields, run per-stack migration:
@@ -227,7 +227,7 @@ The `stacks` array contains one entry per each confirmed stack-path pair from St
   "stacks": [
     { "name": "{detected_stack}", "path": ".", "linter": "{detected_linter}", "testRunner": "{detected_runner}" }
   ],
-  "implementation_mode": "quality",
+  "implementation_mode": "premium",
   "ci": "{detected_ci}",
   "context7": true,
   "research_policy": "{research_policy}",
@@ -255,6 +255,10 @@ The `stacks` array contains one entry per each confirmed stack-path pair from St
   "autonomous": {
     "discuss": true,
     "auto_approve_confidence": "high"
+  },
+  "adaptive": {
+    "learning": true,
+    "escalation": true
   }
 }
 ```
@@ -266,7 +270,7 @@ The `stacks` array contains one entry per each confirmed stack-path pair from St
     { "name": "laravel-inertia-vue", "path": ".", "linter": "pint", "testRunner": "pest" },
     { "name": "nestjs", "path": "api", "linter": "eslint", "testRunner": "jest" }
   ],
-  "implementation_mode": "quality",
+  "implementation_mode": "premium",
   "ci": "github-actions",
   "context7": true,
   "research_policy": "{research_policy}",
@@ -294,6 +298,10 @@ The `stacks` array contains one entry per each confirmed stack-path pair from St
   "autonomous": {
     "discuss": true,
     "auto_approve_confidence": "high"
+  },
+  "adaptive": {
+    "learning": true,
+    "escalation": true
   }
 }
 ```

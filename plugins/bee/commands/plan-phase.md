@@ -123,7 +123,7 @@ AskUserQuestion(
 
 1. Read phases.md to get the phase description and deliverables for phase {N}
 2. Read ROADMAP.md from the spec folder (if it exists) to get success criteria and requirement IDs for this phase
-3. Read config.implementation_mode from config.json (defaults to "quality" if absent)
+3. Read config.implementation_mode from config.json (defaults to "premium" if absent)
    - Premium mode: Omit model parameter.
    - Economy or Quality mode: Pass model: "sonnet".
 4. Spawn the researcher agent as a subagent with the model determined above. Provide:
@@ -187,7 +187,7 @@ If $RESEARCH_PATH is set (ecosystem research was performed):
 
 #### 2.5.2: Assumptions Analysis
 
-1. Read config.implementation_mode from config.json (defaults to "quality" if absent)
+1. Read config.implementation_mode from config.json (defaults to "premium" if absent)
    - Premium mode: Omit model parameter.
    - Economy or Quality mode: Pass model: "sonnet".
 2. Spawn the assumptions-analyzer agent as a subagent with the model determined above. Provide:
@@ -230,7 +230,7 @@ If $RESEARCH_PATH is set (ecosystem research was performed):
 
 #### 2.5.3: Dependency Health Check
 
-1. Read config.implementation_mode from config.json (defaults to "quality" if absent)
+1. Read config.implementation_mode from config.json (defaults to "premium" if absent)
    - Premium mode: Omit model parameter.
    - Economy or Quality mode: Pass model: "sonnet".
 2. Spawn the dependency-auditor agent as a subagent with the model determined above. Provide:
@@ -273,7 +273,7 @@ If $RESEARCH_PATH is set (ecosystem research was performed):
    - If "required": run automatically.
 
 2. If running:
-   a. Read config.implementation_mode from config.json (defaults to "quality" if absent).
+   a. Read config.implementation_mode from config.json (defaults to "premium" if absent).
       - Premium mode: Omit model parameter.
       - Economy or Quality mode: Pass model: "sonnet".
    b. Spawn the testing-auditor agent as a subagent with the model determined above. Provide:
@@ -343,11 +343,11 @@ Check for active LEARNINGS.md files from prior phases to generate predictive war
 
 ### Step 3: Plan What -- Spawn phase-planner Agent (Pass 1)
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
 **Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
+**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
 
 Spawn the `phase-planner` agent as a subagent with the model determined above. Provide the following context:
 
@@ -379,11 +379,11 @@ If TASKS.md was not created, tell the user the planner failed and stop.
 
 ### Step 4: Plan How -- Spawn researcher Agent
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
 **Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
+**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
 
 After the phase-planner completes, spawn the `researcher` agent as a subagent with the model determined above. Provide the following context:
 
@@ -403,11 +403,11 @@ If no research notes were added, warn the user but continue (research enrichment
 
 ### Step 5: Plan Who -- Spawn phase-planner Agent (Pass 2)
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent).
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
 
 **Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
 
-**Economy or Quality mode** (default): Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
+**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
 
 Re-spawn the `phase-planner` agent as a subagent with the model determined above. Provide the following context:
 
@@ -425,7 +425,7 @@ If no wave sections were added, tell the user the wave assignment failed and sto
 
 After wave assignment completes, run a mandatory plan review. Four specialized agents review the plan against the spec to catch coverage gaps, pattern deviations, potential bugs, and stack best practice issues before the developer sees the plan.
 
-Read `config.implementation_mode` from config.json (defaults to `"quality"` if absent). This determines the model tier for the four review agents spawned in Step 6.2.
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent). This determines the model tier for the four review agents spawned in Step 6.2.
 
 #### 6.1: Build context packets
 
@@ -505,7 +505,7 @@ Spawn all four agents via four Task tool calls in a SINGLE message (parallel exe
 
 **Economy mode** (`implementation_mode: "economy"`): Pass `model: "sonnet"` for all agents.
 
-**Quality or Premium mode** (default `"quality"`, or `"premium"`): Omit the model parameter for all agents (they inherit the parent model).
+**Quality or Premium mode** (default): Omit the model parameter for all agents (they inherit the parent model).
 
 Wait for all four agents to complete.
 
@@ -552,7 +552,7 @@ If no issues were found (the "clean" case from 6.3), set plan review result to "
 
 If issues were found, **fix them automatically** in TASKS.md (this is the default, recommended behavior):
 
-Initialize: `$PLAN_REVIEW_ITERATION = 1`. Read `config.review.max_plan_review_iterations` from config.json (default: 3). Store as `$MAX_PLAN_REVIEW_ITERATIONS`.
+Initialize ONCE (do NOT re-initialize on re-entry): `$PLAN_REVIEW_ITERATION = 1`. Read `config.review.max_plan_review_iterations` from config.json (default: 3). Store as `$MAX_PLAN_REVIEW_ITERATIONS`. These variables persist across re-review iterations — do not reset them when looping back from Step 6.4.2.
 
 **6.4.1: Present findings and fix**
 

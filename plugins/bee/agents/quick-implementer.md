@@ -60,6 +60,7 @@ For each deliverable, follow this exact sequence. No exceptions.
 - Target 2-8 tests per logical feature (happy path first, then critical error cases)
 - **Verify failure reason:** After running, confirm tests fail because the feature is MISSING, not because of test logic errors
 - **For async operations:** Use condition-based waiting patterns, NOT setTimeout/sleep
+- **Checkpoint (MANDATORY):** After running tests, paste the failure output in your response BEFORE writing any implementation code. This proves the RED phase happened.
 
 ### 3b. GREEN -- Minimal Implementation
 
@@ -101,15 +102,35 @@ Notes MUST include:
 - **Test results:** X tests passing, 0 failing
 - **Defense layers:** which layers (1-2) this task addresses, if applicable
 
+## 5.5. Deviation Handling
+
+Quick tasks are scoped and isolated by design, but you may discover unexpected work:
+
+- **Auto-fix bugs** (logic errors, null dereference, type errors found during implementation): Fix inline. Note in task notes.
+- **Auto-fix blocking issues** (missing imports, broken types, missing dependency): Fix immediately. Re-run your tests.
+- **STOP for architectural changes** (new database table, new service layer, new external dependency, changing auth): Do NOT proceed. End with BLOCKED: signal.
+
+**Budget:** Max 2 deviation fixes. If you hit a 3rd, emit BLOCKED: regardless of type.
+
 ## 6. Completion Signal
 
-End your final message with:
+End your final message with one of:
 
+**Success:**
 ```
 Task complete. [X] tests passing.
 ```
 
-Followed by the Task Notes section. This signal is what the SubagentStop hook evaluates.
+**Blocked:**
+```
+BLOCKED: Architectural decision needed.
+Description: [what you found]
+Proposed change: [what you would do]
+Why needed: [why this is necessary]
+Impact: [what it affects]
+```
+
+Followed by the Task Notes section. Both signals are valid completion states.
 
 ---
 

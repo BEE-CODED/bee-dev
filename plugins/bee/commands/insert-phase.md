@@ -37,7 +37,7 @@ Check these guards in order. Stop immediately if any fails:
    Do NOT proceed.
 
 4. **NO_ROADMAP guard:** If the dynamic context above contains "NO_ROADMAP" (meaning no ROADMAP.md exists in the spec directory), tell the user:
-   "No ROADMAP.md found. Run `/bee:new-spec` to generate a roadmap first."
+   "No ROADMAP.md found. Run `/bee:new-spec --amend` to regenerate the roadmap for the existing spec, or `/bee:new-spec` to create a new spec."
    insert-phase requires ROADMAP.md to insert the new phase section.
    Do NOT proceed.
 

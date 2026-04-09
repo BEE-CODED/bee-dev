@@ -111,7 +111,7 @@ AskUserQuestion(
 
 ### Step 4: Handle Choice
 
-- **Run /bee:{command}**: Display "Run `/bee:{command}` now." Do NOT auto-invoke the command.
+- **Run /bee:{command}**: Invoke the command using `Skill(skill: "bee:{command}")`. If the Skill tool is unavailable, display "Run `/bee:{command}` now." as a fallback.
 - **Show alternatives**: Display 3-5 related commands with one-line descriptions from the classification table above. Then present:
 
 ```
