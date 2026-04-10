@@ -260,17 +260,19 @@ Based on the current state, suggest exactly one next command. Use this logic:
 | Status is `COMPLETED` (all phases complete) | `/bee:complete-spec` -- "All phases complete. Run the spec completion ceremony (audit, changelog, tag, archive). For a quick archive without ceremony, use `/bee:archive-spec` directly." |
 | Status is `ARCHIVED` | `/bee:new-spec` -- "Spec archived. Start a new feature." |
 
-Present the suggestion using an interactive menu:
+Present the suggestion using an interactive menu. The menu ALWAYS includes the dynamically suggested next command, an option to open the Bee Hive dashboard (because the phase grid + metrics + seeds + archives are significantly more readable there), and "Custom" last:
 
 ```
 AskUserQuestion(
   question: "[status summary]. Suggested next: [command]",
-  options: ["[suggested command]", "Custom"]
+  options: ["[suggested command]", "Open Bee Hive dashboard", "Custom"]
 )
 ```
 
-The first option is the dynamically suggested command (e.g. `/bee:execute-phase 2`). "Custom" is always last.
+The first option is the dynamically suggested command (e.g. `/bee:execute-phase 2`). The second option is a suggestion to open `/bee:hive` so the user can see the full phase grid, metrics, seeds, and archives rendered in a web UI — this is proactively offered because `/bee:progress` is a "read-heavy" command and the dashboard presents the same information with significantly better density and readability. "Custom" is always last.
+
+If the user picks **Open Bee Hive dashboard**, invoke `Skill(skill: "bee:hive")` (or display "Run `/bee:hive` now." as a fallback if the Skill tool is unavailable). If the user picks the suggested next command, invoke it the same way. If the user picks Custom, wait for free-text input.
 
 ### Output Format
 
-Keep the output concise. The entire response should fit in one screen -- no scrolling needed. Developers check progress frequently; respect their time.
+Keep the output concise. The entire response should fit in one screen -- no scrolling needed. Developers check progress frequently; respect their time. When offering the Bee Hive dashboard, keep the framing neutral — it's a suggestion, not a recommendation to replace the terminal flow. Users who prefer terminal-only are free to keep picking the terminal-next-command option.

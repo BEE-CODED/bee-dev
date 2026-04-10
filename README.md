@@ -2,7 +2,7 @@
 
 Spec-driven development workflow plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
 
-Bee takes a feature idea through a complete, repeatable pipeline: **spec > plan > execute > review > test > commit**. Every step is orchestrated by Claude Code with review gates between phases. Includes a comprehensive code audit system for analyzing inherited/vibecoded projects, debug & recovery intelligence, and fully autonomous pipeline orchestration.
+Bee takes a feature idea through a complete, repeatable pipeline: **spec > plan > execute > review > test > commit**. Every step is orchestrated by Claude Code with review gates between phases. Includes a comprehensive code audit system for analyzing inherited/vibecoded projects, debug & recovery intelligence, fully autonomous pipeline orchestration, and the **Bee Hive live dashboard** — a local web UI for browsing phases, reports, notes, seeds, and workflow state in a readable IDE-style interface.
 
 ## Install
 
@@ -36,6 +36,7 @@ claude --plugin-dir /path/to/bee-dev/plugins/bee
 /bee:quick           # Fast-track: describe, execute, commit (no spec needed)
 /bee:audit           # Comprehensive 10-agent code audit
 /bee:ship            # Autonomous: plan-reviewed phases -> execute + review + commit all
+/bee:hive            # Open the live web dashboard at http://localhost:3333
 ```
 
 ## Commands (49)
@@ -118,6 +119,11 @@ claude --plugin-dir /path/to/bee-dev/plugins/bee
 | `/bee:backlog` | Manage the seed backlog (review, promote, archive) |
 | `/bee:note` | Zero-friction note capture |
 | `/bee:thread` | Cross-session knowledge persistence |
+
+### Visualization
+| Command | Description |
+|---------|-------------|
+| `/bee:hive` | Start or stop the Bee Hive dashboard server and open it in the browser. `stop` subcommand to shut down |
 
 ### Extensibility
 | Command | Description |
@@ -283,6 +289,44 @@ Opus bee 4.0 | hexhexhex P2/5 EXEC | gauge 40% | d3
 ```
 
 Shows: model + bee version | honeycomb phase progress + status | context gauge | git dirty.
+
+## Bee Hive Dashboard
+
+A local web dashboard for browsing your `.bee/` workflow state in a readable IDE-style interface. Perfect for reading phase plans, reviewing generated reports, or navigating notes and seeds without cat/less gymnastics in the terminal.
+
+```
+/bee:hive          # Start the server and open the browser (default: http://localhost:3333)
+/bee:hive stop     # Stop the server
+```
+
+**What you get:**
+
+- **3-column IDE layout** — Left sidebar file tree, main content area with tabs, right sidebar live activity feed. Both sidebars collapsible via header toggles.
+- **File tree navigation** — Browse phases, notes, seeds, quick tasks, discussions, forensics, debug sessions, and archived specs. Section counts + status badges per entry.
+- **Tab system with markdown viewer** — Click any file to open it in a tab. Markdown rendered with hive-themed headings, code blocks, tables, and links. JSON/YAML files shown as plain text. Overview tab is pinned and always accessible.
+- **Phase detail view** — Click a phase to see a rich view with workflow progress chain (plan → review → execute → test → commit), description, goal, deliverables, success criteria, requirements, and dependencies — cross-referenced from `state.phases` + `spec.phases` + `roadmap.phaseMapping`.
+- **Roadmap timeline** — Header button opens a roadmap tab with a vertical phase timeline. Click any phase card to jump to its detail view.
+- **Split pane** — Click the split button on any tab to pop it into a second column for side-by-side viewing (e.g., compare a phase's PLAN.md and REVIEW.md).
+- **Keyboard shortcuts** — `[`/`]` for prev/next tab, `\` to toggle split, `Escape` to close split or active tab. All gated on "no input focused" so typing into search boxes is safe.
+- **Persistent state** — Open tabs, active tab, sidebar collapse state, and expanded sections all persist across reloads via localStorage.
+- **Live snapshot polling** — Activity feed detects new files, phase status changes, and metric updates every 5 seconds with graceful degradation on network errors.
+- **Config editing** — The Config panel in the Overview has inline toggles for `review.against_spec`, `review.against_standards`, `review.dead_code`, `ship.final_review`, `ship.max_review_iterations`, and `implementation_mode`. Changes POST to `/api/config` and persist to `.bee/config.json`.
+
+**When to use it:**
+
+- Reading long phase plans (TASKS.md, PLAN.md) or review reports (REVIEW.md) — much nicer than terminal
+- Browsing the seed backlog or note collection without scrolling through directories
+- Showing a colleague "what did Bee do for this feature" without SSH-ing into the repo
+- Inspecting the roadmap and phase status at a glance
+- Comparing files side-by-side via split pane
+
+**When to skip it:**
+
+- Single-file edits or quick grep tasks — the terminal is faster
+- Running Bee commands — always done via the Claude Code CLI, not the dashboard
+- When you're in a `/bee:autonomous` or `/bee:ship` flow and don't need the distraction
+
+The server is a zero-dependency Node.js HTTP server under `plugins/bee/scripts/hive-server.js`. It binds `127.0.0.1` only (no remote exposure) and shuts down automatically when the Claude Code session that started it exits (owner PID monitoring).
 
 ## Scoped Testing
 

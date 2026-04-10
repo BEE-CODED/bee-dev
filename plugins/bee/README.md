@@ -1,10 +1,10 @@
 # Bee - Spec-Driven Development Workflow
 
-A Claude Code plugin that enforces disciplined, spec-driven development with TDD, parallel agent execution, multi-stack support, interactive flow control, review gates, and comprehensive code auditing.
+A Claude Code plugin that enforces disciplined, spec-driven development with TDD, parallel agent execution, multi-stack support, interactive flow control, review gates, comprehensive code auditing, and the **Bee Hive live dashboard** — a local web UI for browsing phases, reports, notes, seeds, and workflow state in a readable IDE-style interface.
 
 ## What Bee Does
 
-Bee structures your development workflow into a lifecycle: **Spec > Plan > Execute > Review > Test > Commit**. Each step produces artifacts on disk, every feature goes through review gates, and 33 specialized agents handle different aspects of the work — including 11 dedicated audit agents for deep codebase analysis.
+Bee structures your development workflow into a lifecycle: **Spec > Plan > Execute > Review > Test > Commit**. Each step produces artifacts on disk, every feature goes through review gates, and 33 specialized agents handle different aspects of the work — including 11 dedicated audit agents for deep codebase analysis. The Bee Hive dashboard gives you a live web UI over all of it so reading long phase plans, reviewing reports, and navigating notes is a click instead of a cat/less dance.
 
 ## Commands (28)
 
@@ -59,6 +59,11 @@ Bee structures your development workflow into a lifecycle: **Spec > Plan > Execu
 | `/bee:commit` | | Show diff summary and create a commit with user approval |
 | `/bee:archive-spec` | | Archive completed spec, reset STATE.md, bump plugin version |
 | `/bee:eod` | | End-of-day integrity check with 4 parallel audits |
+
+### Visualization
+| Command | Args | Description |
+|---------|------|-------------|
+| `/bee:hive` | `[stop]` | Start or stop the Bee Hive dashboard server and open it in the browser. Default: `http://localhost:3333` |
 
 ## Workflows
 
@@ -244,6 +249,45 @@ Set via `config.implementation_mode` in `.bee/config.json` or during `/bee:new-s
 - **Windows**: PowerShell toast notifications
 
 Events: task completed (Stop), background agent finished (Notification), permission needed (PermissionRequest).
+
+## Bee Hive Dashboard
+
+A local web dashboard for browsing your `.bee/` workflow state in a readable IDE-style interface.
+
+```
+/bee:hive          # Start the server and open the browser (default: http://localhost:3333)
+/bee:hive stop     # Stop the server
+```
+
+**Layout:**
+
+- **3-column IDE shell** — collapsible left file tree + tabbed main area + collapsible right activity feed
+- **File tree navigation** — phases, notes, seeds, quick tasks, discussions, forensics, debug sessions, archived specs with section counts and status badges
+- **Tab system** — click any file to open it in a tab, with markdown rendering (headings, code blocks, tables, links) for `.md`/`.markdown` and plain preformatted view for `.txt`/`.json`/`.yml`/`.yaml`. Overview tab is always pinned
+- **Phase detail view** — rich cross-referenced view with workflow progress chain, description, goal, deliverables, success criteria, requirements, and dependencies
+- **Roadmap timeline** — vertical phase timeline with clickable cards that jump to phase detail
+- **Split pane** — pop any tab into a second column for side-by-side reading
+- **Keyboard shortcuts** — `[`/`]` prev/next tab, `\` toggle split, `Escape` close split or active tab
+- **Persistent state** — open tabs, active tab, sidebar collapse state, and expanded sections persist across reloads via localStorage
+- **Config editing** — inline toggles for review/ship/mode settings that POST to `/api/config` and persist to `.bee/config.json`
+
+**Endpoints (for extension or debugging):**
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/api/snapshot` | GET | Full workflow state aggregator (state.phases, config, health, scanners, spec, roadmap, archives) |
+| `/api/config` | POST/PUT | Merge partial config changes into `.bee/config.json` |
+| `/api/file` | GET | Read a single text file from `.bee/` with path-traversal guard, symlink safety, extension allowlist (`.md`/`.txt`/`.json`/`.yml`/`.yaml`), 1 MB size limit |
+
+The server is a zero-dependency Node.js HTTP server under `plugins/bee/scripts/hive-server.js`. Binds `127.0.0.1` only (no remote exposure). Shuts down automatically when the Claude Code session that started it exits (owner PID monitoring).
+
+**When to use it:**
+
+- Reading long phase plans (TASKS.md, PLAN.md) or review reports (REVIEW.md) — more pleasant than terminal
+- Browsing seeds or notes without scrolling through directories
+- Showing a colleague "what did Bee do for this feature"
+- Inspecting the roadmap and phase status at a glance
+- Comparing files side-by-side via split pane
 
 ## Configuration
 
