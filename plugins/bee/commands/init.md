@@ -209,9 +209,25 @@ Map selection to config values:
 - "Yes" -> `"autonomous": { "discuss": true, "auto_approve_confidence": "high" }`
 - "No" -> `"autonomous": { "discuss": false, "auto_approve_confidence": "high" }`
 
-If the user selects "Custom", ask follow-up questions:
-1. Whether to enable discuss (true/false)
-2. If enabled, the auto-approve confidence threshold: "high" (only auto-approve HIGH confidence proposals after 2+ phases), "none" (never auto-approve, always ask)
+If the user selects "Custom":
+
+```
+AskUserQuestion(
+  question: "Enable smart discuss in autonomous mode?",
+  options: ["Yes", "No", "Custom"]
+)
+```
+
+If "Yes", then ask:
+
+```
+AskUserQuestion(
+  question: "Auto-approve confidence threshold for batch proposals?",
+  options: ["High (auto-approve HIGH confidence after 2+ phases)", "None (always ask, never auto-approve)", "Custom"]
+)
+```
+
+Map "High" → `"high"`, "None" → `"none"`.
 
 Store the selected values for Step 4 (config.json creation).
 
@@ -350,7 +366,7 @@ From `composer.json` (if exists): list require and require-dev (names only).
 
 **6d. File statistics**
 
-Run via Bash: `find . -type f -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/vendor/*' -not -path '*/dist/*' | wc -l` for total file count.
+Use Glob with pattern `**/*` to discover all files, then filter out paths containing `node_modules/`, `.git/`, `vendor/`, `dist/`. Count the remaining files for total file count.
 Count files per top-level directory for a size overview.
 
 **6e. Write `.bee/PROJECT.md`**
@@ -574,7 +590,7 @@ Use AskUserQuestion with options:
 
 **If the user accepts:**
 
-1. **Check if already configured.** Read `~/.claude/settings.json` using Bash (`cat ~/.claude/settings.json 2>/dev/null`). If the file exists AND contains `"Stop"` hooks with `notify` or `osascript` or `notify-send` in any hook command, display: "Notifications already configured!" and skip the rest of this step.
+1. **Check if already configured.** Read `~/.claude/settings.json` using the Read tool. If the file exists AND contains `"Stop"` hooks with `notify` or `osascript` or `notify-send` in any hook command, display: "Notifications already configured!" and skip the rest of this step. If the file does not exist, proceed (it will be created in step 4).
 
 2. **Detect platform and test notification tool:**
    - macOS: run `osascript -e 'display notification "test" with title "Bee"'` — if exit 0, platform supported

@@ -234,7 +234,7 @@ Run:
 git worktree list --porcelain
 ```
 
-For each workspace entry in workspaces.json, check if its path appears in the worktree list output. If a workspace path is not found in the list, mark its status as `stale` in workspaces.json and write the updated file.
+For each workspace entry in workspaces.json, check if its path appears in the worktree list output. If a workspace path is not found in the list: re-read `$MAIN_PROJECT_PATH/.bee/workspaces.json` from disk (Read-Modify-Write pattern — the git worktree commands ran between the initial read and this write), mark its status as `stale`, and write the updated file.
 
 **4c. Detect current workspace:**
 

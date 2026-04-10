@@ -4,35 +4,7 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [4.1.0] - 2026-04-10 -- Skills Expansion & Quality Optimization
-
-### Added
-- **18 new conditional library/standards skills** -- prisma, drizzle, tailwind-v4, tanstack-query, supabase, stripe, zustand, trpc, shadcn-vue, sentry, storybook, email, s3-storage, auth-patterns, realtime, ci-cd, docker, monorepo, i18n. All load conditionally based on package.json/config detection.
-- **Firm rules R8 + R9** -- R8: no completion claims without evidence (paste actual test output). R9: HIGH confidence only for review findings (exact file:line, traceable impact, 5-15 per phase).
-- **Async testing patterns** in standards/testing -- promises, timers, waitFor, error rejection, PHP queue fakes, flaky test prevention (86 lines)
-- **Severity calibration table** in audit skill -- 7 borderline examples with "3 AM test" heuristic
-- **Version-aware queries + result disambiguation** in context7 skill
-- **Spec compliance procedure** in review skill -- list ACs by task ID, map to tests, trace code paths
-- **FP staleness check** in review skill -- verify code unchanged before excluding false positives
-- **Dark mode section** in frontend standards -- semantic tokens, Tailwind v3/v4 guidance
-- **400 vs 422 clarification** in backend standards
-
-### Changed
-- Skills count: 22 -> 41 (19 new, all conditional)
-- Core skill compressed: rationalizations table (12 -> 6 lines), Context7 section (28 -> 5 lines), model delegation (10 -> 3 lines). Net -20 lines while adding R8+R9.
-- **react-native-expo** major rewrite (300 -> 527): expo-image, Reanimated 3, forms+keyboard, error recovery, SDK upgrade pattern
-- **kmp-compose** expanded: SQLDelight (setup+driver+queries), Coil 3 image loading, Ktor interceptors+retry
-- **claude-code-plugin** expanded: hook script patterns, SubagentStop validators, agent context packets, test patterns
-- **laravel-inertia-react** expanded: DataTable with TanStack Table (columns, row actions, server pagination)
-- **nestjs** expanded: Security Hardening (Helmet, CORS, Throttler, csrf-csrf, structured logging)
-- **angular** expanded: NgRx Signal Store example (signalStore, withState, withComputed, withMethods)
-- **react** expanded: concurrent rendering (startTransition, useDeferredValue, memoization guide)
-- **nextjs** expanded: enhanced Image section (static, remote, fill, priority, blur, sizes)
-- **playwright** expanded: accessibility testing (aria snapshots, axe-core), API testing, debugging
-- **nestjs-rabbitmq** expanded: connection management, reconnection, RPC timeouts, competing consumers
-- **shadcn-ui** and **shadcn-vue**: hardcoded colors in variant examples replaced with semantic tokens
-
-## [4.0.0] - 2026-04-09 -- Bee Sentinel: Debug & Recovery Intelligence
+## [4.0.0] - 2026-04-09 -- Bee Sentinel: Debug & Recovery Intelligence + Skills Expansion + Command Quality Overhaul
 
 ### Added
 - **Forensics command** (`/bee:forensics`) -- Read-only workflow diagnostics with 4-factor severity escalation (CRITICAL/HIGH/MEDIUM/LOW), 5-step cross-phase dependency tracing, rollback path generation (1-3 paths, safest-to-aggressive ordering), and forensics-to-debug handoff
@@ -49,6 +21,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **7 new agents**: debug-investigator, dependency-auditor, assumptions-analyzer, integration-checker, swarm-consolidator, ui-auditor, testing-auditor
 - **Post-wave full validation** (Step 5d.0 in execute-phase) -- Runs full test suite, linter, and static analysis ONCE per wave after all agents complete
 - **Model escalation** in execute-phase -- Sonnet agents escalated to opus after 3 failures
+- **18 new conditional library/standards skills** -- prisma, drizzle, tailwind-v4, tanstack-query, supabase, stripe, zustand, trpc, shadcn-vue, sentry, storybook, email, s3-storage, auth-patterns, realtime, ci-cd, docker, monorepo, i18n. All load conditionally based on package.json/config detection.
+- **Firm rules R8 + R9** -- R8: no completion claims without evidence (paste actual test output). R9: HIGH confidence only for review findings (exact file:line, traceable impact, 5-15 per phase).
+- **Async testing patterns** in standards/testing -- promises, timers, waitFor, error rejection, PHP queue fakes, flaky test prevention
+- **Severity calibration table** in audit skill -- 7 borderline examples with "3 AM test" heuristic
+- **Version-aware queries + result disambiguation** in context7 skill
+- **Spec compliance procedure** in review skill -- list ACs by task ID, map to tests, trace code paths
+- **Dark mode section** in frontend standards -- semantic tokens, Tailwind v3/v4 guidance
 
 ### Changed
 - Plugin version: 3.3.0 -> 4.0.0
@@ -70,6 +49,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `seed.md` counts only active seeds toward 20 limit (was counting all including archived)
 - `workspace.md` routes conflicted status directly to recovery
 - `test.md`, `plan-review.md`, `test-gen.md` use Glob wildcard for phase directory lookup
+- Skills count: 22 -> 41 (19 new, all conditional)
+- Core skill compressed: rationalizations (12->6), Context7 (28->5), model delegation (10->3). Net -20 lines while adding R8+R9.
+- **react-native-expo** major rewrite (300->527): expo-image, Reanimated 3, forms+keyboard, error recovery
+- **kmp-compose** expanded: SQLDelight, Coil 3 image loading, Ktor interceptors+retry
+- **claude-code-plugin** expanded: hook script patterns, SubagentStop validators, agent context packets
+- **nestjs** expanded: Security Hardening (Helmet, CORS, Throttler, csrf-csrf)
+- **angular** expanded: NgRx Signal Store example
+- **react** expanded: concurrent rendering (startTransition, useDeferredValue)
+- **playwright** expanded: accessibility testing (aria snapshots, axe-core), API testing
+- **Default implementation mode: premium** -- All commands now default to `"premium"` (opus for everything)
+- **Variable standardized:** `$IMPL_MODE` -> `$IMPLEMENTATION_MODE` across all commands
+- **`$RESOLVED_MODEL` pattern** applied to plan-phase (8->1 reads), plan-all (5->1), discuss (2->1)
+- **EXECUTING status** added to all 5 routing tables for mid-execution crash recovery
+- **Swarm Review** added to completion menus of 6 commands
+- **Protected agent names** expanded from 23 to 39 in create-agent.md
+- **Heredoc commit pattern** in commit.md and quick.md for safe special character handling
+- **Smart next-step routing** in commit.md checks if next phase is already planned/executed
+- **Coverage map persisted** to TEST-GEN.md (was ephemeral)
+- **DISCUSS-CONTEXT.md integration** in plan-all.md planner prompts
+- **Predictive warnings** always run in plan-phase even when research_policy=skip
 
 ### Fixed
 - EOD command referenced non-existent agents (`reviewer`, `project-reviewer`)
@@ -79,6 +78,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `audit-bug-detector` triggering `bug-detector$` SubagentStop hook (incompatible output format)
 - `pre-commit-gate.sh` block paths used stderr + exit 2 (changed to stdout + exit 0)
 - `session-end-summary.sh` git diff HEAD~0 when COMMITS=0
+- **49 commands quality overhaul** -- all commands reviewed and optimized:
+  - new-spec.md: duplicate heading, amend flow nav, spec-writer uses $IMPLEMENTATION_MODE
+  - execute-phase.md: $FAILURE_TYPE_COUNTS preserved on crash+resume
+  - review.md: $CLEAN_EXIT flag prevents STATE.md double-write on 0 findings
+  - commit.md: targeted file staging (was overstaging entire spec tree)
+  - complete-spec.md: plugin version bump fallback, ROADMAP.md in audit, memory archival
+  - compact.md: CONTEXT.md no longer emitted verbatim pre-compaction
+  - workspace.md: status subcommand exempt from nested worktree guard
+  - audit-spec.md: dead pattern removed, results persisted to AUDIT-SPEC.md
+  - audit.md: `find` replaced with Glob, irrelevant dependency scan removed
+  - memory.md: full rewrite with proper frontmatter and AskUserQuestion
+  - 15+ commands: R-M-W pattern added/made explicit for STATE.md writes
+  - 10+ commands: free-text prompts replaced with AskUserQuestion
+  - test-e2e.md, thread.md: STATE.md Last Action updates added
+  - do.md: Skill() invocation for command routing
 
 ## [3.1.0] - 2026-03-17 -- Audit System & Quality Expansion
 

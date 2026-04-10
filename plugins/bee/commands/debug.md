@@ -432,9 +432,9 @@ After the continuation agent returns, go back to Step 6 to handle the new result
 
 ---
 
-### Update STATE.md
+### Step 8: Update STATE.md
 
-After each significant action (session creation, agent completion, session close), read `.bee/STATE.md` from disk and update the Last Action section:
+After each significant action (session creation, agent completion, session close), re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern) and update the Last Action section:
 
 ```
 ## Last Action

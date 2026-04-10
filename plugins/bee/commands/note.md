@@ -66,7 +66,18 @@ Determine the subcommand from `$ARGUMENTS`:
    ...
    ```
 5. If there are more than 10 notes, display: "Showing 10 of {total}."
-6. Display: "Promote a note with `/bee:note promote N`"
+6. Present menu:
+
+```
+AskUserQuestion(
+  question: "{count} notes ({count > 10 ? '10 shown' : 'all shown'}).",
+  options: ["Promote a note", "New note", "Custom"]
+)
+```
+
+- **Promote a note**: Ask which number to promote, then execute PROMOTE mode for that number.
+- **New note**: Ask "What's on your mind?" and execute APPEND mode with the response.
+- **Custom**: Free text.
 
 ---
 

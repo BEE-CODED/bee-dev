@@ -571,18 +571,30 @@ Commit message: {message}
 
 Files to stage:
 - {list of changed files}
-
-Commit? (yes / edit message / cancel)
 ```
 
-4. Wait for confirmation.
-   - **yes:** stage specific files and commit. NEVER use `git add -A` or `git add .`.
-   - **edit:** wait for user's message, then commit with that.
-   - **cancel:** display "Cancelled. Changes are unstaged." Stop.
+```
+AskUserQuestion(
+  question: "Commit with this message?",
+  options: ["Commit", "Edit message", "Cancel", "Custom"]
+)
+```
+
+- **Commit:** Stage specific files and commit using heredoc for safe message handling:
+  ```bash
+  git commit -m "$(cat <<'EOF'
+  {message}
+  EOF
+  )"
+  ```
+  NEVER use `git add -A` or `git add .`.
+- **Edit message:** Wait for user's edited message, then commit with that.
+- **Cancel:** Display "Cancelled. Changes are unstaged." Stop.
+- **Custom:** Free text.
 
 ### Step 6: Update STATE.md
 
-1. Read `.bee/STATE.md` fresh from disk.
+1. Re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern — quick task may have been long-running).
 2. Find or create the `## Quick Tasks` section. If it doesn't exist, add it after the Phases table (or after Last Action if no Phases table):
 
 ```markdown
@@ -621,9 +633,18 @@ Quick task {N} complete: {DESCRIPTION}
 Commit: {commit_hash}
 {If $USE_REVIEW was false: "Tip: Use --review flag for a lightweight code review before commit."}
 {If $USE_FAST was true: "Tip: TDD mode is the default. Omit --fast for implementer agent with Red-Green-Refactor."}
-
-Next: /bee:progress to see project state, or /bee:quick for another task.
 ```
+
+```
+AskUserQuestion(
+  question: "Quick task {N} complete.",
+  options: ["Another quick task", "Progress", "Custom"]
+)
+```
+
+- **Another quick task**: Ask "What's the next task?" and start a new quick task flow.
+- **Progress**: Execute `/bee:progress`
+- **Custom**: Free text.
 
 ---
 

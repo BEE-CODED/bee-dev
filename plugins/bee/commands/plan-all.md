@@ -47,6 +47,8 @@ Check these guards in order. Stop immediately if any fails:
    - All per-phase planning and review is complete. Skip to Step 4 (Cross-Plan Review) directly — the cross-plan review always runs when all phases are individually plan-reviewed (it has no separate checkpoint and is idempotent).
    - Display: "All phases individually planned and reviewed. Running cross-plan consistency review..."
 
+**Resolve `$IMPLEMENTATION_MODE` once** (reused by all sub-steps below): Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent). In premium mode, omit the model parameter for all spawned agents. In economy or quality mode, pass `model: "sonnet"`. Store as `$RESOLVED_MODEL` for use in Steps 3 through 4.
+
 ### Step 2: Discover Phases
 
 1. Read the Phases table from STATE.md. Extract all phase rows: phase number, phase name, Status, Plan column, Plan Review column.
@@ -83,22 +85,18 @@ Skip this step if the phase is classified as "needs_review" (directory already e
 
 Skip this step if the phase is classified as "needs_review".
 
-Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
-
-**Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
-
-**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
-
-Spawn the `phase-planner` agent as a subagent with the model determined above. Provide the following context:
+Spawn the `phase-planner` agent as a subagent with `$RESOLVED_MODEL`. Provide the following context:
 
 - The phase directory path (where to write TASKS.md)
 - The phase number being planned
 - The spec folder path (where spec.md and phases.md live)
 - Instruction: "This is Pass 1 (Plan What). Read spec.md and phases.md to understand the feature. Decompose phase {N} into granular tasks with testable acceptance criteria. Read the TASKS.md template at skills/core/templates/tasks.md for the output structure. Write initial TASKS.md (task list without waves) to the phase directory."
+- **DISCUSS-CONTEXT.md integration:** Check if `{phase-directory}/DISCUSS-CONTEXT.md` exists. If found, add to the planner prompt: "Read DISCUSS-CONTEXT.md from the phase directory for user decisions and constraints. Locked decisions from smart discuss override planner discretion."
 
 If the phase number is greater than 1, also provide:
 - Paths to ALL prior phases' TASKS.md files (so the planner knows what is already built and planned). Use Glob to find them: `{spec-path}/phases/{NN}-*/TASKS.md` for each prior phase number.
-- Instruction addition: "Read TASKS.md from prior phases to understand what is already built or planned. Avoid duplicating existing work. Reference outputs from earlier phases where needed."
+- Paths to ALL prior phases' DISCUSS-CONTEXT.md files (if they exist) for decision consistency across phases.
+- Instruction addition: "Read TASKS.md and DISCUSS-CONTEXT.md from prior phases to understand what is already built or planned and what decisions were made. Avoid duplicating existing work. Reference outputs from earlier phases where needed."
 
 Wait for the phase-planner to complete. Verify that TASKS.md was created in the phase directory:
 ```
@@ -111,13 +109,7 @@ If TASKS.md was not created, tell the user the planner failed for phase {N} and 
 
 Skip this step if the phase is classified as "needs_review".
 
-Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
-
-**Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
-
-**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
-
-After the phase-planner completes, spawn the `researcher` agent as a subagent with the model determined above. Provide the following context:
+After the phase-planner completes, spawn the `researcher` agent as a subagent with `$RESOLVED_MODEL`. Provide the following context:
 
 - The phase directory path (where TASKS.md lives)
 - The spec folder path
@@ -134,13 +126,7 @@ If no research notes were added, warn but continue (research enrichment is valua
 
 Skip this step if the phase is classified as "needs_review".
 
-Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
-
-**Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
-
-**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
-
-Re-spawn the `phase-planner` agent as a subagent with the model determined above. Provide the following context:
+Re-spawn the `phase-planner` agent as a subagent with `$RESOLVED_MODEL`. Provide the following context:
 
 - The phase directory path (where research-enriched TASKS.md lives)
 - Instruction: "This is Pass 2 (Plan Who). Read the research-enriched TASKS.md. Analyze task dependencies, detect file ownership conflicts (no two tasks in the same wave may modify the same file), group tasks into parallel waves, and define context packets per task. Write the final TASKS.md with wave structure, replacing the pre-wave version."
@@ -249,13 +235,7 @@ Read TASKS.md to understand the planned tasks. Load the stack skill dynamically 
 
 **3f.2: Spawn all four agents in parallel**
 
-Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
-
-**Economy mode** (`implementation_mode: "economy"`): Pass `model: "sonnet"` for all agents.
-
-**Quality or Premium mode** (default): Omit the model parameter for all agents (they inherit the parent model).
-
-Spawn all four agents via four Task tool calls in a SINGLE message (parallel execution).
+Use `$RESOLVED_MODEL` for all four agents. Spawn all four via four Task tool calls in a SINGLE message (parallel execution).
 
 Wait for all four agents to complete.
 
@@ -374,13 +354,7 @@ Review ALL phase plans simultaneously. Look for potential bugs that span multipl
 
 **4c. Spawn both agents in parallel**
 
-Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
-
-**Economy mode** (`implementation_mode: "economy"`): Pass `model: "sonnet"` for both agents.
-
-**Quality or Premium mode** (default): Omit the model parameter for both agents (they inherit the parent model).
-
-Spawn both agents via two Task tool calls in a SINGLE message (parallel execution).
+Use `$RESOLVED_MODEL` for both agents. Spawn both via two Task tool calls in a SINGLE message (parallel execution).
 
 Wait for both agents to complete.
 
@@ -443,22 +417,26 @@ Total: {total_tasks} tasks across {total_waves} waves in {total_phases} phases
 Next step: /bee:ship or /bee:execute-phase 1
 ```
 
-Update STATE.md Last Action:
+Re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern — plan-all is long-running). Update Last Action:
 - Command: `/bee:plan-all`
 - Timestamp: current ISO 8601 timestamp
 - Result: "All phases planned: {total_tasks} tasks across {total_phases} phases (cross-plan: {clean|fixed|unresolved})"
+
+Write updated STATE.md to disk.
 
 Present the exit menu using AskUserQuestion:
 
 ```
 AskUserQuestion(
   question: "Plan-all complete. {total_phases} phases planned, {total_tasks} tasks.",
-  options: ["Ship", "Execute Phase 1", "Custom"]
+  options: ["Ship", "Execute Phase 1", "Swarm Review", "Plan Review", "Custom"]
 )
 ```
 
 - **Ship**: Execute `/bee:ship`
 - **Execute Phase 1**: Execute `/bee:execute-phase 1`
+- **Swarm Review**: Execute `/bee:swarm-review` (multi-agent deep review on all plans)
+- **Plan Review**: Execute `/bee:plan-review 1` (standalone plan review for Phase 1)
 - **Custom**: Free text
 
 ---

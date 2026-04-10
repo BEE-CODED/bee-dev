@@ -102,6 +102,7 @@ Format:
 {If CONTEXT.md was not present, omit this entire section -- do not include the heading}
 
 ## Next Step
+Determine the suggested next command by reading the Phases table status from STATE.md and applying the same routing logic as `/bee:progress` Step 2 (phase status → next command mapping). Display as:
 `/bee:{suggested command}` -- {reason}
 ```
 
@@ -136,8 +137,7 @@ Key decisions:
 Metrics: {count} phases tracked, velocity {trend}
 
 {If CONTEXT.md was found in Step 2:}
-Codebase Context:
-{Insert CONTEXT.md content here}
+Codebase context: saved in .bee/COMPACT-CONTEXT.md (not repeated here to avoid inflating context before compaction)
 
 Next step: /bee:{suggested command} -- {reason}
 --- END BEE CONTEXT ---
@@ -160,11 +160,12 @@ Then present an interactive menu:
 ```
 AskUserQuestion(
   question: "Context preserved. Ready to compact.",
-  options: ["Compact now", "Custom"]
+  options: ["Compact now", "Save snapshot only", "Custom"]
 )
 ```
 
 - **Compact now**: Display "Run `/compact` to compress the conversation." Do NOT attempt to invoke `/compact` programmatically — it is a built-in CLI command that must be run by the user.
+- **Save snapshot only**: Display "Snapshot saved to `.bee/COMPACT-CONTEXT.md`. Conversation not compacted — you can continue working." Stop.
 - **Custom**: Free text
 
 Stop here.
@@ -173,7 +174,7 @@ Stop here.
 
 **Design Notes (do not display to user):**
 
-- Dual persistence: context goes to both disk (`.bee/COMPACT-CONTEXT.md`) and conversation stream. Disk survives session crashes; conversation stream survives compaction summaries.
+- Dual persistence: context goes to both disk (`.bee/COMPACT-CONTEXT.md`) and conversation stream. Disk survives session crashes; conversation stream survives compaction summaries. CONTEXT.md is only included verbatim in the disk file — the conversation stream references it by path to avoid inflating context right before compaction.
 - `.bee/COMPACT-CONTEXT.md` replaces `.bee/SESSION-CONTEXT.md` as the richer context snapshot. SESSION-CONTEXT.md (from PreCompact hook) is a raw dump; COMPACT-CONTEXT.md is curated and structured.
 - `/bee:resume` can read COMPACT-CONTEXT.md for a better briefing than SESSION-CONTEXT.md alone.
 - The context block format is intentionally terse -- one line per concept, no prose. Maximizes information density in both the file and the compacted summary.

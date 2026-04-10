@@ -77,9 +77,9 @@ For each stack in `config.stacks`, scoped to its `path`:
 
 **Test check (user opt-in, per-stack):**
 
-Ask the user: "Run tests before review? (yes/no)"
+Use `AskUserQuestion(question: "Run tests before review?", options: ["Yes", "No"])`.
 
-If the user says **yes**:
+If "Yes":
 For each stack in `config.stacks`, resolve its test runner: read `stacks[i].testRunner` first, fall back to root `config.testRunner` if absent, then `"none"`. Run each stack's test runner scoped to its path. Report per-stack: "Tests: {stack.name} ({runner}): {result}".
 
 For each stack:
@@ -412,9 +412,14 @@ For each pair of findings from different agents, check if they reference the sam
    - Full spec mode: "{N} findings from {agent_count} reviewers ({stack_count} stacks): {critical} critical, {high} high, {medium} medium"
    - Ad-hoc mode: "{N} findings from {agent_count} reviewers: {critical} critical, {high} high, {medium} medium"
 
-4. If more than 10 findings: present the list to user before proceeding:
-   "The review found {N} findings (above typical range). Review the list at {output_path} and confirm you want to proceed with validation."
-   Wait for user confirmation. If user declines, stop.
+4. If more than 10 findings:
+   ```
+   AskUserQuestion(
+     question: "The review found {N} findings (above typical range). Review at {output_path}.",
+     options: ["Proceed with validation", "Stop -- review first", "Custom"]
+   )
+   ```
+   If "Stop": display the output path and stop.
 
 ### Step 5: Parse, Deduplicate, and Write Output
 
@@ -589,11 +594,12 @@ Per-phase compliance percentages are calculated from the findings: for each phas
    ```
    AskUserQuestion(
      question: "Review complete. [X] findings: [F] fixed, [S] skipped, [FP] false positives.",
-     options: ["Re-review", "Accept", "Custom"]
+     options: ["Re-review", "Swarm Review", "Accept", "Custom"]
    )
    ```
 
    - **Re-review**: Re-run the full review pipeline from Step 1 (fresh agent spawns on same files). No iteration limit.
+   - **Swarm Review**: Execute `/bee:swarm-review` (multi-agent deep review with segmentation)
    - **Accept**: End command, update STATE.md
    - **Custom**: User types what they want
 
@@ -623,11 +629,12 @@ Review saved: {output_path}
    ```
    AskUserQuestion(
      question: "Review complete. [X] findings: [F] fixed, [S] skipped, [FP] false positives.",
-     options: ["Re-review", "Accept", "Custom"]
+     options: ["Re-review", "Swarm Review", "Accept", "Custom"]
    )
    ```
 
    - **Re-review**: Re-run the full review pipeline from Step 1 (fresh agent spawns on same files). No iteration limit.
+   - **Swarm Review**: Execute `/bee:swarm-review` (multi-agent deep review with segmentation)
    - **Accept**: End command, update STATE.md
    - **Custom**: User types what they want
 

@@ -39,10 +39,10 @@ Read `.bee/config.json` to determine:
 - Project root and source directories
 - Any audit-specific configuration in `config.audit` (if present)
 
-Count total source files using Bash to include in the report metadata:
-```bash
-find . -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.vue" -o -name "*.php" -o -name "*.py" \) -not -path "*/node_modules/*" -not -path "*/vendor/*" -not -path "*/.next/*" -not -path "*/dist/*" | wc -l
-```
+Count total source files using Glob to include in the report metadata:
+- Use Glob with patterns: `**/*.ts`, `**/*.tsx`, `**/*.js`, `**/*.jsx`, `**/*.vue`, `**/*.php`, `**/*.py`
+- Exclude results containing `node_modules/`, `vendor/`, `.next/`, `dist/` in their paths
+- Count the total matching files
 
 Tell the user what you're about to do:
 ```
@@ -65,17 +65,7 @@ Before spawning any agents, read these files once and include their content in e
 
 Pass these as part of the agent's prompt context — agents should NOT re-read these files themselves.
 
-**Dependency Scan:**
-
-Before spawning review agents, expand the file scope:
-
-1. For each modified file, grep for `import`/`require`/`use` statements to find its **dependencies** (files it imports)
-2. Grep the project for files that `import`/`require` any modified file to find its **consumers** (files that import it)
-3. Scan depth: direct imports only (not transitive)
-4. **Test file discovery:** For each modified file, look for corresponding test files using common patterns: `{name}.test.{ext}`, `{name}.spec.{ext}`, `tests/{name}.{ext}`, `__tests__/{name}.{ext}`. Include discovered test file paths in the context packet.
-5. Limit: max 20 extra files (dependencies + consumers + test files combined) per agent context packet — if more than 20, prioritize consumers over dependencies
-6. Include all expanded file paths in the agent's context packet alongside the modified files
-7. Instruct agents: "Also verify that modifications don't break consumer files. Check import compatibility, return type changes, and side effect changes. Verify test files cover the modified behavior."
+Note: Unlike `/bee:review` and `/bee:swarm-review` which scan specific files and expand dependencies, `/bee:audit` scans the ENTIRE codebase. Dependency expansion is not needed — all files are already in scope. Agents discover import/require relationships as part of their domain analysis (e.g., integration-checker builds dependency graphs, architecture-auditor traces cross-layer calls).
 
 ### Step 4: Run Audit Agents
 
@@ -159,36 +149,15 @@ The report generator produces:
 - `.bee/AUDIT-REPORT.md` — Human-readable report
 - `.bee/audit-findings.json` — Machine-readable findings for `bee:audit-to-spec`
 
-### Step 7: Present Results
+### Step 7: Prepare Results Data
 
-After the report is generated, present a summary to the user:
+After the report is generated, compute the summary data for Step 8 and Step 9:
+- Risk level: CRITICAL / HIGH / MODERATE / LOW / CLEAN
+- Severity counts: critical, high, medium, low (confirmed + needs context)
+- False positive rate
+- Top 3 concerns (most critical findings)
 
-```
-## Audit Complete
-
-**Risk Level:** {CRITICAL / HIGH / MODERATE / LOW / CLEAN}
-
-| Severity | Confirmed | Needs Context |
-|----------|-----------|---------------|
-| CRITICAL | {n} | {n} |
-| HIGH | {n} | {n} |
-| MEDIUM | {n} | {n} |
-| LOW | {n} | {n} |
-
-**False positive rate:** {percentage}%
-
-**Top concerns:**
-1. {Most critical finding title}
-2. {Second most critical}
-3. {Third most critical}
-
-Full report: `.bee/AUDIT-REPORT.md`
-
-**Next steps:**
-- Review the report, especially NEEDS CONTEXT findings
-- Run `/bee:audit-to-spec` to convert findings into actionable specs
-- Run `/bee:audit-to-spec --critical` for immediate critical fixes only
-```
+Do NOT display results here — Step 9 presents the summary alongside the interactive menu.
 
 ### Step 8: Update STATE.md
 
@@ -220,9 +189,33 @@ Read `.bee/STATE.md` from disk (fresh read).
 
 4. Write updated STATE.md to disk.
 
-### Step 9: Interactive Menu
+### Step 9: Present Results & Interactive Menu
 
-Present the results summary from Step 7, then ask the user:
+Display the audit results summary:
+
+```
+## Audit Complete
+
+**Risk Level:** {risk_level}
+
+| Severity | Confirmed | Needs Context |
+|----------|-----------|---------------|
+| CRITICAL | {n} | {n} |
+| HIGH | {n} | {n} |
+| MEDIUM | {n} | {n} |
+| LOW | {n} | {n} |
+
+**False positive rate:** {percentage}%
+
+**Top concerns:**
+1. {Most critical finding title}
+2. {Second most critical}
+3. {Third most critical}
+
+Full report: `.bee/AUDIT-REPORT.md`
+```
+
+Then ask the user:
 
 ```
 AskUserQuestion(

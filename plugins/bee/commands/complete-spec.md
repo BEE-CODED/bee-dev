@@ -65,9 +65,10 @@ Read the Phases table from STATE.md. Check each phase row:
    - Build a requirements list: `[{ id, description, checked }]`
    - If no requirements found, display: "No parseable requirements found in spec.md. Skipping audit." and continue to Step 4.
 
-   **3b. Trace requirements to phases (via TASKS.md):**
+   **3b. Trace requirements to phases (via ROADMAP.md + TASKS.md):**
+   - Read `{spec-path}/ROADMAP.md` if it exists. If found, use the Phase-Requirement Mapping table as the PRIMARY source for requirement→phase mapping. Supplement with TASKS.md grep for any requirements not in ROADMAP.md. If ROADMAP.md does not exist, fall back to TASKS.md grep only.
    - Read the Phases table from STATE.md to get the list of phases with their names and statuses.
-   - Detect phase directories within the spec path. Look for subdirectories matching: `phase-{N}/` or `{NN}-{name}/`.
+   - Detect phase directories within the spec path using Glob: `{spec-path}/phases/*/TASKS.md`. Phase directories follow the `{NN}-{name}/` convention.
    - For each phase directory, read `TASKS.md` if it exists and search for requirement IDs to determine mappings.
    - Requirements not found in any TASKS.md are flagged as "Orphaned".
 
@@ -150,7 +151,7 @@ Read the Phases table from STATE.md. Check each phase row:
      question: "Review the generated changelog:",
      options: ["Approve", "Edit", "Skip changelog", "Custom"]
    )
-   - **Approve**: Write the changelog entry to `.bee/archive/{spec-folder-name}/CHANGELOG.md` (the file will be at this path after Step 6 moves the spec there -- write the CHANGELOG.md into the spec directory now, before the move, so it gets moved with the spec).
+   - **Approve**: Write the changelog entry to `{spec-path}/CHANGELOG.md` (inside the spec directory, before the archive move in Step 6 — it will be moved with the spec to `.bee/archive/`).
    - **Edit**: Let the user provide edits, then write the updated content.
    - **Skip changelog**: Continue without writing a changelog. Record "skipped" for the summary.
 
@@ -170,9 +171,19 @@ Read the Phases table from STATE.md. Check each phase row:
 5. Display: "Git tag created: `{tag}`"
 6. Do NOT push the tag. The user pushes manually if desired.
 
+### Step 5.5: Archive Agent Memory
+
+Archive agent memory from the completed spec before archiving the spec directory:
+
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/archive-memory.sh "{spec-name}"
+```
+
+This archives agent memory to `.bee/memory-archive/{spec-name}/`, keeps only project-level shared entries, and clears agent-specific memory.
+
 ### Step 6: Archive to .bee/archive/
 
-This step reuses the same logic as `/bee:archive-spec` Steps 3-4:
+This step reuses the same logic as `/bee:archive-spec` Steps 4-5:
 
 1. Create the archive directory: `mkdir -p .bee/archive/`
 2. Move the spec directory to the archive: `mv {spec-path} .bee/archive/{spec-folder-name}/`

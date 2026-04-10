@@ -73,26 +73,21 @@ Wait for the user's response. Store as `$TARGET_STACK`.
 
 ### Step 5: Select Sections
 
-Use AskUserQuestion to ask the user which sections to include in the skill. Present a multi-select list of common skill sections:
+Build the section list by asking one section at a time. Start with an empty `$SECTIONS` list, then loop:
 
-"Which sections should the skill include? Select all that apply."
+```
+AskUserQuestion(
+  question: "Add a section to the skill? (currently {count} sections selected)",
+  options: ["Conventions", "Must-Haves", "Good Practices", "Common Bugs", "Anti-Patterns", "Code Examples", "Custom section", "Done — no more sections", "Custom"]
+)
+```
 
-Options:
-- "Conventions -- naming, structure, and pattern rules"
-- "Must-Haves -- non-negotiable requirements"
-- "Good Practices -- recommended approaches"
-- "Common Bugs -- known pitfalls to avoid"
-- "Anti-Patterns -- what NOT to do"
-- "Code Examples -- concrete reference snippets"
-- "Custom section (you will name it)"
+- **Named section**: Add it to `$SECTIONS`, then re-present the menu (without already-selected sections).
+- **Custom section**: Ask "What should the custom section be called?" then add to `$SECTIONS` and re-present.
+- **Done**: Proceed to Step 6 with the accumulated `$SECTIONS`.
+- **Custom**: Free text.
 
-Wait for the user's response. Store the selected sections as `$SECTIONS`.
-
-If the user selected "Custom section", use AskUserQuestion to ask:
-
-"What should the custom section be called?"
-
-Wait for the response and add it to `$SECTIONS`.
+If `$SECTIONS` is empty when "Done" is selected, require at least one section: "A skill needs at least one section. Please select one."
 
 ### Step 6: Collect Content Per Section
 
@@ -164,7 +159,7 @@ custom skills will pick it up automatically from .claude/bee-extensions/skills/.
 
 To edit the skill later, modify the file directly at the path above.
 
-Run `/bee:init` or `/bee:resume` to load the extension.
+The extension will be auto-loaded on your next session start. Run `/bee:resume` to verify it's discovered.
 ```
 
 ---

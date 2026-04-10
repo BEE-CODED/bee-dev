@@ -37,7 +37,13 @@ Check `$ARGUMENTS`:
 - **`--run <pattern>` with a test file pattern:** Skip to Step 5, run only matching files.
 - **Feature description provided (no --run):** Proceed to Step 3 (Generate Tests).
 - **No arguments AND active spec exists:** Use the current spec as the feature context. Proceed to Step 3.
-- **No arguments AND no spec:** Ask the user: "What feature should I write E2E tests for? Describe the user flows to test."
+- **No arguments AND no spec:**
+  ```
+  AskUserQuestion(
+    question: "What feature should I write E2E tests for? Describe the user flows to test.",
+    options: ["Custom"]
+  )
+  ```
 
 ### Step 3: Research and Plan
 
@@ -78,9 +84,15 @@ Reusing:
 - {existing POM or fixture}
 ```
 
-Ask: "Does this test plan look right? You can modify it or approve."
+```
+AskUserQuestion(
+  question: "Does this test plan look right?",
+  options: ["Approve and generate tests", "Modify plan", "Custom"]
+)
+```
 
-Wait for user confirmation.
+- **Approve**: Proceed to Step 4.
+- **Modify plan**: Wait for user's modifications, update plan, re-present.
 
 ### Step 4: Generate Tests
 
@@ -157,9 +169,14 @@ Failure analysis:
    Suggested fix: {what to change}
 ```
 
-**6c. Ask user:** Use AskUserQuestion:
-Question: "Tests failed. How to proceed?"
-Options: "Fix test issues" (update test files and re-run), "Show trace" (open Playwright trace viewer for debugging), "Skip" (leave failures for manual investigation).
+**6c. Ask user:**
+
+```
+AskUserQuestion(
+  question: "Tests failed. How to proceed?",
+  options: ["Fix test issues", "Show trace", "Skip", "Custom"]
+)
+```
 
 Handle each response:
 - **Fix test issues:** Apply fixes to test files, re-run. Loop up to 3 times. After 3 failed fix attempts, display: "Tests still failing after 3 fix attempts. Recommend manual investigation with `npx playwright test --ui`." and proceed to Step 7.
@@ -201,6 +218,15 @@ AskUserQuestion(
 - **Accept**: End command
 - **Custom**: Free text
 
+### Step 8: Update STATE.md
+
+Re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern). Update Last Action:
+- Command: `/bee:test-e2e`
+- Timestamp: current ISO 8601 timestamp
+- Result: "E2E tests: {passed} passed, {failed} failed for {feature}"
+
+Write updated STATE.md to disk.
+
 ---
 
 **Design Notes (do not display to user):**
@@ -212,4 +238,4 @@ AskUserQuestion(
 - Auth setup is reused if it exists. If not, the command creates it.
 - The `--run` flag allows using this command as a test runner without generating new tests.
 - Test files go in the project's existing E2E directory (detected from playwright.config.ts testDir or common conventions).
-- This command does NOT update STATE.md — it's independent of the spec lifecycle. E2E tests can be written for any feature, spec-driven or ad-hoc.
+- E2E tests can be written for any feature, spec-driven or ad-hoc. STATE.md Last Action is updated for audit trail consistency.

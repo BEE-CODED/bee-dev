@@ -35,7 +35,7 @@ Stop here -- do not proceed.
 - `git branch --show-current` -- current branch name
 - `git status --short | wc -l` -- count of uncommitted files
 
-**From TASKS.md** -- if an active phase exists and has a TASKS.md (check spec path from STATE.md for `phases/{N}/TASKS.md`):
+**From TASKS.md** -- if an active phase exists, use Glob to find TASKS.md: `{spec-path}/phases/{NN}-*/TASKS.md` where NN is the zero-padded active phase number. If found:
 - Read the TASKS.md file
 - Completed tasks: lines matching `- [x]`
 - Remaining tasks: lines matching `- [ ]`
@@ -52,6 +52,7 @@ Use the same next-command logic as `/bee:progress`:
 | No spec (no uncommitted changes) | `/bee:new-spec` | "Start by defining what you want to build." |
 | Spec exists, no phases planned | `/bee:plan-phase 1` | "Your spec is ready. Plan the first phase." |
 | Next phase PENDING (not yet planned) | `/bee:plan-phase N` | "Phase N needs planning before execution." |
+| Phase EXECUTING (mid-execution) | `/bee:execute-phase N` | "Phase N was interrupted. Resume execution." |
 | Phase planned, not executed | `/bee:execute-phase N` | "Phase N is planned and ready to execute." |
 | Phase executed, not reviewed | `/bee:review` | "Phase N is implemented. Time to review." |
 | Phase reviewed, not tested | `/bee:test` | "Review is done. Generate test scenarios." |

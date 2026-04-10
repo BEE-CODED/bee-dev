@@ -13,13 +13,9 @@ Read these files using the Read tool:
 
 You are running `/bee:swarm-review` -- the intelligent multi-agent swarm review pipeline for BeeDev. Unlike `/bee:review` (4 fixed agents on phase files) or `/bee:audit` (10 agents on entire codebase), swarm-review is intelligent: it segments code first, then dispatches ONLY the most relevant agents per segment. This produces deeper, more focused review with less noise.
 
-### Step 1: Current State and Invocation Path Detection
+### Step 1: Invocation Path Detection
 
-Read these files using the Read tool:
-- `.bee/STATE.md` -- if not found: check for ad-hoc/external invocation
-- `.bee/config.json` -- if not found: use `{}`
-
-Detect invocation path from `$ARGUMENTS`:
+Detect invocation path from `$ARGUMENTS` (STATE.md and config.json already loaded in Current State above):
 
 1. **`--pre-commit` path:** Review staged changes only. Run `git diff --cached --name-only` to get files. No `.bee/` required. Filter to source files only (exclude lock files, generated files, `.bee/` directory files).
 
@@ -315,13 +311,13 @@ Present results summary, then:
 ```
 AskUserQuestion(
   question: "Swarm review complete. {N} confirmed findings ({critical} critical, {high} high). Report: {path}",
-  options: ["Fix findings", "Re-review", "Audit-to-spec", "Accept", "Custom"]
+  options: ["Fix findings", "Re-review", "Test", "Accept", "Custom"]
 )
 ```
 
 - **Fix findings**: For each confirmed finding, spawn fixer agents using the same file-based parallelism strategy from review.md Step 6 (parallel across files, sequential within same file). Group findings by file, spawn one fixer per file group.
 - **Re-review**: Re-run the swarm review pipeline from Step 1
-- **Audit-to-spec**: Execute `/bee:audit-to-spec` on the generated report (convert to actionable spec)
+- **Test**: Execute `/bee:test` (generate test scenarios for reviewed code)
 - **Accept**: End command
 - **Custom**: User types what they want
 

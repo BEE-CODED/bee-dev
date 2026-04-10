@@ -528,7 +528,7 @@ Provide the spec-shaper agent with (omit model parameter -- amend mode needs ful
 Relay the amendment discussion between the agent and the user.
 
 **Spawn spec-writer in amend mode:**
-After the spec-shaper finishes updating `requirements.md`, spawn the spec-writer with `model: "sonnet"`. Provide the spec-writer agent with:
+After the spec-shaper finishes updating `requirements.md`, read `config.implementation_mode` from config.json (defaults to `"premium"` if absent). In premium mode, omit the model parameter; in economy or quality mode, pass `model: "sonnet"`. Spawn the spec-writer agent with the resolved model. Provide the spec-writer agent with:
 - The spec folder path
 - Instruction: "This is an amended spec. Read the updated requirements.md. Rewrite only sections affected by the changes in spec.md and phases.md. Preserve unchanged content exactly."
 
@@ -536,7 +536,7 @@ After the spec-writer finishes, proceed to **Step 9.5: Spec Review Loop** to val
 
 ### Step 11: Update STATE.md
 
-After all steps complete successfully (in either the new or amend flow), update `.bee/STATE.md`:
+After all steps complete successfully (in either the new or amend flow), re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern — this is a long-running command, STATE.md may have been modified by hooks during discovery). Update:
 
 1. Set **Current Spec Name** to the spec name (e.g., `user-management`)
 2. Set **Current Spec Path** to the spec folder path (e.g., `.bee/specs/2026-02-20-user-management/`)

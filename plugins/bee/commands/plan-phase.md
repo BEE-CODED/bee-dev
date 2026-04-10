@@ -57,6 +57,8 @@ Check these four guards in order. Stop immediately if any fails:
 
 After creating the phase directory, offer pre-planning intelligence to inform task decomposition.
 
+**Resolve `$IMPLEMENTATION_MODE` once** (reused by all sub-steps below): Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent). In premium mode, omit the model parameter for all spawned agents. In economy or quality mode, pass `model: "sonnet"`. Store as `$RESOLVED_MODEL` for use in Steps 2.5.1 through 5.
+
 #### Read Discussion Context
 
 Check if a DISCUSS-CONTEXT.md exists in the phase directory:
@@ -104,7 +106,11 @@ No interactive prompts -- all steps run automatically.
 
 Display: "Research policy: skip. Proceeding to task decomposition..."
 
-Set $RESEARCH_PATH = null. Set $ASSUMPTIONS = null. Set $DEP_HEALTH = null. Set $TEST_GAPS = null. Proceed directly to Step 3.
+Set $RESEARCH_PATH = null. Set $ASSUMPTIONS = null. Set $DEP_HEALTH = null. Set $TEST_GAPS = null.
+
+**Important:** Even when research is skipped, ALWAYS run Step 2.5.5 (Predictive Warning from Learnings). Learnings come from prior phase execution history, not from research — they should inform planning regardless of research policy.
+
+Proceed directly to Step 2.5.5, then Step 3.
 
 #### Policy: "recommended" (default, research_policy = "recommended")
 
@@ -123,10 +129,8 @@ AskUserQuestion(
 
 1. Read phases.md to get the phase description and deliverables for phase {N}
 2. Read ROADMAP.md from the spec folder (if it exists) to get success criteria and requirement IDs for this phase
-3. Read config.implementation_mode from config.json (defaults to "premium" if absent)
-   - Premium mode: Omit model parameter.
-   - Economy or Quality mode: Pass model: "sonnet".
-4. Spawn the researcher agent as a subagent with the model determined above. Provide:
+3. Use `$RESOLVED_MODEL` from Step 2.5 for model selection.
+4. Spawn the researcher agent as a subagent with `$RESOLVED_MODEL`. Provide:
    - Phase directory path (where to write RESEARCH.md)
    - Instruction: "ECOSYSTEM RESEARCH MODE -- No TASKS.md exists yet. Research ecosystem patterns for this phase.
      Phase {N}: {phase name}
@@ -187,10 +191,8 @@ If $RESEARCH_PATH is set (ecosystem research was performed):
 
 #### 2.5.2: Assumptions Analysis
 
-1. Read config.implementation_mode from config.json (defaults to "premium" if absent)
-   - Premium mode: Omit model parameter.
-   - Economy or Quality mode: Pass model: "sonnet".
-2. Spawn the assumptions-analyzer agent as a subagent with the model determined above. Provide:
+1. Use `$RESOLVED_MODEL` from Step 2.5 for model selection.
+2. Spawn the assumptions-analyzer agent as a subagent with `$RESOLVED_MODEL`. Provide:
    - Instruction: "Analyze codebase assumptions for phase {N}: {phase name}.
      Phase description: {from phases.md}
      Requirements: {REQ-IDs from ROADMAP.md, if available}
@@ -230,10 +232,8 @@ If $RESEARCH_PATH is set (ecosystem research was performed):
 
 #### 2.5.3: Dependency Health Check
 
-1. Read config.implementation_mode from config.json (defaults to "premium" if absent)
-   - Premium mode: Omit model parameter.
-   - Economy or Quality mode: Pass model: "sonnet".
-2. Spawn the dependency-auditor agent as a subagent with the model determined above. Provide:
+1. Use `$RESOLVED_MODEL` from Step 2.5 for model selection.
+2. Spawn the dependency-auditor agent as a subagent with `$RESOLVED_MODEL`. Provide:
    - Phase description and requirements (from phases.md and ROADMAP.md)
    - Stack paths from config.json
    - Instruction: "Scan dependencies for phase {N}: {phase name}.
@@ -273,10 +273,8 @@ If $RESEARCH_PATH is set (ecosystem research was performed):
    - If "required": run automatically.
 
 2. If running:
-   a. Read config.implementation_mode from config.json (defaults to "premium" if absent).
-      - Premium mode: Omit model parameter.
-      - Economy or Quality mode: Pass model: "sonnet".
-   b. Spawn the testing-auditor agent as a subagent with the model determined above. Provide:
+   a. Use `$RESOLVED_MODEL` from Step 2.5 for model selection.
+   b. Spawn the testing-auditor agent as a subagent with `$RESOLVED_MODEL`. Provide:
       - Instruction: "MODE: pre-plan
         Analyze test infrastructure readiness for phase {N}: {phase name}.
         Phase description: {from phases.md}
@@ -343,13 +341,9 @@ Check for active LEARNINGS.md files from prior phases to generate predictive war
 
 ### Step 3: Plan What -- Spawn phase-planner Agent (Pass 1)
 
-Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
+Use `$RESOLVED_MODEL` from Step 2.5 for model selection (resolved once, reused across all planning steps).
 
-**Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
-
-**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
-
-Spawn the `phase-planner` agent as a subagent with the model determined above. Provide the following context:
+Spawn the `phase-planner` agent as a subagent with `$RESOLVED_MODEL`. Provide the following context:
 
 - The phase directory path (where to write TASKS.md)
 - The phase number being planned
@@ -379,13 +373,7 @@ If TASKS.md was not created, tell the user the planner failed and stop.
 
 ### Step 4: Plan How -- Spawn researcher Agent
 
-Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
-
-**Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
-
-**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
-
-After the phase-planner completes, spawn the `researcher` agent as a subagent with the model determined above. Provide the following context:
+After the phase-planner completes, spawn the `researcher` agent as a subagent with `$RESOLVED_MODEL`. Provide the following context:
 
 - The phase directory path (where TASKS.md lives)
 - The spec folder path
@@ -403,13 +391,7 @@ If no research notes were added, warn the user but continue (research enrichment
 
 ### Step 5: Plan Who -- Spawn phase-planner Agent (Pass 2)
 
-Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
-
-**Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
-
-**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
-
-Re-spawn the `phase-planner` agent as a subagent with the model determined above. Provide the following context:
+Re-spawn the `phase-planner` agent as a subagent with `$RESOLVED_MODEL`. Provide the following context:
 
 - The phase directory path (where research-enriched TASKS.md lives)
 - Instruction: "This is Pass 2 (Plan Who). Read the research-enriched TASKS.md. Analyze task dependencies, detect file ownership conflicts (no two tasks in the same wave may modify the same file), group tasks into parallel waves, and define context packets per task. Write the final TASKS.md with wave structure, replacing the pre-wave version."
@@ -715,7 +697,7 @@ IMPORTANT: Never auto-approve the plan. Always present it and wait for explicit 
 
 ### Step 8: Update STATE.md
 
-After the user approves the plan, update `.bee/STATE.md`:
+After the user approves the plan, re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern — plan-phase is long-running, STATE.md may have changed during research/planning). Update:
 
 1. Set the phase row's **Plan** column to `Yes`
 2. Set the phase row's **Plan Review** column based on the plan review result from Step 6:
@@ -748,6 +730,19 @@ Wave breakdown:
 
 Next step: /bee:execute-phase {N}
 ```
+
+```
+AskUserQuestion(
+  question: "Phase {N} planned. {X} tasks in {Y} waves.",
+  options: ["Execute Phase {N}", "Plan Review", "Swarm Review", "Revise plan", "Custom"]
+)
+```
+
+- **Execute Phase {N}**: Execute `/bee:execute-phase {N}`
+- **Plan Review**: Execute `/bee:plan-review {N}` for another review round
+- **Swarm Review**: Execute `/bee:swarm-review --phase {N}` (multi-agent deep review with segmentation)
+- **Revise plan**: Follow-up AskUserQuestion for revision instructions, apply to TASKS.md
+- **Custom**: Free text
 
 ---
 

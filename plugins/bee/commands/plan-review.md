@@ -298,7 +298,7 @@ If 0 issues total, set Status to CLEAN. Otherwise set Status to ISSUES_FOUND.
 1. Parse PLAN-REVIEW.md summary counts and additional section counts from all four agents' consolidated output.
 
 2. **CLEAN path (0 findings):** If status is CLEAN (0 gaps, 0 partial, 0 drift, 0 over-engineering, 0 bug risks, 0 pattern concerns, 0 stack concerns), auto-approve:
-   - Read STATE.md from disk. Parse the current Plan Review column value for this phase:
+   - Re-read STATE.md from disk (Read-Modify-Write pattern). Parse the current Plan Review column value for this phase:
      - `"Yes (1)"` -> N=1, `"Yes (2)"` -> N=2, etc.
      - `"Yes"` -> N=0
      - Empty or missing -> N=0
@@ -308,11 +308,12 @@ If 0 issues total, set Status to CLEAN. Otherwise set Status to ISSUES_FOUND.
      ```
      AskUserQuestion(
        question: "Plan review complete — zero issues. Plan Review set to Yes ({N+1}).",
-       options: ["Execute Phase", "Re-review", "Custom"]
+       options: ["Execute Phase {N}", "Swarm Review", "Re-review", "Custom"]
      )
      ```
 
-     - **Execute Phase**: Proceed to `/bee:execute-phase {N}`
+     - **Execute Phase {N}**: Execute `/bee:execute-phase {N}`
+     - **Swarm Review**: Execute `/bee:swarm-review --phase {N}` (multi-agent deep review)
      - **Re-review**: Re-run plan review pipeline from Step 1
      - **Custom**: Free text
 
@@ -342,11 +343,12 @@ If 0 issues total, set Status to CLEAN. Otherwise set Status to ISSUES_FOUND.
 ```
 AskUserQuestion(
   question: "Plan review complete. {X} issues found.",
-  options: ["Accept", "Re-review", "Revise plan", "Custom"]
+  options: ["Accept", "Swarm Review", "Re-review", "Revise plan", "Custom"]
 )
 ```
 
 - **Accept**: Accept plan as-is, update STATE.md Plan Review column (Read-Modify-Write: parse current value, write `"Yes ({N+1})"`)
+- **Swarm Review**: Execute `/bee:swarm-review --phase {N}` (multi-agent deep review with segmentation)
 - **Re-review**: Re-run plan review pipeline from Step 1 (re-spawn all four agents with the current TASKS.md)
 - **Revise plan**: Follow-up AskUserQuestion (free text) for what to change — apply changes to TASKS.md on disk, then return to this menu
 - **Custom**: Free text

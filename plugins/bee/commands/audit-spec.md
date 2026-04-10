@@ -49,9 +49,8 @@ Check these guards in order. Stop immediately if any fails:
 ### Step 3: Trace Requirements to Phases
 
 1. Read the Phases table from STATE.md to get the list of phases with their names and statuses.
-2. Detect phase directories within the spec path. Look for subdirectories matching these patterns:
-   - `phase-{N}/` (e.g., `phase-1/`, `phase-2/`)
-   - `{NN}-{name}/` (e.g., `01-auth/`, `02-dashboard/`)
+1b. **ROADMAP.md check:** Read `{spec-path}/ROADMAP.md` if it exists. If found, use the Phase-Requirement Mapping table as the PRIMARY source for requirement→phase mapping (it is the authoritative mapping created during spec generation). Supplement with TASKS.md grep for any requirements not in ROADMAP.md. If ROADMAP.md does not exist, fall back to TASKS.md grep only.
+2. Detect phase directories within the spec path using Glob: `{spec-path}/phases/*/TASKS.md`. Phase directories follow the `{NN}-{name}/` convention (e.g., `01-auth/`, `02-dashboard/`).
 3. For each phase directory found:
    a. Read `TASKS.md` if it exists -- search for requirement IDs (REQ-01, FEAT-01, etc.) to determine which requirements are mapped to which phases.
    b. Record the mapping: requirement -> phase(s). A requirement can appear in multiple phases.
@@ -116,6 +115,13 @@ If the `--verbose` flag is present in the user's command, include per-requiremen
 - Which REVIEW.md section confirms the requirement
 - Which TESTING.md scenario covers it (or the absence thereof)
 
+### Step 7.5: Persist Audit Results
+
+Write the traceability matrix to `{spec-path}/AUDIT-SPEC.md` so it survives session compaction and can be referenced later:
+
+1. Write the full traceability matrix (from Step 7 output) to `{spec-path}/AUDIT-SPEC.md`
+2. Display: "Audit results saved to `{spec-path}/AUDIT-SPEC.md`"
+
 ### Step 8: Present Options
 
 ```
@@ -135,8 +141,8 @@ AskUserQuestion(
 
 - This command does NOT use any agents -- it operates entirely in the main Claude context. No `Task(` calls or agent spawning.
 - Requirement ID pattern matching should be case-insensitive and support common formats: REQ-01, R-01, FEAT-01, FUNC-01, NFR-01, etc. The general regex pattern is `/[A-Z]+-\d+/i`.
-- The audit result is ephemeral (displayed to the user, not persisted to disk). The `/bee:complete-spec` command calls audit-spec internally and uses the result to gate completion.
-- Phase directory detection: look for subdirectories matching `phase-{N}/` or `{NN}-{name}/` patterns within the spec path. This handles both naming conventions used in Bee specs.
+- The audit result is persisted to `{spec-path}/AUDIT-SPEC.md` for reference. The `/bee:complete-spec` command calls audit-spec internally and uses the result to gate completion.
+- Phase directory detection uses the `{NN}-{name}/` pattern exclusively (the standard Bee convention, created by plan-phase.md).
 - The traceability chain is: spec.md requirements -> phase TASKS.md (implementation) -> REVIEW.md (review confirmation) -> TESTING.md (test coverage).
 - Coverage percentage is a simple ratio: requirements with all three traces (Satisfied) divided by total requirements.
 - This command never auto-commits. It is a read-only audit operation.

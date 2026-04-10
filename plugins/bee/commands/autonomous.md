@@ -336,10 +336,7 @@ If the subagent returns a decision or action checkpoint:
 - Respawn the execute-phase subagent with the response as continuation context
 - Repeat until execution completes for this phase
 
-After execution completes, read the generated SUMMARY.md:
-```bash
-cat .bee/specs/*/phases/{NN}-*/SUMMARY.md 2>/dev/null
-```
+After execution completes, read the generated SUMMARY.md using the Read tool at `{spec_path}/phases/{NN}-{slug}/SUMMARY.md` (construct path from the phase directory resolved earlier — do NOT use wildcards).
 
 **3c: Evaluate SUMMARY.md**
 
@@ -444,14 +441,19 @@ All code remains uncommitted. Run `/bee:commit` when ready.
 
 ```
 AskUserQuestion(
-  question: "Autonomous execution complete. What next?",
-  options: ["View detailed results", "Run /bee:commit", "Custom"]
+  question: "Autonomous execution complete. {count} phases processed.",
+  options: ["Review implementation", "Swarm Review", "Commit", "Custom"]
 )
 ```
 
-### Update STATE.md
+- **Review implementation**: Execute `/bee:review-implementation` (full cross-phase review)
+- **Swarm Review**: Execute `/bee:swarm-review` (multi-agent deep review on all executed phases)
+- **Commit**: Execute `/bee:commit`
+- **Custom**: Free text
 
-After autonomous execution completes (all phases done or stopped), read `.bee/STATE.md` from disk and update the Last Action section:
+### Step 6: Update STATE.md
+
+After autonomous execution completes (all phases done or stopped), re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern) and update the Last Action section:
 
 ```
 ## Last Action

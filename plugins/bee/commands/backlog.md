@@ -88,16 +88,35 @@ AskUserQuestion(
    If "Cancel": stop.
 6. Update the seed frontmatter: set `status: promoted`.
 7. Display: "Seed S-{NNN} promoted. Run `/bee:new-spec {idea}` to create a spec from this seed."
-8. Do NOT auto-invoke `/bee:new-spec` -- the developer decides when to act.
+8. Update `.bee/STATE.md` Last Action (re-read from disk first — Read-Modify-Write): Command: `/bee:backlog`, Result: "Promoted seed S-{NNN}: {idea}".
+9. Do NOT auto-invoke `/bee:new-spec` -- the developer decides when to act.
 
 ---
 
 #### archive S-NNN
 
-1. Find seed file by ID: map `S-NNN` to `seed-NNN.md`.
-2. If the file does not exist: display "Seed S-{NNN} not found." Stop.
-3. Update seed frontmatter: set `status: archived`, add `archived_date: {YYYY-MM-DD}`.
-4. Display: "Seed S-{NNN} archived."
+1. **If no seed ID in arguments** (arrived from the list menu's "Archive a seed" option): read all active seeds from `.bee/seeds/`, then present:
+   ```
+   AskUserQuestion(
+     question: "Which seed to archive?",
+     options: ["S-001: {idea}", "S-002: {idea}", ..., "Custom"]
+   )
+   ```
+   Parse the selected seed ID.
+
+2. Find seed file by ID: map `S-NNN` to `seed-NNN.md` (e.g., `S-003` maps to `.bee/seeds/seed-003.md`).
+3. If the file does not exist: display "Seed S-{NNN} not found." Stop.
+4. Read the seed content (idea from frontmatter).
+5. Confirm before archiving:
+   ```
+   AskUserQuestion(
+     question: "Archive seed S-{NNN}: {idea}?",
+     options: ["Yes, archive", "Cancel", "Custom"]
+   )
+   ```
+   If "Cancel": stop.
+6. Update seed frontmatter: set `status: archived`, add `archived_date: {YYYY-MM-DD}`.
+7. Display: "Seed S-{NNN} archived."
 
 ---
 
@@ -105,6 +124,7 @@ AskUserQuestion(
 
 - This command does not use any agents -- it operates entirely within the main Claude context.
 - This command does not commit anything. The user runs `/bee:commit` separately if they want to commit.
+- After any state-modifying action (promote, archive, plant), update `.bee/STATE.md` Last Action (Read-Modify-Write pattern): Command: `/bee:backlog`, Result: "{action} seed S-{NNN}: {idea}".
 - Subcommands are inline (not separate command files) for simplicity.
 - The `promote` action updates seed status to `promoted` but does NOT auto-invoke `/bee:new-spec` -- the developer decides when to act on the promoted seed.
 - Seeds with `status: archived` are shown in the list output in a separate "Archived Seeds" section but are excluded from auto-surface during `/bee:new-spec`.

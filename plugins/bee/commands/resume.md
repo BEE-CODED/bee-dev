@@ -146,6 +146,7 @@ If no learnings: skip silently (no "No learnings" message).
 Summarize the project state:
 - **Spec:** Name and status (or "No spec defined yet")
 - **Stack:** From config.json
+- **Mode:** Read `config.implementation_mode` (defaults to "premium"). Display as: "premium" / "quality" / "economy"
 - **Active phase:** Which phase is currently in progress (if any)
 - **Phase status:** What stage the active phase is in (planned / executing / executed / reviewing / reviewed / testing / tested / ready to commit)
 
@@ -233,6 +234,7 @@ Suggest the specific next command based on state analysis. Use the same logic as
 | `NO_SPEC` (no uncommitted changes) | `/bee:new-spec` | "You haven't defined a spec yet. Start by describing what you want to build." |
 | Spec exists, no phases planned | `/bee:plan-phase 1` | "Your spec '{name}' is ready. The next step is to break it into executable phases." |
 | Next phase PENDING (not yet planned) | `/bee:plan-phase N` | "Phase N needs planning before execution." |
+| Phase EXECUTING (mid-execution) | `/bee:execute-phase N` | "Phase N was interrupted mid-execution. Resume it to continue from the last completed wave." |
 | Phase planned, not executed | `/bee:execute-phase N` | "Phase N ('{name}') has a plan ready. Execute it to generate the implementation." |
 | Phase executed, not reviewed | `/bee:review` | "Phase N is implemented. Review it to catch issues before moving on." |
 | Phase reviewed, not tested | `/bee:test` | "Review is complete. Generate test scenarios to verify the implementation." |
@@ -268,11 +270,16 @@ After presenting all sections above, end with an interactive menu:
 ```
 AskUserQuestion(
   question: "Context restored. [briefing summary]",
-  options: ["[suggested next command]", "Custom"]
+  options: ["[suggested next command]", "Health check", "Progress", "Custom"]
 )
 ```
 
-The `[briefing summary]` is a one-line recap (e.g. "Phase 2 is implemented and ready to review."). The first option is the suggested next command from section 5. "Custom" is always last.
+The `[briefing summary]` is a one-line recap (e.g. "Phase 2 is implemented and ready to review."). The first option is the suggested next command from section 5.
+
+- **[suggested next command]**: Execute the suggested command from section 5
+- **Health check**: Execute `/bee:health` for full diagnostics
+- **Progress**: Execute `/bee:progress` for detailed status
+- **Custom**: Free text (always last)
 
 ### Output Format
 

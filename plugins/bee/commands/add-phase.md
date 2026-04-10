@@ -73,16 +73,14 @@ Wait for the user's response. Store description as `$DESCRIPTION` and deliverabl
 
 Determine the default dependency: if `$PHASE_NUMBER` is 1, the default is "None". Otherwise, the default is "Phase {$PHASE_NUMBER - 1}".
 
-Ask the user:
-
 ```
-Dependencies for Phase {$PHASE_NUMBER}?
-Default: {default dependency}
-
-(Press enter to accept default, or specify different dependencies)
+AskUserQuestion(
+  question: "Dependencies for Phase {$PHASE_NUMBER}?",
+  options: ["Phase {$PHASE_NUMBER - 1} (default)", "None", "Custom"]
+)
 ```
 
-Wait for the user's response. If the user accepts the default (empty response, "yes", "default", or similar affirmative), use the default. Otherwise store the user's response as `$DEPENDENCIES`.
+If first option is selected, use "Phase {$PHASE_NUMBER - 1}". If "None", use "None". If "Custom", wait for user input and store as `$DEPENDENCIES`. For Phase 1, show only "None (default)" and "Custom".
 
 ### Step 5: Append to phases.md
 
@@ -101,6 +99,13 @@ Wait for the user's response. If the user accepts the default (empty response, "
 ```
 
 3. Write the updated `phases.md` back to disk.
+
+4. **Update ROADMAP.md (if exists):** Check if `{spec-path}/ROADMAP.md` exists. If yes:
+   - Read it from disk
+   - Append a new phase row to the Phase-Requirement Mapping table: `| {$PHASE_NUMBER}. {$PHASE_NAME} | {$DESCRIPTION} | (unmapped) | (to be defined during planning) |`
+   - Append a new Phase Details section at the end
+   - Write updated ROADMAP.md to disk
+   - Note: Requirements will be mapped when `/bee:plan-phase {$PHASE_NUMBER}` runs
 
 ### Step 6: Append to STATE.md
 
@@ -140,10 +145,16 @@ Updated:
 
 ```
 
+```
 AskUserQuestion(
-  question: "Phase [N] added to spec.",
-  options: ["Plan Phase", "Custom"]
+  question: "Phase {$PHASE_NUMBER} added to spec.",
+  options: ["Plan Phase {$PHASE_NUMBER}", "Add another phase", "Custom"]
 )
+```
+
+- **Plan Phase {$PHASE_NUMBER}**: Execute `/bee:plan-phase {$PHASE_NUMBER}`
+- **Add another phase**: Re-run `/bee:add-phase` for the next phase
+- **Custom**: Free text
 
 ---
 

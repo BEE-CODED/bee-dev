@@ -42,6 +42,7 @@ Apply the next-action table below. Check conditions top to bottom -- use the FIR
 | Status is `NO_SPEC` (no uncommitted changes) | `/bee:new-spec` | "Start by defining what you want to build." |
 | Status is `SPEC_CREATED` | `/bee:plan-phase 1` | "Spec ready. Plan the first phase." |
 | Status is `IN_PROGRESS`, next phase is PENDING (not yet planned) | `/bee:plan-phase N` | "Phase N needs planning before execution." |
+| Status is `IN_PROGRESS`, phase is EXECUTING (mid-execution) | `/bee:execute-phase N` | "Phase N was interrupted mid-execution. Resume it." |
 | Status is `IN_PROGRESS`, phase planned not executed | `/bee:execute-phase N` | "Phase N is planned and ready to execute." |
 | Status is `IN_PROGRESS`, phase executed not reviewed | `/bee:review` | "Phase N is implemented. Time to review." |
 | Status is `IN_PROGRESS`, phase reviewed not tested | `/bee:test` | "Review done. Generate test scenarios." |

@@ -11,9 +11,9 @@ You are running `/bee:update` -- updates the bee statusline to the latest versio
 
 Use Bash to gather current state in parallel:
 
-1. Check global statusline: `cat ~/.claude/hooks/bee-statusline.js 2>/dev/null | head -5` (look for BEE_VERSION line)
+1. Check global statusline: Read `~/.claude/hooks/bee-statusline.js` using the Read tool (if not found, note as NOT INSTALLED). Extract the BEE_VERSION line from the first 5 lines.
 2. Check local legacy copy: `test -f .bee/statusline.js && echo "EXISTS" || echo "NONE"`
-3. Check local settings: `cat .claude/settings.json 2>/dev/null || echo "NONE"`
+3. Check local settings: Read `.claude/settings.json` using the Read tool (if not found, note as NONE)
 4. Read plugin version: read `${CLAUDE_PLUGIN_ROOT}/../.claude-plugin/plugin.json` (resolve relative to this command's directory, i.e., the plugin root's `.claude-plugin/plugin.json`)
 
 ### Step 2: Show Current Status
@@ -54,7 +54,7 @@ After running, verify the copy was successful by checking `~/.claude/hooks/bee-s
 
 ### Step 4b: Implementation Mode Recommendation
 
-Read `.bee/config.json`. If `implementation_mode` is `"quality"` or `"economy"`:
+Re-read `.bee/config.json` from disk (Read-Modify-Write pattern). If `implementation_mode` is `"quality"` or `"economy"`:
 
 ```
 AskUserQuestion(
@@ -87,7 +87,7 @@ Then present an interactive menu:
 ```
 AskUserQuestion(
   question: "Bee updated. [summary]",
-  options: ["Accept", "Custom"]
+  options: ["Health check", "Accept", "Custom"]
 )
 ```
 

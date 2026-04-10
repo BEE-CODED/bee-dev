@@ -158,8 +158,8 @@ Total specs to create: {N}
 ```
 
 Use AskUserQuestion:
-- If `--dry-run`: Question: "This is a dry-run preview. What next?" Options: "Generate specs now" (proceed to Step 6), "Adjust plan" (user describes changes), "Cancel" (stop).
-- If NOT `--dry-run`: Question: "Ready to generate {N} specs from audit findings?" Options: "Generate all" (proceed to Step 6), "Adjust plan" (user describes changes), "Cancel" (stop).
+- If `--dry-run`: Question: "This is a dry-run preview. What next?" Options: "Generate specs now" (proceed to Step 6), "Adjust plan" (user describes changes), "Cancel" (stop), "Custom".
+- If NOT `--dry-run`: Question: "Ready to generate {N} specs from audit findings?" Options: "Generate all" (proceed to Step 6), "Adjust plan" (user describes changes), "Cancel" (stop), "Custom".
 
 If "Adjust plan": wait for user's changes, update the plan, and re-present.
 
@@ -221,9 +221,15 @@ For quick individual fixes, you can also use:
 
 This is especially useful for LOW and MEDIUM findings that don't need a full spec pipeline.
 
----
+### Step 8: Completion Menu
 
+```
 AskUserQuestion(
-  question: "Specs generated from audit findings. [X] specs created.",
-  options: ["New Spec", "Accept", "Custom"]
+  question: "Specs generated from audit findings. {X} specs created in .bee/audit-specs/.",
+  options: ["Start first spec", "Accept", "Custom"]
 )
+```
+
+- **Start first spec**: Execute `/bee:new-spec --from-discussion .bee/audit-specs/{first-file}` to begin with the highest-priority spec
+- **Accept**: End command
+- **Custom**: Free text

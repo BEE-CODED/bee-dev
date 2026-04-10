@@ -95,7 +95,17 @@ Display to user: "Starting testing of Phase {N}: {phase-name}..."
    ```
 
 2. Ask the developer:
-   "Please test these scenarios manually. When ready, tell me: **'all pass'** or describe any failures (e.g., 'happy path 3 fails -- no toast message after submit')."
+
+   ```
+   AskUserQuestion(
+     question: "Please test these scenarios manually. Ready to report results?",
+     options: ["All scenarios pass", "Some scenarios failed", "Custom"]
+   )
+   ```
+
+   - **All scenarios pass**: Proceed to Step 5 "all pass" path.
+   - **Some scenarios failed**: Ask "Describe the failures (e.g., 'happy path 3 fails -- no toast after submit')." then proceed to Step 5 failure path.
+   - **Custom**: Free text (developer describes results in detail).
 
 ### Step 5: Handle Developer Response
 

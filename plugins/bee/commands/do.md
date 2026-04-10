@@ -121,7 +121,7 @@ AskUserQuestion(
 )
 ```
 
-For the selected alternative, display "Run `/bee:{command}` now." Do NOT auto-invoke.
+For the selected alternative, invoke using `Skill(skill: "bee:{command}")`. If the Skill tool is unavailable, display "Run `/bee:{command}` now." as a fallback.
 
 - **Custom**: Wait for free-text input from the user.
 
@@ -129,7 +129,7 @@ For the selected alternative, display "Run `/bee:{command}` now." Do NOT auto-in
 
 **Design Notes (do not display to user):**
 
-- /bee:do NEVER executes commands itself -- it only suggests. This keeps the user in control and avoids recursive command invocation issues.
+- /bee:do invokes the selected command via `Skill()` after user confirmation. The user always sees the suggestion and explicitly chooses before invocation — no silent auto-routing.
 - Intent classification uses simple keyword matching, not LLM reasoning. First match wins.
 - The alternatives shown for "Show alternatives" should be contextually related commands (e.g., if matched `/bee:review`, show `/bee:audit`, `/bee:test`, `/bee:review-implementation`).
 - No agents needed. No Task tool. Pure command logic with Read and AskUserQuestion.

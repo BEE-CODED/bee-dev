@@ -225,7 +225,7 @@ Action Items:
 Full report: .bee/eod-reports/{YYYY-MM-DD}.md
 ```
 
-Update `.bee/STATE.md` Last Action:
+Re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern). Update Last Action:
 - Command: `/bee:eod`
 - Timestamp: current ISO 8601 timestamp
 - Result: "EOD audit: {integrity_status}, {code_status}, {test_status}, {compliance_status}, velocity: {velocity_status}, sentinel: {sentinel_status}"
@@ -235,11 +235,12 @@ Ask:
 ```
 AskUserQuestion(
   question: "EOD check complete. {integrity_status} | {code_status} | {test_status} | {compliance_status}",
-  options: ["Commit", "Review findings", "Accept", "Custom"]
+  options: ["Commit", "Pause", "Review findings", "Accept", "Custom"]
 )
 ```
 
 - **Commit**: Proceed to `/bee:commit`
+- **Pause**: Execute `/bee:pause` (save handoff for tomorrow)
 - **Review findings**: Show detailed findings
 - **Accept**: End session
 - **Custom**: Free text

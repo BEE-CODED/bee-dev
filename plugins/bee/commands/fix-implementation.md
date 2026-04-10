@@ -154,6 +154,9 @@ Findings: {total} processed
 - Skipped: {skipped}
 - Failed: {failed}
 
+{For each finding, one line:}
+  F-{NNN}: {summary} — {status} {if failed/skipped: "({reason})"}
+
 Next steps:
   git diff                   (review all changes)
   /bee:commit                (commit when satisfied)

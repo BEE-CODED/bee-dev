@@ -252,6 +252,7 @@ Based on the current state, suggest exactly one next command. Use this logic:
 | Status is `NO_SPEC` (no spec exists, no uncommitted changes) | `/bee:new-spec` -- "Start by defining what you want to build." |
 | Status is `SPEC_CREATED` (spec exists but no phases planned) | `/bee:plan-phase 1` -- "Your spec is ready. Plan the first phase." |
 | Status is `IN_PROGRESS`, next phase is PENDING (not yet planned) | `/bee:plan-phase N` -- "Phase N needs planning before execution." |
+| Status is `IN_PROGRESS`, a phase is EXECUTING (mid-execution) | `/bee:execute-phase N` -- "Phase N was interrupted mid-execution. Resume it." |
 | Status is `IN_PROGRESS`, a phase is planned but not yet executed | `/bee:execute-phase N` -- "Phase N is planned and ready to execute." |
 | Status is `IN_PROGRESS`, a phase is executed but not reviewed | `/bee:review` -- "Phase N is implemented. Time to review." |
 | Status is `IN_PROGRESS`, a phase is reviewed but not tested | `/bee:test` -- "Review is done. Generate test scenarios." |

@@ -599,11 +599,13 @@ Then present the end-of-phase menu:
 ```
 AskUserQuestion(
   question: "Phase {N} executed. {X} tasks completed.",
-  options: ["Review", "Custom"]
+  options: ["Review", "Swarm Review", "Test", "Custom"]
 )
 ```
 
 - **Review**: Execute `/bee:review` (per-phase review — generates REVIEW.md, updates status to REVIEWED, writes review metrics)
+- **Swarm Review**: Execute `/bee:swarm-review --phase {N}` (multi-agent deep review with segmentation)
+- **Test**: Execute `/bee:test` (generate test scenarios for the phase)
 - **Custom**: Free text
 
 ---

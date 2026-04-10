@@ -155,6 +155,15 @@ Determine the subcommand from `$ARGUMENTS`:
 
 8. Display: "Closed: {slug}"
 
+### Update STATE.md
+
+After any state-modifying subcommand (new, add, close, status change), re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern) and update Last Action:
+- Command: `/bee:thread {subcommand}`
+- Timestamp: current ISO 8601 timestamp
+- Result: e.g., "Created thread 'auth-patterns'", "Added entry to 'perf-tuning'", "Closed thread 'api-redesign'"
+
+Write updated STATE.md to disk.
+
 ---
 
 **Design Notes (do not display to user):**

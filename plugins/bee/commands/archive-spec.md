@@ -100,14 +100,24 @@ Perform a double-write to STATE.md to record the transition through ARCHIVED sta
 6. Keep the Last Action from the first write unchanged.
 7. Write STATE.md to disk.
 
+### Step 5.5: Archive Agent Memory
+
+Archive agent memory from the completed spec so agents start clean for the next spec:
+
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/archive-memory.sh "{spec-name}"
+```
+
+This archives agent memory to `.bee/memory-archive/{spec-name}/`, keeps only project-level shared entries, and clears agent-specific memory.
+
 ### Step 6: Bump Plugin Version
 
-1. Read the plugin manifest at `plugins/bee/.claude-plugin/plugin.json` (use the Read tool -- adjust the path relative to the project root, which for the bee plugin itself is the repo root).
-   - If running within a project that uses the bee plugin, the plugin.json path is at the plugin's installed location. Use `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` via Bash to resolve the correct path.
-2. Parse the `version` field (semver format: `MAJOR.MINOR.PATCH`).
-3. Increment the PATCH number by 1 (e.g., `2.1.0` becomes `2.1.1`, `1.0.9` becomes `1.0.10`).
-4. Write the updated plugin.json back to disk with the new version, preserving all other fields.
-5. Display: "Plugin version bumped: {old-version} -> {new-version}"
+1. Attempt to read the plugin manifest: try `plugins/bee/.claude-plugin/plugin.json` first, then `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` via Bash if the first path does not exist.
+2. If neither path resolves to a file, display: "Plugin version bump skipped — plugin.json not found. Bump manually if needed." and continue to Step 7.
+3. Parse the `version` field (semver format: `MAJOR.MINOR.PATCH`).
+4. Increment the PATCH number by 1 (e.g., `2.1.0` becomes `2.1.1`, `1.0.9` becomes `1.0.10`).
+5. Write the updated plugin.json back to disk with the new version, preserving all other fields.
+6. Display: "Plugin version bumped: {old-version} -> {new-version}"
 
 ### Step 7: Summary
 

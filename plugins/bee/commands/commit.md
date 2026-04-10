@@ -35,9 +35,16 @@ Check these guards in order. Stop immediately if any fails:
    "No spec found. Run `/bee:new-spec` first."
    Do NOT proceed.
 
-4. **Phase detection:** Check `$ARGUMENTS` for a phase number. If present, use that phase number explicitly. Validate: if the phase does not exist in the Phases table, tell the user: "Phase {N} does not exist. Your spec has {M} phases." Do NOT proceed. If the explicit phase's Status is not "TESTED" (with Committed != "Yes") and not "REVIEWED" (with Committed != "Yes"), tell the user: "Phase {N} has status {status} -- expected TESTED or REVIEWED with Committed != Yes for committing." Do NOT proceed. If no phase number in `$ARGUMENTS`, read the Phases table from STATE.md. Find the **last** phase where: Status is "TESTED" AND the Committed column is NOT "Yes". This is the phase to commit. If no such phase exists: check for the **last** phase with Status "REVIEWED" and Committed column NOT "Yes" (user may want to commit after review without testing). If still no such phase, tell the user:
-   "No phases ready to commit. Complete testing first with `/bee:test`."
-   Do NOT proceed.
+4. **Phase detection:**
+
+   **(a) Explicit phase number:** If `$ARGUMENTS` contains a phase number:
+   - Validate it exists in the Phases table. If not: "Phase {N} does not exist. Your spec has {M} phases." Stop.
+   - Validate the phase Status is "TESTED" or "REVIEWED" with Committed != "Yes". If not: "Phase {N} has status {status} -- expected TESTED or REVIEWED with Committed != Yes." Stop.
+
+   **(b) Auto-detect** (no phase number in arguments):
+   - Scan the Phases table for the **last** phase where Status = "TESTED" AND Committed != "Yes".
+   - If none found: check for the **last** phase where Status = "REVIEWED" AND Committed != "Yes" (commit after review without testing).
+   - If still none: "No phases ready to commit. Complete testing first with `/bee:test`." Stop.
 
 5. **No changes guard:** If git diff --stat and git status --short from the dynamic context both show no output (no changes), tell the user:
    "No changes to commit. Everything is already committed."
@@ -79,11 +86,17 @@ Check these guards in order. Stop immediately if any fails:
 
 Ask the user:
 
-Use AskUserQuestion:
-Question: "How would you like to proceed?"
-Options: "Commit with this message" (proceed to Step 5 with the suggested message), "Edit the message" (user provides preferred message, then proceed to Step 5), "Cancel" (don't commit, stop).
+```
+AskUserQuestion(
+  question: "How would you like to proceed?",
+  options: ["Commit with this message", "Edit the message", "Cancel", "Custom"]
+)
+```
 
-Act on the user's choice. If "Edit the message" is selected, wait for the user's edited message via their "Other" input or follow-up message.
+- **Commit with this message**: Proceed to Step 5 with the suggested message.
+- **Edit the message**: Wait for the user's edited message via their follow-up input, then proceed to Step 5.
+- **Cancel**: Do not commit. Stop.
+- **Custom**: Free text input.
 
 ### Step 5: Execute Commit
 
@@ -95,7 +108,13 @@ Act on the user's choice. If "Edit the message" is selected, wait for the user's
    - Stage implementation files listed in TASKS.md
    - Present the staged file list to the user: "Staging these files: {list}"
 3. NEVER use `git add -A`, `git add .`, `git add --all`, or `git add {spec-path}/` (overly broad — stages all phases). Only stage phase-related files.
-4. Run `git commit -m "{message}"`
+4. Run git commit using heredoc to handle special characters safely:
+   ```bash
+   git commit -m "$(cat <<'EOF'
+   {message}
+   EOF
+   )"
+   ```
 5. If commit succeeds: proceed to Step 6.
 6. If commit fails: display the error and suggest resolution. Do NOT retry automatically.
 
@@ -110,9 +129,11 @@ Act on the user's choice. If "Edit the message" is selected, wait for the user's
    - Timestamp: current ISO 8601 timestamp
    - Result: "Phase {N} committed: {message}"
 4. Write updated STATE.md to disk.
-5. Determine next step:
-   - If there are more phases in the spec: suggest `/bee:plan-phase {N+1}`
-   - If all phases are complete: suggest `/bee:review-implementation`
+5. Determine next step by reading the Phases table from STATE.md:
+   - If the next phase (N+1) exists and has Plan = empty: suggest `/bee:plan-phase {N+1}`
+   - If the next phase (N+1) exists and has Plan = "Yes" but Status is PENDING: suggest `/bee:execute-phase {N+1}`
+   - If the next phase (N+1) exists and Status is EXECUTED: suggest `/bee:review`
+   - If all phases have Committed = "Yes": suggest `/bee:review-implementation`
 6. Display:
 
    ```

@@ -132,7 +132,7 @@ Handle responses same as autonomous.md: "Accept all" records recommendations, "C
   </deferred>
   ```
 
-- If `$BATCH_PHASE` is null (generic topic): write to `.bee/discussions/{date}-{slug}-batch.md` with a simplified format (no phase-specific sections, just decisions and findings).
+- If `$BATCH_PHASE` is null (generic topic): run `date +%Y-%m-%d` and store as `$BATCH_DATE`. Write to `.bee/discussions/{$BATCH_DATE}-{slug}-batch.md` with a simplified format (no phase-specific sections, just decisions and findings).
 
 **7. Completion and next steps:**
 
@@ -148,17 +148,20 @@ AskUserQuestion(
 - **"Continue discussing"**: Re-enter batch mode for additional grey areas
 - **"Custom"**: Free text
 
-After batch mode completes, update STATE.md Last Action and stop. Do NOT proceed to regular discuss Steps 3-7.
+After batch mode completes: re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern). Update Last Action:
+- Command: `/bee:discuss` (batch)
+- Timestamp: current ISO 8601 timestamp
+- Result: "Batch discuss complete. {N} decisions captured to {output path}"
+
+Write updated STATE.md to disk. Do NOT proceed to regular discuss Steps 3-7.
+
+### Step 2.5: Resolve Model Once
+
+Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent). In premium mode, omit the model parameter for all spawned agents. In economy or quality mode, pass `model: "sonnet"`. Store as `$RESOLVED_MODEL` for use in Steps 3, 3.5, and 5.
 
 ### Step 3: Spawn Discuss-Partner Scan Mode
 
-Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent).
-
-**Premium mode** (`implementation_mode: "premium"`): Omit the model parameter (inherit parent model) -- premium uses the strongest model for all work.
-
-**Economy or Quality mode**: Pass `model: "sonnet"` -- scanning/planning work is structured and does not require deep reasoning.
-
-Spawn the `discuss-partner` agent via the Task tool with the model determined above. Provide the following context:
+Spawn the `discuss-partner` agent via the Task tool with `$RESOLVED_MODEL`. Provide the following context:
 
 ```
 Task(
@@ -206,10 +209,8 @@ AskUserQuestion(
 If "Skip": proceed to Step 4.
 
 If "Yes":
-1. Read config.implementation_mode from config.json (defaults to "premium" if absent)
-   - Premium mode: Omit model parameter.
-   - Economy or Quality mode: Pass model: "sonnet".
-2. Spawn the assumptions-analyzer agent as a subagent with the model determined above. Provide:
+1. Use `$RESOLVED_MODEL` from Step 2.5 for model selection.
+2. Spawn the assumptions-analyzer agent as a subagent with `$RESOLVED_MODEL`. Provide:
    - Instruction: "Analyze codebase assumptions for this discussion topic.
      Topic: {$TOPIC}
      Codebase scan results: {$SCAN_RESULT}
@@ -334,9 +335,9 @@ options:
 
 Derive the output path for the discussion notes:
 
-1. Get today's date: `date +%Y-%m-%d` (format: `{YYYY-MM-DD}`)
-2. Use the slug derived in Step 2
-3. Output path: `.bee/discussions/{YYYY-MM-DD}-{slug}.md`
+1. Run `date +%Y-%m-%d` and store as `$TODAY`.
+2. Use the slug derived in Step 2.
+3. Output path: `.bee/discussions/{$TODAY}-{slug}.md`
 
 Ensure the `.bee/discussions/` directory exists (create it if needed using Bash `mkdir -p`).
 

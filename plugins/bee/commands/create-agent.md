@@ -35,31 +35,9 @@ Wait for the user's response. Normalize to kebab-case and store as `$AGENT_NAME`
 
 ### Step 3: Validate Against Protected Names
 
-Check `$AGENT_NAME` against the following list of 23 protected names. These are reserved for core BeeDev agents and must not be overridden by custom agents:
+Check `$AGENT_NAME` against the protected names list below. These are reserved for core BeeDev agents and must not be overridden by custom agents:
 
-1. `implementer`
-2. `fixer`
-3. `researcher`
-4. `spec-writer`
-5. `phase-planner`
-6. `plan-reviewer`
-7. `spec-shaper`
-8. `finding-validator`
-9. `integrity-auditor`
-10. `test-auditor`
-11. `test-planner`
-12. `project-reviewer`
-13. `context-builder`
-14. `quick-implementer`
-15. `discuss-partner`
-16. `bug-detector`
-17. `pattern-reviewer`
-18. `stack-reviewer`
-19. `plan-compliance-reviewer`
-20. `spec-reviewer`
-21. `laravel-inertia-vue-bug-detector`
-22. `laravel-inertia-vue-pattern-reviewer`
-23. `laravel-inertia-vue-implementer`
+`implementer`, `quick-implementer`, `fixer`, `researcher`, `spec-writer`, `spec-shaper`, `spec-reviewer`, `phase-planner`, `plan-reviewer`, `plan-compliance-reviewer`, `context-builder`, `discuss-partner`, `finding-validator`, `bug-detector`, `pattern-reviewer`, `stack-reviewer`, `swarm-consolidator`, `security-auditor`, `error-handling-auditor`, `database-auditor`, `architecture-auditor`, `api-auditor`, `frontend-auditor`, `performance-auditor`, `testing-auditor`, `test-auditor`, `test-planner`, `audit-bug-detector`, `audit-finding-validator`, `audit-report-generator`, `integration-checker`, `integrity-auditor`, `dependency-auditor`, `assumptions-analyzer`, `debug-investigator`, `ui-auditor`, `laravel-inertia-vue-bug-detector`, `laravel-inertia-vue-pattern-reviewer`, `laravel-inertia-vue-implementer`
 
 If `$AGENT_NAME` matches any protected name, tell the user:
 
@@ -126,6 +104,7 @@ Use AskUserQuestion to ask the user:
 Options:
 - **Yes** — Agent must follow Red-Green-Refactor cycle. Tests first, then implementation.
 - **No** — Agent does not enforce TDD. It can write code without tests.
+- **Custom** — Free text (e.g., "TDD only for business logic, not for config files").
 
 Store the selection as `$TDD_ENFORCED`.
 
@@ -216,7 +195,7 @@ Run `/bee:init` or `/bee:resume` to load the extension.
 **Design Notes (do not display to user):**
 
 - This command runs entirely in main context using AskUserQuestion for each wizard step. No subagents are spawned.
-- The protected names list (23 names) covers all core BeeDev agents from `agents/` directory plus registered names in `inject-memory.sh` that do not have their own file. This prevents users from accidentally overriding core functionality.
+- The protected names list (39 names) covers all core BeeDev agents from `agents/` directory including stack-specific variants. This prevents users from accidentally overriding core functionality or causing hook conflicts (SubagentStop hooks match by agent name).
 - The output directory `.claude/bee-extensions/agents/` is a user-space extensions directory, separate from the plugin's own `agents/` directory. This keeps custom agents isolated from core agents and makes them portable across plugin updates.
 - The agent file format (YAML frontmatter with name, description, tools, color, model, skills) matches the core agent format exactly, so the plugin infrastructure (hooks, memory injection) can work with custom agents the same way it works with core agents.
 - The `model: inherit` convention is followed for custom agents -- the conductor decides the model at spawn time based on work complexity.
