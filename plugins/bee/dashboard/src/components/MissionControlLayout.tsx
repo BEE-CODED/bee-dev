@@ -27,13 +27,13 @@
 //     as it did before this change (AC 1). The 2-column `[main | feed]`
 //     behaviour is preserved byte-for-byte via the same template literal.
 
-import { useState } from 'react';
 import {
   Activity,
   Hexagon,
   PanelLeft,
   PanelRight,
 } from 'lucide-react';
+import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 
 export interface MissionControlLayoutProps {
   children: React.ReactNode;
@@ -48,8 +48,16 @@ export function MissionControlLayout({
   feed,
   leftSidebar,
 }: MissionControlLayoutProps) {
-  const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [leftCollapsed, setLeftCollapsed] = useLocalStorageState<boolean>(
+    'bee-hive:v1:leftCollapsed',
+    false,
+    { validate: (v): v is boolean => typeof v === 'boolean' },
+  );
+  const [rightCollapsed, setRightCollapsed] = useLocalStorageState<boolean>(
+    'bee-hive:v1:rightCollapsed',
+    false,
+    { validate: (v): v is boolean => typeof v === 'boolean' },
+  );
 
   // Visibility is a pure function of (slot-provided) × (collapsed state).
   // These booleans drive BOTH the grid-template selection and the JSX
