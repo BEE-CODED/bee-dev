@@ -141,6 +141,25 @@ Use Glob to find `{spec-path}/phases/*/LEARNINGS.md`. If any active learnings ex
 
 If no learnings: skip silently (no "No learnings" message).
 
+**Git Drift Check (if available):**
+
+After reading the Last Action timestamp from STATE.md, check for commits that landed AFTER the last bee command was run. These commits are not yet reflected in STATE.md's audit trail and may cause the briefing to understate recent work.
+
+1. Extract the timestamp value from the `- Timestamp:` line under `## Last Action` in STATE.md.
+2. **Timestamp guard (mandatory):** Before running the git log query, validate the extracted timestamp. If the timestamp value is empty, missing, still contains the literal placeholder `{TIMESTAMP}`, or does not match an ISO 8601 pattern (e.g., `2026-04-11T10:30:00Z`), SKIP this check entirely — display nothing, emit no warning, continue to Section 2. The drift check is a best-effort enhancement, not a correctness gate. Git's approxidate parser treats empty or unparseable `--since` values as "no limit" and would return every commit in history, flooding the briefing and violating the zero-noise contract of this subsection.
+3. Run via Bash: `git log --since="{timestamp}" --oneline --format="%h %s"`.
+4. If the output contains one or more commits, display a warning block:
+   ```
+   Warning: {N} commit(s) landed after last bee command ({timestamp}):
+     {hash} {subject}
+     {hash} {subject}
+     ...
+   STATE.md may be stale. Consider recording these with `/bee:note`, or run `/bee:commit` if they came from uncommitted changes.
+   ```
+5. If 0 commits returned, display NOTHING. This subsection is zero-noise when there is no drift — no "no drift detected" message, no blank header.
+
+This complements the existing uncommitted-changes probe in Section 4.7 — drift detection catches commits that happened but were not orchestrated through a bee command (e.g., manual git commits for small UI polishes between sessions).
+
 **2. Current Position**
 
 Summarize the project state:

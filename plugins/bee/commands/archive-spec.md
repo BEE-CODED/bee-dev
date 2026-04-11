@@ -102,11 +102,15 @@ Perform a double-write to STATE.md to record the transition through ARCHIVED sta
 
 ### Step 5.5: Archive Agent Memory
 
-Archive agent memory from the completed spec so agents start clean for the next spec:
+Archive agent memory from the completed spec so agents start clean for the next spec. Capture the script's stdout and display it to the user — the script emits one status line per outcome (success with count, no-op, or error) instead of running silently:
 
 ```bash
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/archive-memory.sh "{spec-name}"
 ```
+
+1. Capture stdout from the Bash invocation above.
+2. Display the captured output to the user verbatim (e.g. `archived 3 file(s) to .bee/memory-archive/{spec-name}/` or `no memory to archive (no shared entries found)`).
+3. If the script exits with a non-zero code, surface the stderr error message to the user before proceeding so the failure is not silent.
 
 This archives agent memory to `.bee/memory-archive/{spec-name}/`, keeps only project-level shared entries, and clears agent-specific memory.
 

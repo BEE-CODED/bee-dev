@@ -61,6 +61,8 @@ If STATE.md shows an existing spec (Status is NOT `NO_SPEC`), archive the memory
 
 1. Get the previous spec name from STATE.md (Current Spec Name field)
 2. Run: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/archive-memory.sh "{previous-spec-name}"`
+3. Capture the script's stdout and display it to the user verbatim — the script emits one status line per outcome (e.g. `archived 3 file(s) to .bee/memory-archive/{previous-spec-name}/` or `no memory to archive (no shared entries found)`). This replaces the previous fire-and-forget silent invocation.
+4. If the script exits with a non-zero code, surface the stderr error message to the user before continuing so the failure is not silent.
 
 This archives agent memory to `.bee/memory-archive/{spec-name}/`, keeps only project-level shared entries (patterns, conventions, preferences), and clears agent-specific memory so agents start clean for the new spec.
 
