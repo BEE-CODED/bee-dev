@@ -1,7 +1,7 @@
 {
   "name": "bee",
-  "version": "4.0.1",
-  "description": "Spec-driven development workflow with TDD enforcement, parallel agent execution, autonomous pipeline orchestration, interactive flow control, review gates, comprehensive code auditing, workflow metrics, debug intelligence, health baselining, adaptive error recovery, and the Bee Hive live dashboard — a local web UI for browsing phases, reports, notes, seeds, quick plans, and roadmap in a readable IDE-style interface",
+  "version": "4.0.2",
+  "description": "Spec-driven development workflow with TDD enforcement, parallel agent execution, autonomous pipeline orchestration, interactive flow control, review gates, comprehensive code auditing, workflow metrics, debug intelligence, health baselining, adaptive error recovery, and the Bee Hive live dashboard — a local web UI for browsing phases, reports, notes, seeds, quick plans, roadmap, and a live agent activity feed powered by Claude Code hooks",
   "author": {
     "name": "Beecoded",
     "url": "https://github.com/beecoded"
@@ -17,6 +17,8 @@
     "interactive-flow",
     "multi-agent",
     "dashboard",
-    "live-ui"
+    "live-ui",
+    "live-activity",
+    "hooks"
   ]
 }
