@@ -172,12 +172,13 @@ assert(
   /setEventsHandler/.test(serverExportsSlice),
   'hive-server.js module.exports includes setEventsHandler'
 );
-// sendJsonError export is optional (we chose to duplicate the helper in
-// hive-snapshot.js instead), but we keep the export so future code can reuse
-// it without the circular-require risk.
+// sendJsonError lives in the neutral-leaf hive-http-utils.js (post-S-003
+// architectural refactor — see hive-http-utils.js header for the DAG topology).
+// hive-server.js imports it at the top and re-exports it here so downstream
+// callers can reach the helper without knowing the leaf module exists.
 assert(
   /sendJsonError/.test(serverExportsSlice),
-  'hive-server.js module.exports includes sendJsonError (available for reuse)'
+  'hive-server.js module.exports includes sendJsonError (re-exported from hive-http-utils)'
 );
 
 // ============================================================
