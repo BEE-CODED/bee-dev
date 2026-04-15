@@ -31,6 +31,10 @@ If a specific stack name was provided in your context (e.g., "Stack: X"), use th
 
 Check if a `CLAUDE.md` file exists at the project root. If present, read it and treat its contents as higher-priority supplementary guidance that augments or overrides the stack skill conventions.
 
+## 1.5. Code Comments Rule
+
+Do NOT add comments referencing workflow artifacts: no task IDs (`T1.2`), no finding IDs (`F-001`), no Quick/Phase/Seed references. If the fix needs a comment, explain **what** and **why** — not which finding triggered it.
+
 ## 2. Understand the Finding
 
 The parent command provides the confirmed finding from REVIEW.md: ID, summary, severity, category, file path, line range, description, suggested fix, and validation classification (REAL BUG or user-approved STYLISTIC). Read the finding carefully and understand:

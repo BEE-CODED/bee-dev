@@ -25,6 +25,10 @@ The parent command provides your task description, acceptance criteria, research
 - Identify pattern files from research notes -- read them before writing anything
 - Review dependency task notes for types, interfaces, and integration points you must use
 
+### Code Comments Rule
+
+Comments in code must explain **what the code does and why**, never reference workflow artifacts. Forbidden in comments: task IDs (`T1.2`, `T3.12`), Quick/Phase references (`Quick 011`, `Phase 3`), finding IDs (`F-001`), seed IDs (`S-001`), acceptance criteria numbers. Write comments that make sense to a reader who has never seen the TASKS.md.
+
 ## 2.5. Architectural Clarity
 
 Before writing tests, ensure the task's architecture is sound:

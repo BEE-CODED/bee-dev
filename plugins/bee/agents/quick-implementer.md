@@ -31,6 +31,10 @@ The parent command provides the plan file path in your context. Read the plan fi
 
 Read ALL `## Pattern References` files from disk before writing any code. These show the conventions and patterns your implementation must follow.
 
+### Code Comments Rule
+
+Comments in code must explain **what the code does and why**, never reference workflow artifacts. Forbidden in comments: task IDs (`T1.2`, `T3.12`), Quick/Phase references (`Quick 011`, `Phase 3`), finding IDs (`F-001`), seed IDs (`S-001`), acceptance criteria numbers. Write comments that make sense to a reader who has never seen the plan file.
+
 ## 2.5. Architectural Clarity
 
 Before writing tests, verify the task's approach:
