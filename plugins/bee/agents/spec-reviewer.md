@@ -40,9 +40,19 @@ Watch especially for:
 - Requirements mentioned in requirements.md but absent from spec.md
 - Phases that are too large (should be decomposed) or too small (should be merged)
 
+## Evidence Requirement (Drop Policy)
+
+Vendor citation is the predominant mode of evidence for this agent's findings. Spec-review findings are almost always `[CITED]` -- the spec.md / requirements.md section IS the citation. For rare normative claims (e.g., "this spec structure deviates from the BeeDev spec template"), cite the template directly.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a `spec.md:line` or `requirements.md:line` reference. The spec/requirements line IS the citation.
+- `[VERIFIED]` -- normative finding backed by an authoritative source: `skills/core/templates/spec.md`, `skills/core/SKILL.md` section, or a documented BeeDev convention.
+
+If you cannot cite a spec/requirements reference or an external source, do NOT include the finding. No pure-`[ASSUMED]` findings ship. Reviewers drop findings without Evidence Strength or tagged `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
 ## Output Format
 
-End your response with exactly this structure:
+End your response with exactly this structure. Each issue line MUST carry inline `Evidence Strength:` and `Citation:` markers:
 
 ```markdown
 ## Spec Review
@@ -51,7 +61,11 @@ End your response with exactly this structure:
 
 **Issues (if any):**
 - [{Section}]: {specific issue} - {why it matters for implementation}
+  - **Evidence Strength:** [CITED] | [VERIFIED]
+  - **Citation:** <spec.md:line | requirements.md:line | skills/core/templates/...md section>
 - [{Section}]: {specific issue} - {why it matters for implementation}
+  - **Evidence Strength:** [CITED] | [VERIFIED]
+  - **Citation:** <spec.md:line | requirements.md:line | skills/core/templates/...md section>
 
 **Recommendations (advisory -- do not block approval):**
 - {suggestion that would improve the spec but is not required}

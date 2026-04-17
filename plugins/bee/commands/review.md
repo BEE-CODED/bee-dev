@@ -315,7 +315,7 @@ For each pair of findings from different agents, check if they reference the sam
 2. Write `{phase_directory}/REVIEW.md` using the review-report template (`skills/core/templates/review-report.md`):
    - Fill in the Summary section (spec name, phase number, date, iteration, status: PENDING)
    - Fill in the Counts tables (by severity and by category)
-   - Write each finding as a `### F-NNN` section with: Severity, Category, File, Lines, Description, Suggested Fix, Validation: pending, Fix Status: pending
+   - Write each finding as a `### F-NNN` section with: Severity, Category, File, Lines, Evidence, Evidence Strength: [CITED] | [VERIFIED], Citation: <URL | Context7 lib ID + query | skill section path | codebase file:line>, Impact, Test Gap, Description, Suggested Fix, Validation: pending, Fix Status: pending
    - Leave the False Positives section empty
    - Leave the Fix Summary table with one row per finding, all showing "pending"
 3. Verify REVIEW.md was written by reading it back with the Read tool.
@@ -391,7 +391,9 @@ For each pair of findings from different agents, check if they reference the sam
      - HIGH confidence findings: the validator's verdict (REAL BUG / FALSE POSITIVE / STYLISTIC)
      - Escalated MEDIUM confidence findings: the specialist's verdict with escalation note (e.g., "REAL BUG (Escalated to bug-detector -- reclassified as REAL BUG)")
    - Update the Counts table with classification breakdown
-5. Handle FALSE POSITIVE findings (including those reclassified by specialist escalation):
+5. Handle DROPPED findings (Evidence Strength gate failures): silently discard. Do NOT persist to `.bee/false-positives.md` -- DROPPED is a reviewer process error, not a code claim. Persisting would pollute the FP store and risks suppressing legitimate future findings via summary match. Display a brief tally: "{N} findings dropped at Evidence Strength gate (missing/[ASSUMED]/malformed citation)." Set their REVIEW.md Fix Status to "Dropped (gate failure)".
+
+6. Handle FALSE POSITIVE findings (only TRUE FALSE POSITIVE verdicts -- NOT DROPPED, including those reclassified by specialist escalation):
    - If `.bee/false-positives.md` does not exist, create it with a `# False Positives` header
    - Read `.bee/false-positives.md`, count the number of existing `## FP-` headings, set the next FP number to count + 1
    - For each FALSE POSITIVE finding, append an entry (incrementing the FP number for each):

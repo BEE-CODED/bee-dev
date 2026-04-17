@@ -4,6 +4,25 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [4.1.0] - 2026-04-17 -- Vendor Citation Contract (Anti-Hallucination Guard)
+
+### Added
+- **Vendor citation contract across the review + audit pipeline** — every shipped finding from any of 24 reviewer/auditor agents must classify Evidence Strength as `[CITED]` (codebase trace, self-evidencing) or `[VERIFIED]` (vendor docs / OWASP / RFC / MDN / Context7-fetched), and provide a Citation pointer. Pure-`[ASSUMED]` findings are dropped, NOT shipped. Mirrors and extends the existing `agents/researcher.md:122-128` tag system precedent.
+- **New schema fields** in `skills/core/templates/review-report.md`: `Evidence Strength: [CITED] | [VERIFIED]` and `Citation: <URL | Context7 lib ID + query | skill section path | codebase file:line>`. Slotted between existing `Evidence:` and `Impact:` fields. Total finding template now 13 fields (was 11).
+- **`[CITED]` vs `[VERIFIED]` distinction** — empirical findings (codebase file:line trace) qualify as `[CITED]` even without external vendor docs; the trace IS the citation. Normative findings (best-practice claims) require `[VERIFIED]` external source. Avoids misclassifying legitimate empirical findings as STYLISTIC just because they lack vendor docs.
+- **`DROPPED` verdict** in `finding-validator` and `audit-finding-validator` — distinct from `FALSE POSITIVE`. `DROPPED` means the reviewer made a process error (missing/`[ASSUMED]`/malformed citation); the underlying code claim was NOT evaluated. `quick.md` and `review.md` skip persistence of `DROPPED` to `.bee/false-positives.md` to avoid polluting the FP store and risking suppression of legitimate future findings via summary match.
+- **`Evidence Requirement (Drop Policy)` sections** in `skills/review/SKILL.md` and `skills/audit/SKILL.md` documenting the contract, the empirical/normative split, the drop policy, and the distinction from researcher's permissive `[ASSUMED]` rules.
+- **NEW test file** `plugins/bee/scripts/tests/vendor-citation-contract.test.js` — 166 structural assertions pinning the contract across all 24 agents + 3 schema files + 3 commands. Negative + positive checks ensure regression would fail CI.
+
+### Changed
+- 24 reviewer/auditor agent prompts updated with the contract (3 tiers: 5 with Context7 + full vendor lookup, 17 without Context7 + direct vendor URL citation, 2 validators with format-only fabrication checks + drop logic). Output formats extended with the 2 new fields per each agent's variant.
+- 3 commands (`quick.md`, `review-implementation.md`, `review.md`) — inline finding-format lists extended from 10 to 13 fields.
+- Plugin version: 4.0.7 -> 4.1.0
+- Marketplace version: 1.4.3 -> 1.5.0
+
+### Discussion
+`.bee/discussions/2026-04-17-vendor-citation-reviews.md` captures the design rationale, the empirical/normative split decision, and the colleague's anti-hallucination motivation that drove the strict drop policy.
+
 ## [4.0.7] - 2026-04-17 -- Ceremony Bump Removal (Downstream Safety Hotfix)
 
 ### Fixed

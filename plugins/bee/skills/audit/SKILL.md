@@ -82,6 +82,8 @@ Every finding from every audit agent MUST use this exact format:
 - **File:** `{file path}`
 - **Lines:** {start}-{end} (or "multiple" if spread across files)
 - **Agent:** {agent name that found it}
+- **Evidence Strength:** {[CITED] | [VERIFIED]}
+- **Citation:** {URL | Context7 lib ID + query | skill section path | codebase file:line}
 
 **Description:**
 {What the problem is. Be specific -- reference the exact code pattern.}
@@ -95,6 +97,8 @@ Every finding from every audit agent MUST use this exact format:
 **Suggested Fix:**
 {How to fix it. Reference framework-specific approach if applicable.}
 ```
+
+Drop policy: findings with missing Evidence Strength or tagged `[ASSUMED]` are rejected by the `audit-finding-validator` before they reach the final report. See the "Evidence Requirement (Drop Policy)" section below.
 
 ### Agent Prefixes
 
@@ -138,6 +142,38 @@ For each finding, the validator MUST:
 3. Check if the issue is handled elsewhere (search for related patterns)
 4. Check if framework/middleware handles it automatically
 5. Classify with confidence level (HIGH / MEDIUM)
+6. Enforce the Evidence Requirement (Drop Policy) -- see below
+
+## Evidence Requirement (Drop Policy)
+
+Every audit finding must declare where the reviewer's confidence came from. The tag vocabulary mirrors the researcher's precedent at `agents/researcher.md:122-128` -- audit agents use the same exact bracket notation (`[CITED]`, `[VERIFIED]`, `[ASSUMED]`) but apply a STRICTER contract than the researcher does.
+
+### Evidence Strength classification
+
+Every finding carries an Evidence Strength tag that classifies how the auditor knows the finding is real:
+
+- **`[CITED]`** -- empirical finding. The auditor traced the problem through actual code: a specific `file:line` path showing how the bug manifests, or a side-by-side comparison with an existing codebase pattern. The trace IS the citation.
+- **`[VERIFIED]`** -- normative finding. The auditor checked an authoritative external source before flagging the code as wrong: Context7 documentation for the framework, a vendor docs URL, OWASP / CWE / CVE advisory, RFC, MDN, WCAG, or a stack-skill rule that has an upstream origin.
+- **`[ASSUMED]`** -- inference without codebase or external evidence. Researcher permits this for low-risk claims. **Auditor does NOT.** Findings tagged `[ASSUMED]` (or with missing Evidence Strength) are rejected by the `audit-finding-validator` before they reach the report.
+
+### Drop policy
+
+Audit contract is STRICTER than researcher's permissive tag system. An `[ASSUMED]` audit finding -- a guess dressed up as a problem -- wastes remediation cycles and erodes trust in the pipeline.
+
+**Rule: if you cannot verify a normative claim via an external source AND cannot trace an empirical claim through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship.** This is the anti-hallucination guard.
+
+The `audit-finding-validator` enforces this by dropping (or reclassifying as FALSE POSITIVE) any finding whose Evidence Strength is missing or `[ASSUMED]`. The validator also runs a cheap format-only fabrication check on `[VERIFIED]` claims: URL plausibility, Context7 library ID format, skill section path resolvability. This catches obvious citation fakery without requiring the validator to re-fetch every source.
+
+### Citation format
+
+The Citation field content depends on the Evidence Strength tag:
+
+| Evidence Strength | Expected Citation content                                       |
+|-------------------|-----------------------------------------------------------------|
+| `[CITED]`         | `file:line` trace, or `file:line` + pattern-match path          |
+| `[VERIFIED]`      | URL, Context7 library ID + query used, or skill section path    |
+
+A finding with `[VERIFIED]` Evidence Strength but no concrete Citation is treated as missing evidence and dropped. A `[CITED]` finding without a codebase pointer is also dropped.
 
 ## Report Template
 

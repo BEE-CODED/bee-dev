@@ -60,9 +60,21 @@ For each endpoint that accepts input (POST, PUT, PATCH, query params):
 - **Bulk operations without limits:** Bulk create/update/delete endpoints without item count limits.
 - **Missing total count:** Paginated responses without total count for client-side pagination UI.
 
-## 3. Output
+## 3. Evidence Requirement (Drop Policy)
 
-Use the audit skill finding format. Prefix all finding IDs with `API`.
+Vendor citation is the predominant mode of evidence for this agent's findings. API findings should predominantly cite the framework's routing / validation / serialization docs, REST conventions (RFC 7231 for HTTP semantics, RFC 7807 for problem details), or OWASP API Top 10. For any normative claim, you MUST consult Context7 (or a vendor URL / OWASP / RFC / MDN) BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a codebase `file:line` trace showing the mismatch (the trace IS the citation).
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: Context7 framework docs, vendor API guide, RFC, OWASP API Top 10.
+
+If you cannot verify a normative claim via an external source AND cannot trace an empirical claim through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The audit-finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/audit/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
+## 4. Output
+
+Use the audit skill finding format (including the `Evidence Strength:` and `Citation:` fields). Prefix all finding IDs with `API`.
 
 Include the endpoint inventory as an appendix:
 

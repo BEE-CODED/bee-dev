@@ -470,7 +470,7 @@ For each pair of findings from different agents, check if they reference the sam
 2. Write `{review_output_path}` using the review-report template (`skills/core/templates/review-report.md`):
    - Fill in the Summary section: Spec="Quick Review", Phase="N/A", date, iteration=1, status: PENDING
    - Fill in the Counts tables (by severity and by category)
-   - Write each finding as a `### F-NNN` section with: Severity, Category, File, Lines, Description, Suggested Fix, Validation: pending, Fix Status: pending
+   - Write each finding as a `### F-NNN` section with: Severity, Category, File, Lines, Evidence, Evidence Strength: [CITED] | [VERIFIED], Citation: <URL | Context7 lib ID + query | skill section path | codebase file:line>, Impact, Test Gap, Description, Suggested Fix, Validation: pending, Fix Status: pending
    - Leave the False Positives section empty
    - Leave the Fix Summary table with one row per finding, all showing "pending"
 3. Verify the REVIEW.md was written by reading it back with the Read tool.
@@ -481,9 +481,11 @@ For each pair of findings from different agents, check if they reference the sam
 
 2. Display findings summary: "{N} findings from {agent_count} reviewers: {critical} critical, {high} high, {medium} medium"
 
-3. For each finding, spawn `finding-validator` agent -- up to 5 in parallel -- to classify as REAL BUG / FALSE POSITIVE / STYLISTIC. Model selection: **economy** mode passes `model: "sonnet"`, **quality or premium** mode omits model (inherit parent).
+3. For each finding, spawn `finding-validator` agent -- up to 5 in parallel -- to classify as REAL BUG / FALSE POSITIVE / STYLISTIC / DROPPED. Model selection: **economy** mode passes `model: "sonnet"`, **quality or premium** mode omits model (inherit parent).
 
-4. Handle FALSE POSITIVE findings: if any findings were classified as FALSE POSITIVE, persist them to `.bee/false-positives.md`. If the file does not exist, create it with a `# False Positives` header. Read `.bee/false-positives.md`, count the number of existing `## FP-` headings, set the next FP number to count + 1. For each FALSE POSITIVE finding, append an entry (incrementing the FP number for each):
+4. Handle DROPPED findings (Evidence Strength gate failures): silently discard. Do NOT persist to `.bee/false-positives.md` -- DROPPED is a reviewer process error, not a code claim. Persisting would pollute the FP store and risks suppressing legitimate future findings via summary match. Display a brief tally: "{N} findings dropped at Evidence Strength gate (missing/[ASSUMED]/malformed citation)."
+
+5. Handle FALSE POSITIVE findings (only TRUE FALSE POSITIVE verdicts -- NOT DROPPED): if any findings were classified as FALSE POSITIVE, persist them to `.bee/false-positives.md`. If the file does not exist, create it with a `# False Positives` header. Read `.bee/false-positives.md`, count the number of existing `## FP-` headings, set the next FP number to count + 1. For each FALSE POSITIVE finding, append an entry (incrementing the FP number for each):
      ```
      ## FP-{NNN}: {one-line summary}
      - **Finding:** {original finding description}

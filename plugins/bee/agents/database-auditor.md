@@ -56,9 +56,21 @@ Read `CLAUDE.md` at project root if it exists. When CLAUDE.md conflicts with sta
 - Look for connection leaks (opened connections not properly closed).
 - Check for hardcoded connection strings (should be in env).
 
-## 3. Output
+## 3. Evidence Requirement (Drop Policy)
 
-Use the audit skill finding format. Prefix all finding IDs with `DB`.
+Vendor citation is the predominant mode of evidence for this agent's findings. Database findings should predominantly cite the specific ORM / query-builder / database engine docs (Eloquent / Prisma / Drizzle / PostgreSQL / MySQL documentation). For any normative claim (e.g., "this violates indexing best practice" or "this is an anti-pattern"), cite the vendor docs URL directly BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a codebase `file:line` trace: the specific query, migration, or model definition (the trace IS the citation).
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: ORM docs URL, database engine manual, migration framework guide, or a stack-skill rule with upstream origin.
+
+If you cannot cite an external source AND cannot trace an empirical claim through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The audit-finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/audit/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
+## 4. Output
+
+Use the audit skill finding format (including the `Evidence Strength:` and `Citation:` fields). Prefix all finding IDs with `DB`.
 
 End with summary:
 

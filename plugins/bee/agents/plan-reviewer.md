@@ -66,6 +66,16 @@ Scan for four categories of issues:
 
 4. **Over-engineering:** Tasks that go beyond spec scope -- implementing features listed as "out of scope" in requirements.md, or adding capabilities not mentioned in the spec. These waste implementation time on unrequested work.
 
+## 5.5. Evidence Requirement (Drop Policy)
+
+Vendor citation is the predominant mode of evidence for this agent's findings. Plan-review findings are almost always `[CITED]` -- the spec.md, requirements.md, phases.md, and TASKS.md lines ARE the citations. For rare normative claims (e.g., "the plan structure violates the BeeDev plan template"), cite the template directly.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a `spec.md:line`, `requirements.md:R-###`, or `TASKS.md:T{N}.{M}` reference. The spec/plan line IS the citation.
+- `[VERIFIED]` -- normative finding backed by an authoritative source: `skills/core/templates/tasks.md`, `skills/review/SKILL.md`, or a documented BeeDev convention.
+
+If you cannot cite a spec/plan reference or an external source, do NOT include the finding. No pure-`[ASSUMED]` findings ship. Reviewers drop findings without Evidence Strength or tagged `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
 ## 6. Write PLAN-REVIEW.md
 
 Write the review to `{phase_directory}/PLAN-REVIEW.md` with this structure:
@@ -99,6 +109,8 @@ Write the review to `{phase_directory}/PLAN-REVIEW.md` with this structure:
 - **Requirement:** {full requirement text}
 - **Impact:** {what the user loses if this is not planned}
 - **Suggestion:** {what task to add or which existing task to expand}
+- **Evidence Strength:** [CITED] | [VERIFIED]
+- **Citation:** <spec.md:line | requirements.md:R-### | URL>
 
 {Repeat for each gap. If no gaps: "No gaps found -- all requirements are covered."}
 
@@ -109,6 +121,8 @@ Write the review to `{phase_directory}/PLAN-REVIEW.md` with this structure:
 - **Covered by:** T{N}.{M}
 - **Missing aspect:** {what part of the requirement is not addressed}
 - **Suggestion:** {how to close the gap}
+- **Evidence Strength:** [CITED] | [VERIFIED]
+- **Citation:** <spec.md:line | requirements.md:R-### | TASKS.md:T{N}.{M}>
 
 {If none: "No partial coverage issues found."}
 
@@ -119,6 +133,8 @@ Write the review to `{phase_directory}/PLAN-REVIEW.md` with this structure:
 - **Spec says:** {what the spec requires}
 - **Plan says:** {what the task does differently}
 - **Suggestion:** {how to realign}
+- **Evidence Strength:** [CITED] | [VERIFIED]
+- **Citation:** <spec.md:line | TASKS.md:T{N}.{M} | URL>
 
 {If none: "No spec drift found -- all tasks align with spec intent."}
 
@@ -128,6 +144,8 @@ Write the review to `{phase_directory}/PLAN-REVIEW.md` with this structure:
 - **Task:** T{N}.{M} -- {task description}
 - **Not in spec:** {what capability goes beyond spec}
 - **Suggestion:** Remove or defer to a future phase
+- **Evidence Strength:** [CITED] | [VERIFIED]
+- **Citation:** <spec.md:line | requirements.md:R-### | TASKS.md:T{N}.{M}>
 
 {If none: "No over-engineering found -- plan stays within spec scope."}
 ```

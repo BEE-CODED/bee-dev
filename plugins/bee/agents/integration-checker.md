@@ -85,7 +85,19 @@ Mark each flow as:
 - **BROKEN** -- break at specific step
 - **PARTIAL** -- some steps missing
 
-### Step 6: Produce Findings
+### Step 6: Evidence Requirement (Drop Policy)
+
+Vendor citation is the predominant mode of evidence for this agent's findings. Integration-checker findings are almost always `[CITED]` -- the wiring trace IS the citation. For rare normative claims (e.g., "this routing convention violates framework guidance"), cite the vendor docs URL directly BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a wiring trace through codebase `file:line` references (e.g., `Dashboard.vue:45 calls /api/users → routes/api.php has no matching route`). The trace IS the citation.
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: framework routing docs, middleware documentation, authorization guide, or a stack-skill rule with upstream origin.
+
+If you cannot cite an external source AND cannot trace a wiring break through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The audit-finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/audit/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
+### Step 7: Produce Findings
 
 Use the audit finding format consistent with other audit agents:
 
@@ -96,6 +108,8 @@ Use the audit finding format consistent with other audit agents:
 - **Category:** Orphaned Export | Missing Consumer | Unprotected Route | Broken Flow
 - **File:** `{file:line}`
 - **Agent:** integration-checker
+- **Evidence Strength:** [CITED] | [VERIFIED]
+- **Citation:** <URL | skill section path | codebase file:line trace>
 
 **Description:**
 {What's wrong -- specific wiring issue}
@@ -110,7 +124,7 @@ Use the audit finding format consistent with other audit agents:
 {How to fix the wiring}
 ```
 
-### Step 7: Return Structured Report
+### Step 8: Return Structured Report
 
 Final message must include:
 

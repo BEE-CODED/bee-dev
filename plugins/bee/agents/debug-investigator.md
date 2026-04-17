@@ -114,6 +114,16 @@ If NOT extractable, include:
 
 The parent command (debug.md) handles persisting the pattern to disk. The agent only provides the analysis.
 
+## Evidence Requirement (Drop Policy)
+
+Vendor citation is the predominant mode of evidence for this agent's findings. Debug findings are almost always `[CITED]` -- the hypothesis-confirming evidence trace IS the citation. For rare normative claims (e.g., "this is the documented framework behavior that contradicts the symptom"), cite the vendor docs URL directly BEFORE claiming ROOT CAUSE FOUND.
+
+Classify each Evidence entry using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical evidence backed by a codebase `file:line` trace, git log/blame output, or test-runner output (the trace/output IS the citation).
+- `[VERIFIED]` -- normative evidence backed by an authoritative external source: vendor docs URL, framework behavior reference, language spec.
+
+If you cannot cite an external source AND cannot trace an empirical claim through code / git history / runner output, do NOT confirm a hypothesis on that evidence alone. No pure-`[ASSUMED]` ROOT CAUSE FOUND signals ship -- they mislead the user into fixing the wrong thing. Every Evidence entry in the return signal MUST carry an `Evidence Strength:` tag and a `Citation:` pointer.
+
 ## Return Signals
 
 Return exactly ONE signal in your final message. The signal heading must be the last major section.
@@ -131,7 +141,11 @@ Return exactly ONE signal in your final message. The signal heading must be the 
 
 **Evidence:**
 - {finding 1 with file:line reference}
+  - **Evidence Strength:** [CITED] | [VERIFIED]
+  - **Citation:** <codebase file:line | git blame output | URL>
 - {finding 2 with file:line reference}
+  - **Evidence Strength:** [CITED] | [VERIFIED]
+  - **Citation:** <codebase file:line | git blame output | URL>
 
 **Files Involved:**
 - {file}: {what's wrong}

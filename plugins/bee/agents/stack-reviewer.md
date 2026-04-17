@@ -64,6 +64,20 @@ Cross-reference each potential finding against documented false positives from S
 
 ## 6. Output Format
 
+### Evidence Requirement (Drop Policy)
+
+Vendor citation is the predominant mode of evidence for this agent's findings. A stack-skill rule with an upstream URL or Context7-resolvable origin qualifies as `[VERIFIED]`. A stack-skill rule without an upstream origin requires you to look up the vendor docs directly via Context7 BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a codebase `file:line` trace (the trace IS the citation).
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: Context7 library docs, vendor URL, OWASP / CWE / CVE, RFC, MDN, WCAG, or a stack-skill rule with upstream origin.
+
+If you cannot verify a normative claim via an external source AND cannot trace an empirical claim through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/review/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
+### Violations Format
+
 Output ONLY violations found. Do not confirm what is correct.
 
 ```markdown
@@ -71,6 +85,8 @@ Output ONLY violations found. Do not confirm what is correct.
 
 - **[Rule category from skill file]:** [Violation description] - `file:line`
   - **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+  - **Evidence Strength:** [CITED] | [VERIFIED]
+  - **Citation:** <URL | Context7 lib ID + query | skill section path | codebase file:line>
   - **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
   - **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 

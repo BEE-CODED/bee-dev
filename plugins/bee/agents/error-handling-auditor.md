@@ -71,9 +71,21 @@ Map each finding's effect to severity:
 | DEGRADED UX (unhelpful error) | MEDIUM | User sees error but can't act on it |
 | Stack traces exposed to client | HIGH (security) | Information disclosure |
 
-## 4. Output
+## 4. Evidence Requirement (Drop Policy)
 
-Use the audit skill finding format. Prefix all finding IDs with `ERR`.
+Vendor citation is the predominant mode of evidence for this agent's findings. Error-handling findings should predominantly cite the language's error-handling docs (Node.js Promise rejection, Python exceptions), framework error-boundary docs (React, Vue, Express middleware), or MDN. For any normative claim (e.g., "unhandled rejection crashes the Node process"), cite the vendor docs URL directly BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a codebase `file:line` trace (e.g., an async function without a `try/catch` wrapping a network call). The trace IS the citation.
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: language docs, framework error-handling guide, MDN, or a stack-skill rule with upstream origin.
+
+If you cannot cite an external source AND cannot trace an empirical claim through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The audit-finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/audit/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
+## 5. Output
+
+Use the audit skill finding format (including the `Evidence Strength:` and `Citation:` fields). Prefix all finding IDs with `ERR`.
 
 For each finding, specify which effect it causes (CRASH / SILENT FAILURE / DATA LOSS / DEGRADED UX) and map to severity using the table above.
 

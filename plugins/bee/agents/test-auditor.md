@@ -55,9 +55,19 @@ Scan test files for references to functions, classes, routes, or files that no l
 
 Use Grep to check if referenced identifiers still exist in the production code. Only flag tests as stale if you have HIGH confidence the referenced code is gone.
 
-## 6. Report
+## 6. Evidence Requirement (Drop Policy)
 
-Output a structured test health report in your final message:
+Vendor citation is the predominant mode of evidence for this agent's findings. Test health findings should predominantly cite the test runner's output (the actual pass/fail report), TASKS.md acceptance-criteria references, or the test framework's documentation. For any normative claim, cite the vendor docs URL directly BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by test-runner output or a codebase `file:line` trace (e.g., a test referencing a deleted symbol). The runner output / trace IS the citation.
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: test framework docs, `skills/standards/testing/SKILL.md` section, or a stack-skill rule with upstream origin.
+
+If you cannot cite an external source AND cannot trace an empirical claim through code or runner output, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+## 7. Report
+
+Output a structured test health report in your final message. Each item in the Stale Tests and Coverage Gaps sections MUST carry inline `Evidence Strength:` and `Citation:` markers:
 
 ```
 ## Test Health Report
@@ -68,10 +78,14 @@ Output a structured test health report in your final message:
 
 ### Stale Tests: {COUNT}
 - {test_file}: tests {deleted_identifier} which no longer exists
+  - **Evidence Strength:** [CITED]
+  - **Citation:** {test file:line + missing-symbol grep result}
 ...
 
 ### Coverage Gaps: {COUNT} acceptance criteria without tests
 - Phase {N}, Task {ID}: "{criterion text}" -- no test found
+  - **Evidence Strength:** [CITED]
+  - **Citation:** TASKS.md:T{N}.{M} (acceptance criterion) + test file grep showing no match
 ...
 
 ### Overall: {HEALTHY | ISSUES}

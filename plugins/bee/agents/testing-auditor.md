@@ -83,9 +83,21 @@ If a test runner is configured, try to run the test suite:
 
 Report: total, passed, failed, skipped, and any errors. If tests can't run, report why.
 
-### 4. Output
+### 4. Evidence Requirement (Drop Policy)
 
-Use the audit skill finding format. Prefix all finding IDs with `TEST`.
+Vendor citation is the predominant mode of evidence for this agent's findings (applies to Scan Mode AND Generate Mode escalations). Testing findings should predominantly cite the test framework's docs (Jest, Vitest, PHPUnit, Pest, pytest, Mocha) or testing standards skill (`skills/standards/testing/SKILL.md`). For any normative claim (e.g., "this assertion style is deprecated" or "this is flaky by design"), cite the vendor docs URL directly BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a codebase `file:line` trace (e.g., a test with no assertions, or a test importing a deleted symbol). The trace IS the citation.
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: test framework docs, `skills/standards/testing/SKILL.md` section, or a stack-skill rule with upstream origin.
+
+If you cannot cite an external source AND cannot trace an empirical claim through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The audit-finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/audit/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
+### 5. Output
+
+Use the audit skill finding format (including the `Evidence Strength:` and `Citation:` fields). Prefix all finding IDs with `TEST`.
 
 Include a test coverage map:
 
@@ -188,6 +200,8 @@ When a test reveals that the implementation does not match the acceptance criter
 - **File:** `{implementation file path}`
 - **Lines:** {relevant lines}
 - **Agent:** testing-auditor
+- **Evidence Strength:** {[CITED] | [VERIFIED]}
+- **Citation:** {TASKS.md:T{N}.{M} | spec.md:line | test file:line | URL}
 
 **Description:**
 {What the implementation should do vs what it actually does, based on the acceptance criterion.}

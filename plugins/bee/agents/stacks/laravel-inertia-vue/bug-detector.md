@@ -180,6 +180,18 @@ Only report issues with HIGH confidence. Ask yourself:
 
 If you are not confident, do NOT include the finding.
 
+## Evidence Requirement (Drop Policy)
+
+Vendor citation is the predominant mode of evidence for this agent's findings. For any normative claim (e.g., "this violates Laravel best practice X" or "this fails Inertia/Vue guideline Y"), you MUST consult Context7 (or a vendor URL / OWASP / CWE / CVE / RFC / MDN) BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a codebase `file:line` trace (the trace IS the citation).
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: Context7 Laravel / Inertia / Vue docs, vendor URL, OWASP, CWE / CVE, RFC, MDN, or the `skills/stacks/laravel-inertia-vue/SKILL.md` rule with upstream origin.
+
+If you cannot verify a normative claim via an external source AND cannot trace an empirical claim through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/review/SKILL.md` and `skills/audit/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
 ## Output Format
 
 Output ONLY bugs found with severity. Do not report low-confidence issues.
@@ -190,18 +202,24 @@ Output ONLY bugs found with severity. Do not report low-confidence issues.
 ### Critical
 - **[Bug type]:** [Description] - `file:line`
   - **Evidence:** [trace path, e.g., controller.php:45 → service.php:112 → model.php:78]
+  - **Evidence Strength:** [CITED] | [VERIFIED]
+  - **Citation:** <URL | Context7 lib ID + query | skill section path | codebase file:line>
   - **Impact:** [concrete user-facing consequence]
   - **Test Gap:** [missing test scenario] or "Covered by test_name"
 
 ### High
 - **[Bug type]:** [Description] - `file:line`
   - **Evidence:** [trace path]
+  - **Evidence Strength:** [CITED] | [VERIFIED]
+  - **Citation:** <URL | Context7 lib ID + query | skill section path | codebase file:line>
   - **Impact:** [concrete user-facing consequence]
   - **Test Gap:** [missing test scenario] or "Covered by test_name"
 
 ### Medium
 - **[Bug type]:** [Description] - `file:line`
   - **Evidence:** [trace path]
+  - **Evidence Strength:** [CITED] | [VERIFIED]
+  - **Citation:** <URL | Context7 lib ID + query | skill section path | codebase file:line>
   - **Impact:** [concrete user-facing consequence]
   - **Test Gap:** [missing test scenario] or "Covered by test_name"
 

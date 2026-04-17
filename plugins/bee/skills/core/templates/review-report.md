@@ -35,7 +35,11 @@
      The review command updates Validation after the finding-validator classifies each finding.
      The review command updates Fix Status after the fixer processes each confirmed finding.
      The review command moves false positives to the False Positives section below.
-     The review command updates the Counts tables after validation and fixing. -->
+     The review command updates the Counts tables after validation and fixing.
+     Drop policy: findings missing Evidence Strength or tagged [ASSUMED] are rejected
+     at the finding-validator stage -- no pure-[ASSUMED] findings ship. See
+     skills/review/SKILL.md "Evidence Requirement (Drop Policy)" and the
+     researcher.md tag vocabulary ([VERIFIED] | [CITED] | [ASSUMED]) for details. -->
 
 ### F-001: {ONE_LINE_SUMMARY}
 - **Severity:** {Critical | High | Medium}
@@ -43,6 +47,8 @@
 - **File:** {FILE_PATH}
 - **Lines:** {START_LINE}-{END_LINE}
 - **Evidence:** [trace path showing how the bug manifests, e.g., file:line → file:line → file:line (problem)]
+- **Evidence Strength:** [CITED] | [VERIFIED]
+- **Citation:** <URL | Context7 lib ID + query | skill section path | codebase file:line>
 - **Impact:** [concrete user-facing or system consequence]
 - **Test Gap:** [specific missing test scenario] or "Covered by [test_name]"
 - **Description:** {DETAILED_DESCRIPTION}

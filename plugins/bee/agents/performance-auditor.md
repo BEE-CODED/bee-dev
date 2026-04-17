@@ -60,9 +60,21 @@ Read `CLAUDE.md` at project root if it exists. When CLAUDE.md conflicts with sta
 - **Dev dependencies in production:** Check if dev tools/middleware are loaded in production.
 - **Missing environment-based optimization:** Same configuration for development and production.
 
-## 3. Output
+## 3. Evidence Requirement (Drop Policy)
 
-Use the audit skill finding format. Prefix all finding IDs with `PERF`.
+Vendor citation is the predominant mode of evidence for this agent's findings. Performance findings should predominantly cite web.dev / MDN performance guides / framework performance docs / observed measurements (bundle sizes, profiler output). For any normative claim (e.g., "this is an anti-pattern for Core Web Vitals"), cite the vendor docs URL directly BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a codebase `file:line` trace OR a measurement (bundle analysis output, profiler trace). The trace/measurement IS the citation.
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: web.dev guide, MDN performance docs, framework perf documentation, or a stack-skill rule with upstream origin.
+
+If you cannot cite an external source AND cannot trace an empirical claim through code/measurement, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The audit-finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/audit/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
+## 4. Output
+
+Use the audit skill finding format (including the `Evidence Strength:` and `Citation:` fields). Prefix all finding IDs with `PERF`.
 
 End with summary:
 

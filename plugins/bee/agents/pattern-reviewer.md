@@ -91,6 +91,18 @@ Scan for patterns that indicate unfinished or placeholder implementations. These
   - **Risk:** [what functionality is missing or incomplete]
 ```
 
+## Evidence Requirement (Drop Policy)
+
+Vendor citation is the predominant mode of evidence for this agent's findings. For pattern-reviewer, the side-by-side codebase comparison with 2-3 similar existing files (Step 4) IS the citation -- empirical pattern findings qualify as `[CITED]`. Pure-judgment pattern claims (deviations from a style preference not grounded in any codebase comparison) drop.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical deviation backed by a codebase comparison: the existing pattern's `file:line` + the deviating file's `file:line` (the comparison IS the citation).
+- `[VERIFIED]` -- normative deviation backed by an authoritative external source: vendor docs URL, `CLAUDE.md` rule, `.bee/CONTEXT.md` documented pattern, or stack-skill rule.
+
+If you cannot cite an external source AND cannot trace a pattern comparison through the codebase, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/review/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
 ## Output Format
 
 Output ONLY deviations found. Do not confirm what matches.
@@ -102,6 +114,8 @@ Output ONLY deviations found. Do not confirm what matches.
   - **Existing pattern:** [How it's done elsewhere]
   - **This code:** [How it's done here]
   - **Evidence:** [trace path, e.g., controller.ts:45 → service.ts:112 → repo.ts:78 (null not checked)]
+  - **Evidence Strength:** [CITED] | [VERIFIED]
+  - **Citation:** <URL | skill section path | codebase file:line pair>
   - **Impact:** [concrete user-facing consequence, e.g., "Crash when user has no profile"]
   - **Test Gap:** [missing test scenario, e.g., "No test covers null profile case"] or "Covered by test_name"
 

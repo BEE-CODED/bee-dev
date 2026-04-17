@@ -87,9 +87,21 @@ These are the bugs that hide between layers:
 - **Missing cascading updates:** Deleting a parent entity doesn't clean up children, leaving orphaned records.
 - **Timezone bugs:** Frontend sends local time, backend stores UTC, displayed time is wrong.
 
-## 5. Output
+## 5. Evidence Requirement (Drop Policy)
 
-Use the audit skill finding format. Prefix all finding IDs with `BUG`.
+Vendor citation is the predominant mode of evidence for this agent's findings. For any normative claim (e.g., "this violates framework best practice X" or "this fails security guideline Y"), you MUST consult Context7 (or a vendor URL / OWASP / CWE / CVE / RFC / MDN / WCAG) BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a codebase `file:line` trace (the cross-layer trace IS the citation).
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: Context7 library docs, vendor URL, OWASP / CWE / CVE, RFC, MDN, WCAG, or a stack-skill rule with upstream origin.
+
+If you cannot verify a normative claim via an external source AND cannot trace an empirical claim through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The audit-finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/audit/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
+## 6. Output
+
+Use the audit skill finding format (including the `Evidence Strength:` and `Citation:` fields). Prefix all finding IDs with `BUG`.
 
 For each finding, include the complete trace:
 ```

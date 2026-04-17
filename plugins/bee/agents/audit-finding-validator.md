@@ -73,6 +73,25 @@ Before finalizing, search the broader codebase for context:
 - Check if the issue is handled at a different layer
 - Check if there's documentation explaining the pattern
 
+### Step E: Evidence Requirement Gate (Drop Policy)
+
+Before classifying, enforce the audit contract from `skills/audit/SKILL.md` "Evidence Requirement (Drop Policy)". Audit findings MUST carry an Evidence Strength tag using the exact bracket notation `[CITED]` or `[VERIFIED]` (mirrors `agents/researcher.md:122-128`). Pure-`[ASSUMED]` findings do NOT ship.
+
+Apply these gate checks BEFORE the CONFIRMED / FALSE POSITIVE / NEEDS CONTEXT classification:
+
+1. **Missing Evidence Strength field:** if the finding has no Evidence Strength entry at all, classify as **DROPPED** with reason "Missing Evidence Strength -- audit contract requires [CITED] or [VERIFIED]."
+2. **`[ASSUMED]` Evidence Strength:** if the finding is tagged `[ASSUMED]`, classify as **DROPPED** with reason "[ASSUMED] findings are dropped per drop policy -- auditor could not verify the claim."
+3. **Format-only fabrication check on `[VERIFIED]` claims** (cheap, no network calls):
+   - URL plausibility: if the Citation is a URL, the scheme MUST be `http://` or `https://` and the host MUST NOT be `example.com` / `todo` / obviously placeholder text.
+   - Context7 library ID format: if the Citation references Context7, the library ID MUST match the `/org/project` or `/org/project/version` shape documented in the stack skill -- not a freeform sentence.
+   - Skill section path: if the Citation references a skill section, the path MUST start with `skills/` and end in a named section or line range.
+   - If ANY of the above are clearly malformed (obvious placeholder, wrong shape), classify as **DROPPED** with reason "Citation format invalid -- likely fabricated [VERIFIED] claim."
+4. **`[CITED]` without codebase pointer:** if the Evidence Strength is `[CITED]` but Citation has no `file:line` or codebase path, classify as **DROPPED** with reason "[CITED] requires a codebase pointer -- no file:line found."
+
+Findings that pass the gate proceed to the real classification in step 3.
+
+**IMPORTANT:** `DROPPED` is a distinct verdict from `FALSE POSITIVE`. `DROPPED` means the auditor made a process error (failed to cite/verify); the underlying code claim may or may not be valid but cannot be evaluated. `FALSE POSITIVE` means the underlying code claim was evaluated and found to be incorrect (the code is actually fine). Downstream commands MUST NOT persist `DROPPED` verdicts to `.bee/false-positives.md` -- doing so pollutes the FP store and risks suppressing legitimate future findings via summary match.
+
 ## 3. Classify Each Finding
 
 Classify as exactly ONE of:
@@ -98,6 +117,8 @@ For each finding, output:
 - **Original Agent:** {agent name}
 - **File verified:** {YES path exists | NO file not found}
 - **Evidence verified:** {YES code matches | NO code differs | N/A file not found}
+- **Evidence Strength:** {[CITED] | [VERIFIED] | missing | [ASSUMED]}
+- **Evidence Strength Gate:** {PASSED | DROPPED: <gate-check reason>}
 - **Reason:** {Detailed explanation of classification}
 ```
 

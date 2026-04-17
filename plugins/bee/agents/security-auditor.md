@@ -70,9 +70,21 @@ You audit the ENTIRE codebase, not just recent changes. Scan systematically in t
 - **SSRF (Server-Side Request Forgery):** Find all places the server makes outbound HTTP requests with user-influenced URLs (webhook URLs, image proxy, OAuth callbacks, URL preview/unfurl). Verify URL validation (allowlist domains, block internal IPs 127.0.0.1/10.x/172.16.x/192.168.x). SSRF allows attackers to reach internal services.
 - **Insecure deserialization:** Check for deserialization of untrusted input (unserialize, JSON.parse on raw user data without schema validation). Especially in cookies, JWT payloads, or message queue consumers.
 
-## 4. Output
+## 4. Evidence Requirement (Drop Policy)
 
-Use the finding format from the audit skill. Prefix all finding IDs with `SEC`.
+Vendor citation is the predominant mode of evidence for this agent's findings. Security findings should predominantly cite OWASP / CWE / CVE / vendor security advisories. For any normative claim, you MUST consult Context7 (or a vendor URL / OWASP / CWE / CVE / RFC / MDN) BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a codebase `file:line` trace of the vulnerability (the trace IS the citation).
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: OWASP Top 10 entry, CWE identifier, CVE advisory, Context7 framework docs, vendor security guide.
+
+If you cannot verify a normative claim via an external source AND cannot trace an empirical claim through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The audit-finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/audit/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
+## 5. Output
+
+Use the finding format from the audit skill (including the `Evidence Strength:` and `Citation:` fields). Prefix all finding IDs with `SEC`.
 
 Focus on findings you are CONFIDENT about. For each finding, include the actual code snippet as evidence. If you're uncertain whether a framework handles something automatically, note it as MEDIUM confidence and the validator will check.
 

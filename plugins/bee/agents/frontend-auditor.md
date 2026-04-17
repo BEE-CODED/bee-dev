@@ -61,9 +61,21 @@ For every component that fetches data or handles async operations:
 - **Broken back button:** Client-side state that doesn't survive back/forward navigation.
 - **Missing redirects:** Protected routes that show content briefly before redirecting to login.
 
-## 3. Output
+## 3. Evidence Requirement (Drop Policy)
 
-Use the audit skill finding format. Prefix all finding IDs with `FE`.
+Vendor citation is the predominant mode of evidence for this agent's findings. Frontend findings should predominantly cite MDN / framework documentation (React, Vue, Svelte, Angular) / accessibility standards (WCAG, ARIA Authoring Practices). For any normative claim (e.g., "this violates a11y best practice" or "this is a memory leak"), cite the vendor docs URL directly BEFORE flagging.
+
+Classify each finding's Evidence Strength using the exact bracket notation from `agents/researcher.md:122-128`:
+- `[CITED]` -- empirical finding backed by a codebase `file:line` trace (e.g., a missing cleanup in a specific `useEffect`). The trace IS the citation.
+- `[VERIFIED]` -- normative finding backed by an authoritative external source: MDN, framework docs, WCAG / ARIA Authoring Practices, or a stack-skill rule with upstream origin.
+
+If you cannot cite an external source AND cannot trace an empirical claim through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship. The audit-finding-validator drops any finding whose Evidence Strength is missing or `[ASSUMED]`, so reporting them wastes pipeline cycles.
+
+Every finding you output MUST carry both `Evidence Strength:` and `Citation:` fields. See `skills/audit/SKILL.md` "Evidence Requirement (Drop Policy)" for full details.
+
+## 4. Output
+
+Use the audit skill finding format (including the `Evidence Strength:` and `Citation:` fields). Prefix all finding IDs with `FE`.
 
 End with summary:
 

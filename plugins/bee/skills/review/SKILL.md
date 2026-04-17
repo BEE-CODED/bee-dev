@@ -101,6 +101,40 @@ If all three match AND the relevant code is unchanged, exclude the finding. If c
 
 **When in doubt, include the finding.** The finding-validator will classify it as FALSE POSITIVE or STYLISTIC if appropriate. Better to report a borderline case than miss a real bug.
 
+## Evidence Requirement (Drop Policy)
+
+Vendor citation is the predominant mode of evidence for reviewer findings. This section defines what evidence is required and what happens when it is missing. The tag vocabulary mirrors the researcher's precedent at `agents/researcher.md:122-128` -- reviewers use the same exact bracket notation (`[CITED]`, `[VERIFIED]`, `[ASSUMED]`) but apply a STRICTER contract.
+
+### Evidence Strength classification
+
+Every finding carries an Evidence Strength tag that classifies how the reviewer knows the finding is real:
+
+- **`[CITED]`** -- empirical finding. The reviewer traced the problem through actual code: a specific `file:line` path showing how the bug manifests, or a side-by-side comparison with an existing codebase pattern. The trace IS the citation.
+- **`[VERIFIED]`** -- normative finding. The reviewer checked an authoritative external source before flagging the code as wrong: Context7 documentation for the framework, a vendor docs URL, OWASP / CWE / CVE advisory, RFC, MDN, WCAG, or the project's stack-skill file when the skill rule has an upstream origin.
+- **`[ASSUMED]`** -- inference without codebase or external evidence. Researcher permits this for low-risk claims. **Reviewer does NOT.** Findings tagged `[ASSUMED]` (or with missing Evidence Strength) are rejected by the finding-validator before they reach the user.
+
+### Drop policy
+
+Reviewer contract is STRICTER than researcher's permissive tag system. The distinction is deliberate:
+
+- Researcher produces tagged notes for the planner to consume; `[ASSUMED]` is acceptable because the planner decides what to act on.
+- Reviewer produces findings that trigger fixer work. An `[ASSUMED]` finding -- a guess dressed up as a problem -- wastes fixer cycles and erodes trust in the pipeline.
+
+**Rule: if you cannot verify a normative claim via an external source AND cannot trace an empirical claim through code, do NOT include the finding. No pure-`[ASSUMED]` findings ship.** This is the anti-hallucination guard.
+
+The finding-validator enforces this by dropping (or reclassifying as FALSE POSITIVE) any finding whose Evidence Strength is missing or `[ASSUMED]`. The validator also runs a cheap format-only fabrication check on `[VERIFIED]` claims: URL plausibility, Context7 library ID format, skill section path resolvability. This catches obvious citation fakery without requiring the validator to re-fetch every source.
+
+### Citation format (field 7)
+
+The Citation field content depends on the Evidence Strength tag:
+
+| Evidence Strength | Expected Citation content                                       |
+|-------------------|-----------------------------------------------------------------|
+| `[CITED]`         | `file:line` trace, or `file:line` + pattern-match path          |
+| `[VERIFIED]`      | URL, Context7 library ID + query used, or skill section path    |
+
+A finding with `[VERIFIED]` Evidence Strength but no concrete Citation is treated as missing evidence and dropped. A `[CITED]` finding without a codebase pointer is also dropped.
+
 ## Review Checklist
 
 ### 1. Spec Compliance (mandatory active verification)
@@ -218,19 +252,21 @@ Use the template at `skills/core/templates/review-report.md` as the format refer
 
 Each finding gets a sequential ID: `F-001`, `F-002`, `F-003`, etc.
 
-For every finding, include all 11 fields:
+For every finding, include all 13 fields:
 
 1. **Severity:** Critical, High, or Medium
 2. **Category:** Bug, Spec Gap, Standards, Dead Code, Security, TDD, or Pattern
 3. **File:** Exact file path relative to project root
 4. **Lines:** Start and end line numbers (be specific -- generic findings without location are useless)
 5. **Evidence:** Trace path showing how the bug manifests, e.g., `file:line → file:line → file:line (problem)`
-6. **Impact:** Concrete user-facing or system consequence
-7. **Test Gap:** Specific missing test scenario, or "Covered by [test_name]"
-8. **Description:** Detailed explanation of what is wrong and why
-9. **Suggested Fix:** Concrete description of what to change
-10. **Validation:** Set to `pending` (the review command handles validation)
-11. **Fix Status:** Set to `pending` (the review command handles fixing)
+6. **Evidence Strength:** `[CITED]` for empirical findings backed by a codebase trace (the trace itself is the citation), or `[VERIFIED]` for normative findings backed by an authoritative external source (Context7, vendor docs URL, OWASP, RFC, MDN, WCAG, CVE). See the Evidence Requirement (Drop Policy) section -- pure-`[ASSUMED]` findings are dropped, not reported.
+7. **Citation:** Concrete pointer matching the Evidence Strength tag. For `[CITED]`: codebase `file:line` or pattern match path. For `[VERIFIED]`: URL, Context7 library ID + query used, or stack-skill section path.
+8. **Impact:** Concrete user-facing or system consequence
+9. **Test Gap:** Specific missing test scenario, or "Covered by [test_name]"
+10. **Description:** Detailed explanation of what is wrong and why
+11. **Suggested Fix:** Concrete description of what to change
+12. **Validation:** Set to `pending` (the review command handles validation)
+13. **Fix Status:** Set to `pending` (the review command handles fixing)
 
 **Summary counts:** After writing all findings, fill in the summary tables at the top of REVIEW.md:
 - Severity counts table: total findings per severity level (set Real Bug, False Positive, Stylistic, and Fixed columns to 0 -- these are updated after validation)
