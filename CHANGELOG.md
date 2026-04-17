@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [4.0.6] - 2026-04-17 -- Hive Dashboard Empty Snapshot Fix
+
+### Fixed
+- **`/bee:hive` dashboard rendered empty for every user** — `scripts/hive-start.sh:99` was forwarding only `HIVE_OWNER_PID` to the spawned `node hive-server.js` child. `resolveBeeDir()` then walked up from `__dirname` (the plugin cache path, e.g. `~/.claude/plugins/cache/bee-dev/bee/4.0.5/scripts/`), found no `.bee/` ancestor, returned `null`, and the snapshot/config/file handlers were never wired. `/api/snapshot` stayed on the stub handler that returns only `{"timestamp":"..."}`. Fix adds `HIVE_BEE_DIR="$BEE_DIR"` to the `nohup env ...` prefix on the same line — `BEE_DIR` is unconditionally validated by the discovery block earlier in the script.
+
+### Added
+- **New integration test** (`plugins/bee/scripts/tests/hive-start-integration.test.js`) — spawns `hive-start.sh` as a real subprocess against a temp `.bee/` fixture and asserts the snapshot reflects a sentinel spec name written to a temp `STATE.md`. The sentinel is load-bearing: a simple `state !== undefined` assertion would pass even with the bug because `__dirname` walk-up finds the bee repo's own `.bee/` in the dev environment. Closes the test gap that let this bug ship — existing unit tests bypass the shell launcher by setting `process.env` directly.
+- **Structural Test 15 in `hive-start.test.js`** — pins `HIVE_BEE_DIR="$BEE_DIR"` on the `nohup env ... node` line with a right-anchored negative lookahead `(?![A-Z_0-9])` to reject prefix-matched neighbors like `$BEE_DIR_OTHER`.
+
+### Changed
+- Plugin version: 4.0.5 -> 4.0.6
+- Marketplace version: 1.4.1 -> 1.4.2
+
 ## [4.0.5] - 2026-04-12 -- TDD Applicability Guard
 
 ### Changed
