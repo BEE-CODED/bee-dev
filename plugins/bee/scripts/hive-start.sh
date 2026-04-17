@@ -93,10 +93,14 @@ fi
 
 # ---------- Launch server in background ----------
 # nohup: survive shell exit. disown: remove from job table. `&`: background.
-# env: pass HIVE_OWNER_PID through to the node process.
+# env: pass HIVE_OWNER_PID and HIVE_BEE_DIR through to the node process.
+# HIVE_BEE_DIR is required because hive-server.js often runs from the plugin
+# cache (~/.claude/plugins/cache/...) where walking up from __dirname finds
+# no .bee/ ancestor — without this env var, resolveBeeDir() returns null and
+# the snapshot handler stays on its empty stub, leaving the dashboard blank.
 # Redirect both stdout and stderr to the log file so we can grep for the
 # server-started marker.
-nohup env HIVE_OWNER_PID="$OWNER_PID" node "$SCRIPT_DIR/hive-server.js" > "$LOG_FILE" 2>&1 &
+nohup env HIVE_OWNER_PID="$OWNER_PID" HIVE_BEE_DIR="$BEE_DIR" node "$SCRIPT_DIR/hive-server.js" > "$LOG_FILE" 2>&1 &
 SERVER_PID=$!
 disown "$SERVER_PID" 2>/dev/null || true
 echo "$SERVER_PID" > "$PID_FILE"

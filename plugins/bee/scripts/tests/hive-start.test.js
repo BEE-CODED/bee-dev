@@ -278,6 +278,33 @@ assert(
 );
 
 // ============================================================
+// Test 15: Forwards HIVE_BEE_DIR to the spawned node process
+// ============================================================
+// The shell script must pass HIVE_BEE_DIR alongside HIVE_OWNER_PID via
+// the same `nohup env ... node` line. Without this, hive-server.js runs
+// from the plugin cache where walking up from __dirname finds no .bee/
+// ancestor, resolveBeeDir() returns null, and the snapshot handler stays
+// on the {timestamp}-only stub — producing an empty dashboard.
+console.log('\nTest 15: HIVE_BEE_DIR is forwarded to node');
+// Right-anchored to pin the exact variable name — guards against a future
+// refactor that introduces e.g. $BEE_DIR_OTHER, which would silently slip
+// past a permissive prefix match.
+assert(
+  /HIVE_BEE_DIR="\$BEE_DIR"(?![A-Z_0-9])/.test(content),
+  'Sets HIVE_BEE_DIR="$BEE_DIR" exactly (not a prefix-matched neighbor)'
+);
+// The variable MUST be on the same `nohup env ... node hive-server.js`
+// invocation as HIVE_OWNER_PID — that is the only place env forwarding
+// to the spawned node process actually happens. Pin the value to $BEE_DIR
+// here too so a same-line refactor cannot drift the binding silently.
+assert(
+  /\bnohup\b[^\n]*\bHIVE_BEE_DIR="\$BEE_DIR"(?![A-Z_0-9])[^\n]*\bnode\b[^\n]*hive-server\.js/.test(
+    content
+  ),
+  'HIVE_BEE_DIR="$BEE_DIR" is on the same `nohup env ... node hive-server.js` line as HIVE_OWNER_PID'
+);
+
+// ============================================================
 // Results
 // ============================================================
 console.log(`\nResults: ${passed} passed, ${failed} failed out of ${passed + failed} assertions`);
