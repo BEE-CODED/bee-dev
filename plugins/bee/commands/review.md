@@ -15,23 +15,8 @@ You are running `/bee:review` -- the code review pipeline for BeeDev. This comma
 
 ### Step 1: Validation Guards
 
-Check these guards in order. Stop immediately if any fails:
-
-1. **NOT_INITIALIZED guard:** If the dynamic context above contains "NOT_INITIALIZED" (meaning `.bee/STATE.md` does not exist), tell the user:
-   "BeeDev is not initialized. Run `/bee:init` first."
-   Do NOT proceed.
-
-2. **NO_SPEC guard:** Read STATE.md from the dynamic context above. If no Current Spec Path exists or it shows "(none)", tell the user:
-   "No spec found. Run `/bee:new-spec` first."
-   Do NOT proceed.
-
-3. **Phase detection:** Check `$ARGUMENTS` for a `--phase N` flag. If present, use phase N explicitly. Validate: if phase N does not exist in the Phases table, tell the user: "Phase {N} does not exist. Your spec has {M} phases." Do NOT proceed. If the explicit phase's Status is not "EXECUTED" or "REVIEWED", tell the user: "Phase {N} has status {status} -- expected EXECUTED or REVIEWED for review." Do NOT proceed. If `--phase N` is not present, read the Phases table from STATE.md. Find the **last** phase where: Status is "EXECUTED" or "REVIEWED". This allows both first-time reviews and re-reviews of already-reviewed phases. If no such phase exists, tell the user:
-   "No executed phases waiting for review. Run `/bee:execute-phase N` first."
-   Do NOT proceed.
-
-4. **Already reviewing guard:** If the Status column for the detected phase shows "REVIEWING", warn the user:
-   "Phase {N} review is in progress. Continue from where it left off?"
-   Wait for explicit confirmation before proceeding. If the user declines, stop.
+See `skills/command-primitives/SKILL.md` Validation Guards.
+Apply: NOT_INITIALIZED, NO_SPEC, Phase Status (`$ALLOWED_STATUSES = "EXECUTED, REVIEWED, REVIEWING"`), Already Reviewing.
 
 ### Step 2: Load Phase Context
 
@@ -78,41 +63,8 @@ Display to user: "Starting review of Phase {N}: {phase-name} (iteration {iterati
 
 ### Step 3.5: Build & Test Gate
 
-**Build check (automatic, per-stack):**
-
-For each stack in `config.stacks`, scoped to its `path`:
-1. Check `package.json` for a `build` script within `{stack.path}` (run `node -e "const p=require('./{stack.path}/package.json'); process.exit(p.scripts?.build ? 0 : 1)"` via Bash). Also check `composer.json` if the stack is Laravel-based.
-2. If a build script exists, run it via Bash scoped to the stack path:
-   - Node projects: `cd {stack.path} && npm run build`
-   - PHP projects: skip (no build step typically)
-3. If build **fails**: display "Build: {stack.name} FAILED" with error output. Use AskUserQuestion:
-   Question: "Build failed for {stack.name}. How to proceed?"
-   Options: "Fix build errors first" (stop review, user fixes and re-runs), "Continue review anyway" (note build failure in context).
-   Act on the user's choice.
-4. If build **passes**: display "Build: {stack.name}: OK" and continue.
-5. If no build script exists: display "Build: {stack.name}: skipped (no build script)" and continue.
-
-**Test check (user opt-in, per-stack):**
-
-Ask the user: "Run tests before review? (yes/no)"
-
-If the user says **yes**:
-For each stack in `config.stacks`, resolve its test runner: read `stacks[i].testRunner` first, fall back to root `config.testRunner` if absent, then `"none"`. Run each stack's test runner scoped to its path. Report per-stack: "Tests: {stack.name} ({runner}): {result}".
-
-For each stack:
-1. Resolve the test runner using the fallback chain above. If `"none"`, display "Tests: {stack.name}: skipped (no test runner configured)" and continue to the next stack.
-2. Detect the best parallel-capable test command:
-   - `vitest`: `cd {stack.path} && npx vitest run` (parallel by default via worker threads)
-   - `jest`: `cd {stack.path} && npx jest` (parallel by default via workers, use `--maxWorkers=auto` if not set)
-   - `pest`: `cd {stack.path} && ./vendor/bin/pest --parallel` (uses Paratest under the hood)
-3. Run the detected test command via Bash (timeout: 5 minutes).
-4. If tests **pass**: display "Tests: {stack.name} ({runner}): {count} passed" and continue.
-5. If tests **fail**: display the failure summary. Use AskUserQuestion:
-   Question: "Tests failed for {stack.name} ({fail_count} failures). How to proceed?"
-   Options: "Fix test failures first" (stop, user fixes and re-runs), "Continue review anyway" (note failures in context).
-   Act on the user's choice.
-
-If the user says **no**: display "Tests: skipped" and continue.
+See `skills/command-primitives/SKILL.md` Build & Test Gate (Interactive).
+Run per-stack build then user-opt-in tests; on failure prompt the user via AskUserQuestion.
 
 ### Step 3.9: Extract False Positives
 
@@ -131,27 +83,8 @@ Before spawning review agents, extract documented false positives so each agent 
 
 ### Step 3.95: Context Cache and Dependency Scan
 
-**Context Cache (read once, pass to all agents):**
-
-Before spawning any agents, read these files once and include their content in every agent's context packet:
-1. Stack skill: `plugins/bee/skills/stacks/{stack}/SKILL.md`
-2. Project context: `.bee/CONTEXT.md`
-3. False positives: `.bee/false-positives.md`
-4. User preferences: `.bee/user.md`
-
-Pass these as part of the agent's prompt context — agents should NOT re-read these files themselves.
-
-**Dependency Scan:**
-
-Before spawning review agents, expand the file scope:
-
-1. For each modified file, grep for `import`/`require`/`use` statements to find its **dependencies** (files it imports)
-2. Grep the project for files that `import`/`require` any modified file to find its **consumers** (files that import it)
-3. Scan depth: direct imports only (not transitive)
-4. **Test file discovery:** For each modified file, look for corresponding test files using common patterns: `{name}.test.{ext}`, `{name}.spec.{ext}`, `tests/{name}.{ext}`, `__tests__/{name}.{ext}`. Include discovered test file paths in the context packet.
-5. Limit: max 20 extra files (dependencies + consumers + test files combined) per agent context packet — if more than 20, prioritize consumers over dependencies
-6. Include all expanded file paths in the agent's context packet alongside the modified files
-7. Instruct agents: "Also verify that modifications don't break consumer files. Check import compatibility, return type changes, and side effect changes. Verify test files cover the modified behavior."
+See `skills/command-primitives/SKILL.md` Context Cache + Dependency Scan.
+Modified-file scope: files identified in Step 2 from TASKS.md.
 
 ### Step 4: STEP 1 -- REVIEW (spawn specialized agents)
 
@@ -181,13 +114,8 @@ Build a shared context base for all agents:
 
 For each stack in the stacks list, build three agent-specific context packets. When the project has a single stack, this loop runs once and behavior is identical to the original four-agent approach.
 
-**Agent resolution (stack-specific fallback):** For each per-stack agent, check if a stack-specific variant exists before using the generic agent. For each stack in the stacks list, resolve agents as follows:
-
-- **Bug Detector:** Check if `plugins/bee/agents/stacks/{stack.name}/bug-detector.md` exists. If yes, use `{stack.name}-bug-detector` as the agent name. If no, fallback to generic `bee:bug-detector`.
-- **Pattern Reviewer:** Check if `plugins/bee/agents/stacks/{stack.name}/pattern-reviewer.md` exists. If yes, use `{stack.name}-pattern-reviewer` as the agent name. If no, fallback to generic `bee:pattern-reviewer`.
-- **Stack Reviewer:** Check if `plugins/bee/agents/stacks/{stack.name}/stack-reviewer.md` exists. If yes, use `{stack.name}-stack-reviewer` as the agent name. If no, fallback to generic `bee:stack-reviewer`.
-
-Generic agents remain the default for any stack that does not have dedicated stack-specific agents in `plugins/bee/agents/stacks/{stack.name}/`.
+See `skills/command-primitives/SKILL.md` Per-Stack Agent Resolution.
+Roles to resolve: bug-detector, pattern-reviewer, stack-reviewer.
 
 **Per-stack Agent: Bug Detector** (resolved agent name -- see agent resolution above) -- model set in 4.2 by implementation_mode -- one per stack
 ```
@@ -266,12 +194,12 @@ Review mode: code review. Check implemented code against spec requirements and a
 
 The total number of agents is `(3 x N) + 1` where N is the number of stacks. For a single-stack project this is exactly 4.
 
-**Economy mode** (`implementation_mode: "economy"`): Pass `model: "sonnet"` for all agents. Spawn agents sequentially per stack to reduce token usage:
-1. Spawn the global plan-compliance-reviewer first (single Task tool call, `model: "sonnet"`). Wait for it to complete.
-2. For each stack in order: spawn that stack's 3 per-stack agents (bug-detector, pattern-reviewer, stack-reviewer) via three Task tool calls in a single message (parallel within the stack, all `model: "sonnet"`). Wait for all three to complete before proceeding to the next stack.
-In economy mode with a single stack, this results in the same 4 agents but spawned in two sequential batches instead of one parallel batch.
+See `skills/command-primitives/SKILL.md` Model Selection (Reasoning).
+Inputs: `config.implementation_mode`. Apply the rule to every agent below.
 
-**Quality or Premium mode** (default): Spawn ALL agents (all per-stack agents + the global plan-compliance-reviewer) via Task tool calls in a SINGLE message (parallel execution). Omit the model parameter for all agents (they inherit the parent model) -- quality/premium mode uses the stronger model for deeper, more thorough review analysis. Wait for all agents to complete.
+**Spawn ordering by mode:**
+- In economy mode: spawn agents sequentially per stack to reduce token usage. Spawn the global plan-compliance-reviewer first (single Task tool call) and wait for completion. Then for each stack in order: spawn that stack's 3 per-stack agents (bug-detector, pattern-reviewer, stack-reviewer) via three Task tool calls in a single message (parallel within the stack). Wait for all three to complete before proceeding to the next stack. In economy mode with a single stack, this results in the same 4 agents but spawned in two sequential batches instead of one parallel batch.
+- In quality or premium mode (default): Spawn ALL agents (all per-stack agents + the global plan-compliance-reviewer) via Task tool calls in a SINGLE message (parallel execution). The stronger inherited model enables deeper, more thorough review analysis.
 
 Wait for all agents to complete before proceeding.
 
@@ -344,13 +272,13 @@ For each pair of findings from different agents, check if they reference the sam
 
 1. For each finding in REVIEW.md (parsed from the `### F-NNN` sections):
    - Build validation context: finding ID, summary, severity, category, file path, line range, description, suggested fix, and `source_agent` (the specialist agent that originally produced the finding -- determined by category mapping: Bug/Security -> `bug-detector`, Pattern -> `pattern-reviewer`, Spec Gap -> `plan-compliance-reviewer`, Standards -> `stack-reviewer`)
-   - Spawn `finding-validator` agent via Task tool and the finding context. Model selection: **economy** mode passes `model: "sonnet"`, **quality or premium** mode omits model (inherit parent) -- finding validation is critical classification work
+   - Spawn `finding-validator` agent via Task tool and the finding context. Apply the Model Selection (Reasoning) rule referenced in 4.2 -- finding validation is critical classification work.
    - Multiple validators CAN be spawned in parallel (they are read-only and independent)
    - Batch up to 5 validators at a time to avoid overwhelming the system
 2. Collect classifications from each validator's final message (the `## Classification` section with Finding, Verdict, Confidence, Source Agent, and Reason fields)
 3. Escalate MEDIUM confidence classifications to specialist agents for a second opinion:
    - Filter the collected classifications: separate HIGH confidence (proceed unchanged) from MEDIUM confidence (need escalation)
-   - For each MEDIUM confidence classification, spawn a fresh `finding-validator` agent for a second opinion (NOT the source specialist — specialist agents have SubagentStop hooks that expect their standard output format, not the escalation format). Spawn via Task tool. Model selection: **economy** mode passes `model: "sonnet"`, **quality or premium** mode omits model. Provide this context packet:
+   - For each MEDIUM confidence classification, spawn a fresh `finding-validator` agent for a second opinion (NOT the source specialist — specialist agents have SubagentStop hooks that expect their standard output format, not the escalation format). Spawn via Task tool. Apply the Model Selection (Reasoning) rule referenced in 4.2. Provide this context packet:
      ```
      You are providing a second opinion on a review finding that received an uncertain classification.
 
@@ -598,4 +526,4 @@ AskUserQuestion(
 - The review agents, finding-validator, and fixer are spawned via Task tool as foreground subagents. The SubagentStop hook in hooks.json fires for implementer agents only (matcher: "implementer") -- it does NOT fire for review pipeline agents.
 - If the session ends mid-review (context limit, crash, user stops), re-running `/bee:review` detects the REVIEWING status and offers to resume. REVIEW.md on disk reflects the pipeline state at the time of interruption.
 - Token usage is approximately `(3N + 1)x` that of the previous single-reviewer approach due to per-stack parallel sessions (where N = number of stacks). For single-stack projects this is 4x. The tradeoff is more focused, higher-quality findings from domain specialists. Economy mode reduces peak token usage by serializing per-stack batches.
-- Per-stack agents (bug-detector, pattern-reviewer, stack-reviewer) support stack-specific variants. If `plugins/bee/agents/stacks/{stack.name}/{role}.md` exists, the stack-specific agent is used (e.g., `laravel-inertia-vue-bug-detector`); otherwise the generic `bee:{role}` agent is the fallback. This allows stacks to override review agents with domain-specific instructions while generic agents remain the default for stacks without dedicated agents.
+- Per-stack agents (bug-detector, pattern-reviewer, stack-reviewer) support stack-specific variants. If `agents/stacks/{stack.name}/{role}.md` exists, the stack-specific agent is used (e.g., `laravel-inertia-vue-bug-detector`); otherwise the generic `bee:{role}` agent is the fallback. This allows stacks to override review agents with domain-specific instructions while generic agents remain the default for stacks without dedicated agents.

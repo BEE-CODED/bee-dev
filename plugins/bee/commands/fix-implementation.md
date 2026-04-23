@@ -87,7 +87,7 @@ Fix order:
 **Context Cache (read once, pass to all agents):**
 
 Before spawning any agents, read these files once and include their content in every agent's context packet:
-1. Stack skill: `plugins/bee/skills/stacks/{stack}/SKILL.md`
+1. Stack skill: `skills/stacks/{stack}/SKILL.md`
 2. Project context: `.bee/CONTEXT.md`
 3. False positives: `.bee/false-positives.md`
 4. User preferences: `.bee/user.md`

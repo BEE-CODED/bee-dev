@@ -23,31 +23,23 @@ You are running `/bee:plan-all` -- the orchestrator that plans all unplanned pha
 
 ### Step 1: Validation Guards
 
-Check these guards in order. Stop immediately if any fails:
+See `skills/command-primitives/SKILL.md` Validation Guards.
+Apply: NOT_INITIALIZED, NO_SPEC, NO_PHASES, then the work-list guard below.
 
-1. **NOT_INITIALIZED guard:** If the dynamic context above contains "NOT_INITIALIZED" (meaning `.bee/STATE.md` does not exist), tell the user:
-   "BeeDev is not initialized. Run `/bee:init` first."
-   Do NOT proceed.
+**Phases needing work guard:** Read the Phases table from STATE.md. At least one phase must need planning work. A phase needs work if:
+- Its Plan column is empty (not yet planned), OR
+- Its Plan Review column is empty (planned but not yet reviewed)
 
-2. **NO_SPEC guard:** If the dynamic context above contains "NO_SPEC" (meaning no spec.md exists), tell the user:
-   "No spec found. Run `/bee:new-spec` first to create a specification."
-   Do NOT proceed.
+Phases with Status=PLANNED also qualify as needing work (already planned but not yet reviewed).
 
-3. **NO_PHASES guard:** If the dynamic context above contains "NO_PHASES" (meaning no phases.md exists), tell the user:
-   "No phases found. Run `/bee:new-spec` first to create a spec with phases."
-   Do NOT proceed.
+If ALL phases have Plan set to "Yes" AND Plan Review set to a non-empty value (e.g., "Yes (1)", "Skipped"):
+- All per-phase planning and review is complete. Skip to Step 4 (Cross-Plan Review) directly — the cross-plan review always runs when all phases are individually plan-reviewed (it has no separate checkpoint and is idempotent).
+- Display: "All phases individually planned and reviewed. Running cross-plan consistency review..."
 
-4. **Phases needing work guard:** Read the Phases table from STATE.md. At least one phase must need planning work. A phase needs work if:
-   - Its Plan column is empty (not yet planned), OR
-   - Its Plan Review column is empty (planned but not yet reviewed)
+**Resolve `$IMPLEMENTATION_MODE` once** (reused by all sub-steps below): Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent). Resolve `$RESOLVED_MODEL` per the rule below; reuse it for every agent spawn in Steps 3 through 4.
 
-   Phases with Status=PLANNED also qualify as needing work (already planned but not yet reviewed).
-
-   If ALL phases have Plan set to "Yes" AND Plan Review set to a non-empty value (e.g., "Yes (1)", "Skipped"):
-   - All per-phase planning and review is complete. Skip to Step 4 (Cross-Plan Review) directly — the cross-plan review always runs when all phases are individually plan-reviewed (it has no separate checkpoint and is idempotent).
-   - Display: "All phases individually planned and reviewed. Running cross-plan consistency review..."
-
-**Resolve `$IMPLEMENTATION_MODE` once** (reused by all sub-steps below): Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent). In premium mode, omit the model parameter for all spawned agents. In economy or quality mode, pass `model: "sonnet"`. Store as `$RESOLVED_MODEL` for use in Steps 3 through 4.
+See `skills/command-primitives/SKILL.md` Model Selection (Reasoning).
+Inputs: `$IMPLEMENTATION_MODE`. Output: `$RESOLVED_MODEL`.
 
 ### Step 2: Discover Phases
 
@@ -156,7 +148,10 @@ Display: "Phase {N} planning complete. Starting plan review..."
 
 **3f. Autonomous Plan Review**
 
-Run the plan review pipeline for this phase. This is an autonomous auto-fix loop -- no interactive prompts. Plan-all does NOT invoke the interactive plan-review command; it reuses the same agents but skips all interactive prompts.
+Run the plan review pipeline for this phase using the Auto-Fix Loop pattern below. Plan-all does NOT invoke the interactive plan-review command; it reuses the same agents but skips all interactive prompts.
+
+See `skills/command-primitives/SKILL.md` Auto-Fix Loop (Autonomous).
+Inputs: `$MAX_ITERATIONS_KEY = ship.max_review_iterations` (default 3); decision marker `[Plan review auto-fix]`.
 
 Read `config.ship.max_review_iterations` from config.json (default: 3). Store as `$MAX_PLAN_REVIEW_ITERATIONS`.
 
@@ -368,13 +363,10 @@ Count total cross-plan issues.
 
 **4e. Cross-plan auto-fix loop**
 
-If 0 issues found: display "Cross-plan review clean -- no inter-phase issues found." Proceed to Step 5.
+See `skills/command-primitives/SKILL.md` Auto-Fix Loop (Autonomous).
+Inputs: `$MAX_ITERATIONS_KEY = ship.max_review_iterations` (default 3); decision marker `[Cross-plan auto-fix]`. Loop variable: `$CROSS_PLAN_ITERATION`. Re-spawn step: Step 4c.
 
-If issues found:
-
-Display: "Cross-plan review (iteration {$CROSS_PLAN_ITERATION}): {X} inter-phase issues found. Auto-fixing..."
-
-For each finding, identify the affected phase(s) and apply fixes to the relevant TASKS.md file(s):
+Apply fixes to the affected TASKS.md file(s) per finding:
 - Data contract mismatches -> update field names/types in the phase that is inconsistent
 - Dependency chain breaks -> add or update dependency references in the later phase's tasks
 - File ownership conflicts -> add coordination notes to the affected tasks in both phases
@@ -382,18 +374,10 @@ For each finding, identify the affected phase(s) and apply fixes to the relevant
 - API contract misalignment -> align the frontend or backend phase's task to match the other
 - Test coverage gaps -> add integration test tasks to the appropriate phase boundary
 
-Display: "Fixed {X} cross-plan issues across {Y} phase(s)."
-
-Log the decision to STATE.md Decisions Log:
+Decision log entry per iteration:
 - **[Cross-plan auto-fix]:** Auto-fixed {X} inter-phase issues across {Y} phase(s) (iteration {$CROSS_PLAN_ITERATION}).
 - **Why:** Cross-plan review found inter-phase inconsistencies that could cause integration failures.
 - **Alternative rejected:** Ignoring cross-plan issues -- these are structural problems that would surface as bugs during execution.
-
-If `$CROSS_PLAN_ITERATION >= $MAX_CROSS_PLAN_ITERATIONS`: display "Max cross-plan review iterations ({$MAX_CROSS_PLAN_ITERATIONS}) reached. Proceeding with current plans." Log unresolved findings to Decisions Log. Proceed to Step 5.
-
-Increment `$CROSS_PLAN_ITERATION`.
-
-Go back to **Step 4c** (re-spawn both agents with the updated TASKS.md files). After agents complete, re-run 4d and 4e. If 0 issues: display "Cross-plan review clean after {$CROSS_PLAN_ITERATION} iterations." Proceed to Step 5.
 
 ### Step 5: Completion Summary
 

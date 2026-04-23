@@ -23,29 +23,18 @@ You are running `/bee:ship` -- the autonomous orchestrator that executes all pla
 
 ### Step 1: Validation Guards
 
-Check these guards in order. Stop immediately if any fails:
+See `skills/command-primitives/SKILL.md` Validation Guards.
+Apply: NOT_INITIALIZED, NO_SPEC, NO_PHASES, then the work-list guard below.
 
-1. **NOT_INITIALIZED guard:** If the dynamic context above contains "NOT_INITIALIZED" (meaning `.bee/STATE.md` does not exist), tell the user:
-   "BeeDev is not initialized. Run `/bee:init` first."
-   Do NOT proceed.
+**Phases needing work guard:** Read the Phases table from STATE.md. At least one phase must need work. A phase needs work if its Status is one of:
+- `PLAN_REVIEWED` -- ready for execution
+- `EXECUTING` -- execution in progress (resume)
+- `EXECUTED` -- executed but not yet reviewed (skip to review)
+- `REVIEWING` -- review in progress (resume review)
 
-2. **NO_SPEC guard:** If the dynamic context above contains "NO_SPEC" (meaning no spec.md exists), tell the user:
-   "No spec found. Run `/bee:new-spec` first to create a specification."
-   Do NOT proceed.
-
-3. **NO_PHASES guard:** If the dynamic context above contains "NO_PHASES" (meaning no phases.md exists), tell the user:
-   "No phases found. Run `/bee:new-spec` first to create a spec with phases."
-   Do NOT proceed.
-
-4. **Phases needing work guard:** Read the Phases table from STATE.md. At least one phase must need work. A phase needs work if its Status is one of:
-   - `PLAN_REVIEWED` -- ready for execution
-   - `EXECUTING` -- execution in progress (resume)
-   - `EXECUTED` -- executed but not yet reviewed (skip to review)
-   - `REVIEWING` -- review in progress (resume review)
-
-   If NO phases match any of these statuses, tell the user:
-   "No phases need shipping. All phases are either not yet planned (run `/bee:plan-all` first) or already reviewed/tested/committed."
-   Do NOT proceed.
+If NO phases match any of these statuses, tell the user:
+"No phases need shipping. All phases are either not yet planned (run `/bee:plan-all` first) or already reviewed/tested/committed."
+Do NOT proceed.
 
 ### Step 2: Discover Phases and Build Work List
 
@@ -312,15 +301,14 @@ Include in each context packet:
      - If NO files from the task overlap any specific stack path (or the task has no `context:` / `research:` files), include all stacks as a fallback.
 - **TDD instruction:** "Follow TDD cycle: RED (write failing tests first), GREEN (minimal implementation to pass), REFACTOR (clean up with tests as safety net). Write structured Task Notes in your final message under a `## Task Notes` heading."
 
-**Model tier resolution:** Use `$IMPLEMENTATION_MODE`:
-- **economy** mode: pass `model: "sonnet"`
-- **quality or premium** mode: omit the model parameter (agents inherit the parent model)
+See `skills/command-primitives/SKILL.md` Model Selection (Reasoning).
+Inputs: `$IMPLEMENTATION_MODE`. Apply to every implementer/reviewer/validator below.
 
 **Live progress -- TaskCreate:** After assembling context packets, call TaskCreate for each pending task in the wave. Use the task ID as the title and the full task description line as the body.
 
 **Spawn parallel implementer agents:**
 
-**Agent resolution (stack-specific fallback):** Before spawning each implementer, resolve whether a stack-specific implementer exists. Check if `plugins/bee/agents/stacks/{stack.name}/implementer.md` exists. If yes, use `{stack.name}-implementer` as the agent name. If no, fallback to the generic `implementer` agent.
+**Agent resolution:** See `skills/command-primitives/SKILL.md` Per-Stack Agent Resolution. Role to resolve: implementer.
 
 **Live progress -- TaskUpdate in-progress:** Before spawning agents, call TaskUpdate to set ALL pending tasks in the wave to in-progress status.
 
@@ -397,52 +385,22 @@ Display: "Phase {N} executed. {completed} tasks complete, {failed} failed. Start
 
 **3b. Phase Review Loop (for all qualifying phases)**
 
-Run the autonomous review pipeline for this phase. Ship auto-fixes ALL finding categories (including STYLISTIC) without user interaction. This uses the review pipeline from review.md (Steps 3.5-8) but operates fully autonomously.
+Run the autonomous review pipeline for this phase using the Auto-Fix Loop pattern below. Ship auto-fixes ALL finding categories (including STYLISTIC) without user interaction.
+
+See `skills/command-primitives/SKILL.md` Auto-Fix Loop (Autonomous).
+Inputs: `$MAX_ITERATIONS_KEY = ship.max_review_iterations` (default 3); decision marker `[Auto-fix]` / `[Optimistic-continuation]`. STYLISTIC: auto-fix all.
 
 Initialize: `$REVIEW_ITERATION = 1`.
 
 **3b.1: Build & Test Gate (non-interactive)**
 
-Run the Build & Test Gate from review.md Step 3.5, but WITHOUT any AskUserQuestion:
-
-**Build check (automatic, per-stack):**
-
-For each stack in `config.stacks`, scoped to its `path`:
-1. Check `package.json` for a `build` script within `{stack.path}`.
-2. If a build script exists, run it via Bash scoped to the stack path.
-3. If build **fails**: display "Build: {stack.name} FAILED" with error output. Log the decision:
-   - **[Optimistic-continuation]:** Build failed for {stack.name} -- continuing review anyway.
-   - **Why:** Build failure may be pre-existing or caused by incomplete phase; review can still catch code-level issues.
-   - **Alternative rejected:** Stopping ship execution -- autonomous operation requires continuing through non-blocking failures.
-4. If build **passes**: display "Build: {stack.name}: OK".
-5. If no build script exists: display "Build: {stack.name}: skipped (no build script)".
-
-**Test check (automatic, per-stack -- no user prompt):**
-
-For each stack in `config.stacks`, resolve its test runner: read `stacks[i].testRunner` first, fall back to root `config.testRunner` if absent, then `"none"`.
-
-For each stack:
-1. Resolve the test runner. If `"none"`, display "Tests: {stack.name}: skipped (no test runner configured)" and continue.
-2. Detect the best parallel-capable test command:
-   - `vitest`: `cd {stack.path} && npx vitest run`
-   - `jest`: `cd {stack.path} && npx jest --maxWorkers=auto`
-   - `pest`: `cd {stack.path} && ./vendor/bin/pest --parallel`
-3. Run the detected test command via Bash (timeout: 5 minutes).
-4. If tests **pass**: display "Tests: {stack.name} ({runner}): {count} passed".
-5. If tests **fail**: display the failure summary. Log the decision:
-   - **[Optimistic-continuation]:** Tests failed for {stack.name} ({fail_count} failures) -- continuing review.
-   - **Why:** Test failures may relate to in-progress work; review can still identify additional code-level issues.
-   - **Alternative rejected:** Stopping ship execution -- autonomous pipeline continues through recoverable failures.
+See `skills/command-primitives/SKILL.md` Build & Test Gate (Autonomous).
+Run per-stack build then per-stack tests; on failure log [Optimistic-continuation] decisions and continue.
 
 **3b.2: Context Cache (read once, pass to all review agents)**
 
-Before spawning any review agents, read these files once and include their content in every agent's context packet:
-1. Stack skill: `plugins/bee/skills/stacks/{stack}/SKILL.md`
-2. Project context: `.bee/CONTEXT.md`
-3. False positives: `.bee/false-positives.md`
-4. User preferences: `.bee/user.md`
-
-Pass these as part of the agent's prompt context -- agents should NOT re-read these files themselves.
+See `skills/command-primitives/SKILL.md` Context Cache + Dependency Scan.
+Cache step here; the dependency-scan portion runs in Step 3b.4 with TASKS.md modified-files as scope.
 
 **3b.3: Extract False Positives**
 
@@ -484,7 +442,8 @@ Display: "Phase {N}: Starting autonomous review (iteration {$REVIEW_ITERATION}/{
 
 Build context packets for four review agents using the same multi-stack logic as review.md Step 4:
 
-**Agent resolution (stack-specific fallback):** For each per-stack agent, check if a stack-specific variant exists at `plugins/bee/agents/stacks/{stack.name}/{role}.md`. If yes, use `{stack.name}-{role}` as the agent name. If no, fallback to generic `bee:{role}`.
+See `skills/command-primitives/SKILL.md` Per-Stack Agent Resolution.
+Roles to resolve: bug-detector, pattern-reviewer, stack-reviewer.
 
 **Per-stack Agent: Bug Detector** (one per stack)
 ```
@@ -570,11 +529,11 @@ Review mode: code review. Check implemented code against spec requirements and a
 
 **Spawn agents:**
 
-**Economy mode** (`$IMPLEMENTATION_MODE: "economy"`): Pass `model: "sonnet"` for all agents. Spawn agents sequentially per stack:
-1. Spawn the global plan-compliance-reviewer first. Wait for completion.
-2. For each stack: spawn that stack's 3 per-stack agents in parallel. Wait for completion.
+For model tier per `$IMPLEMENTATION_MODE`, see `skills/command-primitives/SKILL.md` Model Selection (Reasoning).
 
-**Quality or Premium mode**: Spawn ALL agents via Task tool calls in a SINGLE message (parallel execution). Omit the model parameter for all agents (they inherit the parent model).
+**Spawn ordering by mode:**
+- In economy mode: spawn agents sequentially per stack. Spawn the global plan-compliance-reviewer first and wait for completion. Then for each stack: spawn that stack's 3 per-stack agents in parallel and wait for completion before proceeding to the next stack.
+- In quality or premium mode: Spawn ALL agents via Task tool calls in a SINGLE message (parallel execution).
 
 Wait for all agents to complete.
 
@@ -600,7 +559,7 @@ After all agents complete, consolidate findings using the same logic as review.m
 
 For each finding in REVIEW.md:
 1. Build validation context: finding ID, summary, severity, category, file path, line range, description, suggested fix, and `source_agent`.
-2. Spawn `finding-validator` agent via Task tool. Model selection: economy passes `model: "sonnet"`, quality/premium omits model.
+2. Spawn `finding-validator` agent via Task tool. Apply Model Selection (Reasoning) (referenced in Step 3a.4).
 3. Batch up to 5 validators at a time.
 4. Collect classifications from each validator.
 
@@ -714,11 +673,7 @@ Run the review-implementation pipeline (Steps 2-7 from review-implementation.md)
 
 **Context Detection:** Full spec mode applies (spec exists and phases have been executed).
 
-**Context Cache (read once, pass to all agents):**
-1. Stack skill: `plugins/bee/skills/stacks/{stack}/SKILL.md`
-2. Project context: `.bee/CONTEXT.md`
-3. False positives: `.bee/false-positives.md`
-4. User preferences: `.bee/user.md`
+**Context Cache:** apply `skills/command-primitives/SKILL.md` Context Cache + Dependency Scan (cache portion) -- same four files cached in Step 3b.2.
 
 **Extract False Positives:** Re-extract from `.bee/false-positives.md` (includes all FPs documented during per-phase reviews).
 
@@ -918,7 +873,7 @@ AskUserQuestion(
 - The final implementation review uses review-implementation.md's full spec mode pipeline but as a single pass (no re-review loop). This avoids unbounded iterations at the end of a potentially long ship run while still catching cross-phase integration issues.
 - Per-phase progress summaries are displayed after each phase completes. This gives the user visibility into ship's progress when checking back on a long-running autonomous session.
 - The conductor is the sole writer to TASKS.md and STATE.md. All updates use the Read-Modify-Write pattern: read from disk, modify in memory, write back. This prevents stale overwrites during parallel agent execution.
-- Model selection follows the same implementation_mode pattern as other commands: premium mode inherits parent model, economy mode passes model: "sonnet", quality mode inherits parent model. Review agents and finding-validators follow the same model selection as the interactive review command. Fixers always use the parent model (production code writing).
+- Model selection follows the canonical Model Selection (Reasoning) rule in `skills/command-primitives/SKILL.md` (referenced in Step 3a.4). Review agents and finding-validators follow the same selection as the interactive review command. Fixers always use the parent model (production code writing).
 - The Context Cache (Step 3b.2) reads stack skill, CONTEXT.md, false-positives.md, and user.md ONCE before spawning agents, and includes their content in every agent's context packet. This prevents N+1 file reads across parallel agents and ensures consistency (all agents see the same snapshot).
 - Dependency Scan (Step 3b.4) expands the review file scope beyond just the files listed in TASKS.md. It discovers consumer files (files that import modified files), dependency files (files imported by modified files), and test files. This catches breakage at API boundaries and missing test coverage. Maximum 20 extra files per agent to avoid context bloat.
 - Cross-plan review does NOT run during ship. It ran during plan-all. Ship trusts the plan-reviewed state and focuses on execution and code review.

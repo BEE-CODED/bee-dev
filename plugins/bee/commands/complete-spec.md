@@ -15,19 +15,8 @@ You are running `/bee:complete-spec` -- the full spec lifecycle ceremony command
 
 ### Step 1: Validation Guards
 
-Check these guards in order. Stop immediately if any fails:
-
-1. **NOT_INITIALIZED guard:** If the dynamic context above contains "NOT_INITIALIZED" (meaning `.bee/STATE.md` does not exist), tell the user:
-   "BeeDev is not initialized. Run `/bee:init` first."
-   Do NOT proceed.
-
-2. **NO_SPEC guard:** Read STATE.md from the dynamic context above. If Current Spec Status is `NO_SPEC` or Current Spec Path shows "(none)", tell the user:
-   "No active spec found. Run `/bee:new-spec` first."
-   Do NOT proceed.
-
-3. **Spec directory guard:** Read the Current Spec Path from STATE.md. Check that the spec directory exists on disk using Bash (`test -d {spec-path}`). If the directory does not exist, tell the user:
-   "Spec directory not found at `{spec-path}`. STATE.md may be stale."
-   Do NOT proceed.
+See `skills/command-primitives/SKILL.md` Validation Guards.
+Apply: NOT_INITIALIZED, NO_SPEC, Spec Directory Exists.
 
 ### Step 2: Pre-completion Checklist
 

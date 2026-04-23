@@ -271,7 +271,7 @@ Proceed to plan-phase subagent spawn (Step 3a below).
 Skip this step if the phase already has TASKS.md (needs_execution, resume_execution, or needs_review).
 
 Spawn a subagent (via Task tool) that:
-- Reads `plugins/bee/commands/plan-phase.md`
+- Reads `commands/plan-phase.md`
 - Follows its instructions for this specific phase (Steps 1-8)
 - The subagent prompt includes: phase number, spec path, ROADMAP.md path, requirements.md path
 - The subagent prompt includes: "research_policy: {$RESEARCH_POLICY}. In autonomous mode, enforce this research_policy without interactive prompts."
@@ -318,7 +318,7 @@ This ensures the execute-phase subagent knows to look for LEARNINGS.md files wit
 Skip this step if the phase is classified as needs_review (already executed).
 
 Spawn a subagent (via Task tool) that:
-- Reads `plugins/bee/commands/execute-phase.md`
+- Reads `commands/execute-phase.md`
 - Follows its instructions (Steps 2-7) for this specific phase
 - The subagent prompt includes: phase number, spec path, TASKS.md path
 - Checkpoint handling instructions for the subagent:
@@ -415,7 +415,7 @@ Read `config.ship.final_review` from config.json (default: `true`). If `false`, 
 
 If at least one phase was executed in this run AND `config.ship.final_review` is `true`, run a final review:
 - Read `config.ship.max_review_iterations` from config.json (default: 3). Store as `$MAX_REVIEW_ITERATIONS`.
-- Spawn a subagent that reads `plugins/bee/commands/review-implementation.md` and follows its instructions
+- Spawn a subagent that reads `commands/review-implementation.md` and follows its instructions
 - Model: if `$IMPLEMENTATION_MODE` is "economy", pass `model: "sonnet"`. Otherwise omit model (inherit parent).
 - Include in subagent prompt: "This is a final review invoked by autonomous mode. Maximum iterations: {$MAX_REVIEW_ITERATIONS}."
 - This reviews the cumulative work across all executed phases

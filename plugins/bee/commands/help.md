@@ -17,7 +17,7 @@ Parse `$ARGUMENTS`:
 
 ### OVERVIEW Mode
 
-Use the Glob tool to discover all files matching `plugins/bee/commands/*.md`. For each file, read the frontmatter to extract the `description` field.
+Use the Glob tool to discover all files matching `commands/*.md`. For each file, read the frontmatter to extract the `description` field.
 
 Display commands grouped into these categories. For each command, show its name and description from frontmatter. Commands with hardcoded descriptions below (debug, forensics, health, workspace) use those static descriptions intentionally — do NOT read frontmatter for those. All other `{description}` placeholders must be substituted from frontmatter. Format as:
 
@@ -96,7 +96,7 @@ Finalization
   archive-spec  {description}
 ```
 
-If a command listed in a category does not have a matching file in `plugins/bee/commands/`, skip it silently. If a command file exists but is not listed in any category above, add it to an "Other" group at the end.
+If a command listed in a category does not have a matching file in `commands/`, skip it silently. If a command file exists but is not listed in any category above, add it to an "Other" group at the end.
 
 After the grouped list, display:
 
@@ -110,7 +110,7 @@ After the grouped list, display:
 
 1. Normalize the command name: strip any leading `/bee:` or `bee:` prefix. For example, `/bee:help bee:execute-phase` normalizes to `execute-phase`.
 
-2. Check if `plugins/bee/commands/{name}.md` exists using the Read tool. If not found:
+2. Check if `commands/{name}.md` exists using the Read tool. If not found:
    - Display: "Unknown command: {name}. Run `/bee:help` to see all commands."
    - Stop.
 
@@ -131,7 +131,7 @@ Usage: /bee:{name} {argument-hint}
 
 ---
 
-Full command source: plugins/bee/commands/{name}.md
+Full command source: commands/{name}.md
 ```
 
 To extract the Instructions section: find the line starting with `## Instructions` and take the next 25 lines. If no `## Instructions` heading exists, take the first 25 lines after the frontmatter closing `---`.

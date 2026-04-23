@@ -67,7 +67,7 @@ Read `config.implementation_mode` and store as `$IMPLEMENTATION_MODE`. If not se
 **Context Cache (read once, pass to all agents):**
 
 Before spawning any agents, read these files once and include their content in every agent's context packet:
-1. Stack skill: `plugins/bee/skills/stacks/{stack}/SKILL.md` (if exists)
+1. Stack skill: `skills/stacks/{stack}/SKILL.md` (if exists)
 2. Project context: `.bee/CONTEXT.md` (if exists)
 3. False positives: `.bee/false-positives.md` (if exists -- extract as formatted exclusion list)
 4. User preferences: `.bee/user.md` (if exists)

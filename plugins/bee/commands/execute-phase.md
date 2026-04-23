@@ -189,7 +189,7 @@ Keep each context packet to approximately 30% of context window. Phase learnings
 
 **Agent resolution (stack-specific fallback):** Before spawning each implementer, resolve whether a stack-specific implementer exists. Use the stack(s) resolved in Step 5a for the task. For multi-stack tasks, use the primary (first-matched) stack for agent resolution.
 
-Check if `plugins/bee/agents/stacks/{stack.name}/implementer.md` exists. If yes, use `{stack.name}-implementer` as the agent name. If no, fallback to the generic `implementer` agent. Generic agents remain the default for stacks without dedicated stack-specific agents.
+Check if `agents/stacks/{stack.name}/implementer.md` exists. If yes, use `{stack.name}-implementer` as the agent name. If no, fallback to the generic `implementer` agent. Generic agents remain the default for stacks without dedicated stack-specific agents.
 
 **Live progress -- TaskUpdate in-progress:** Before spawning agents, call TaskUpdate to set ALL pending tasks in the wave to in-progress status in a single batch. Since all agents in the wave are spawned simultaneously, all tasks transition to in-progress at the same time.
 
@@ -618,7 +618,7 @@ AskUserQuestion(
 - Agents are spawned simultaneously within a wave using parallel Task tool calls. Sequential spawning defeats the purpose of wave parallelism.
 - Crash recovery works by re-reading TASKS.md checkbox states. `[x]` tasks are skipped, execution resumes from the first wave with pending `[ ]` tasks.
 - The SubagentStop hook in hooks.json fires automatically when each implementer agent completes, validating TDD compliance and task notes before the conductor receives the result.
-- Implementer agents support stack-specific variants. If `plugins/bee/agents/stacks/{stack.name}/implementer.md` exists, the stack-specific implementer is used (e.g., `laravel-inertia-vue-implementer`); otherwise the generic `implementer` agent is the fallback. For multi-stack tasks, the primary (first-matched) stack is used for agent resolution. Generic agents remain the default for stacks without dedicated agents.
+- Implementer agents support stack-specific variants. If `agents/stacks/{stack.name}/implementer.md` exists, the stack-specific implementer is used (e.g., `laravel-inertia-vue-implementer`); otherwise the generic `implementer` agent is the fallback. For multi-stack tasks, the primary (first-matched) stack is used for agent resolution. Generic agents remain the default for stacks without dedicated agents.
 - Checkpoint classification in Step 5d replaces the generic wave completion menu. Four types with explicit priority: decision (Rule 4 STOP) > action (auth gate / manual) > verify (Wave 1) > info (default). Economy mode auto-approves verify and info only -- decision and action checkpoints ALWAYS require human input.
 - The BLOCKED: signal from implementer agents (Rule 4 STOP) is NOT a failure. It triggers a decision checkpoint. The conductor checks for BLOCKED: BEFORE entering retry logic. The conductor can also flag tasks as `conductor_blocked` after attempt 2 failure analysis.
 - Stub detection is handled by review agents (bug-detector, pattern-reviewer), not during execution. SUMMARY.md does not include a Stubs Found section.

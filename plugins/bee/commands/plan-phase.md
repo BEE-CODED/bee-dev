@@ -23,27 +23,8 @@ You are running `/bee:plan-phase` -- the three-step planning command for BeeDev.
 
 ### Step 1: Validation Guards
 
-Check these four guards in order. Stop immediately if any fails:
-
-1. **NOT_INITIALIZED guard:** If the dynamic context above contains "NOT_INITIALIZED" (meaning `.bee/STATE.md` does not exist), tell the user:
-   "BeeDev is not initialized. Run `/bee:init` first."
-   Do NOT proceed.
-
-2. **NO_SPEC guard:** If the dynamic context above contains "NO_SPEC" (meaning no spec.md exists), tell the user:
-   "No spec found. Run `/bee:new-spec` first to create a specification."
-   Do NOT proceed.
-
-3. **Phase number validation:** Check `$ARGUMENTS` for a phase number. If missing or empty, tell the user:
-   "Please provide a phase number: `/bee:plan-phase 1`"
-   Do NOT proceed.
-   Read phases.md from the dynamic context above and count the phases. If the requested phase number exceeds the number of phases, tell the user:
-   "Phase {N} does not exist. Your spec has {M} phases."
-   Do NOT proceed.
-
-4. **Already planned guard:** Read STATE.md from the dynamic context above and check the Phases table. If the Plan column shows "Yes" for the requested phase:
-   - If the phase Status is PLANNED or earlier: warn the user: "Phase {N} is already planned. Re-planning will overwrite the existing TASKS.md. Continue?"
-   - If the phase Status is EXECUTING or later: strongly warn: "Phase {N} is already being executed. Re-planning will overwrite TASKS.md and discard execution progress. This is destructive. Continue?"
-   Wait for explicit user confirmation before proceeding. If the user declines, stop.
+See `skills/command-primitives/SKILL.md` Validation Guards.
+Apply: NOT_INITIALIZED, NO_SPEC, Phase Number Argument, Already Planned.
 
 ### Step 2: Create Phase Directory
 
@@ -57,7 +38,10 @@ Check these four guards in order. Stop immediately if any fails:
 
 After creating the phase directory, offer pre-planning intelligence to inform task decomposition.
 
-**Resolve `$IMPLEMENTATION_MODE` once** (reused by all sub-steps below): Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent). In premium mode, omit the model parameter for all spawned agents. In economy or quality mode, pass `model: "sonnet"`. Store as `$RESOLVED_MODEL` for use in Steps 2.5.1 through 5.
+**Resolve `$IMPLEMENTATION_MODE` once** (reused by all sub-steps below): Read `config.implementation_mode` from config.json (defaults to `"premium"` if absent). Resolve `$RESOLVED_MODEL` per the rule below; reuse it for every agent spawn in Steps 2.5.1 through 5.
+
+See `skills/command-primitives/SKILL.md` Model Selection (Reasoning).
+Inputs: `$IMPLEMENTATION_MODE`. Output: `$RESOLVED_MODEL`.
 
 #### Read Discussion Context
 
@@ -483,11 +467,7 @@ Read TASKS.md to understand the planned tasks. Load the stack skill dynamically 
 
 #### 6.2: Spawn all four agents in parallel
 
-Spawn all four agents via four Task tool calls in a SINGLE message (parallel execution). The model tier for these four review agents depends on `implementation_mode`:
-
-**Economy mode** (`implementation_mode: "economy"`): Pass `model: "sonnet"` for all agents.
-
-**Quality or Premium mode** (default): Omit the model parameter for all agents (they inherit the parent model).
+Spawn all four agents via four Task tool calls in a SINGLE message (parallel execution). For model tier per `implementation_mode`, see `skills/command-primitives/SKILL.md` Model Selection (Reasoning).
 
 Wait for all four agents to complete.
 

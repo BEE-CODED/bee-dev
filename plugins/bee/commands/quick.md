@@ -10,7 +10,10 @@ Read these files using the Read tool:
 - `.bee/config.json` — if not found: use `{}`
 - `.bee/PROJECT.md` — if not found: skip (project index not available)
 
-Read `config.implementation_mode` and store as `$IMPLEMENTATION_MODE`. If not set, defaults to `"premium"`. Valid values: `"economy"` (use sonnet for all agent work to reduce cost), `"quality"` (use best models for reasoning-heavy work, sonnet for scanning), or `"premium"` (use best models for all agents).
+Read `config.implementation_mode` and store as `$IMPLEMENTATION_MODE`. If not set, defaults to `"premium"`. Valid values: `"economy"`, `"quality"`, `"premium"`. Per-agent model resolution follows the rule below.
+
+See `skills/command-primitives/SKILL.md` Model Selection (Reasoning).
+Inputs: `$IMPLEMENTATION_MODE`. Apply to implementer / reviewer / validator agents.
 
 ## Instructions
 
@@ -18,11 +21,8 @@ You are running `/bee:quick` -- the fast-track command for small tasks that don'
 
 ### Step 1: Validation Guard
 
-**NOT_INITIALIZED guard:** If `.bee/STATE.md` does not exist (NOT_INITIALIZED), tell the user:
-"BeeDev is not initialized. Run `/bee:init` first."
-Do NOT proceed.
-
-No spec is required for quick tasks. No phase is required.
+See `skills/command-primitives/SKILL.md` Validation Guards.
+Apply: NOT_INITIALIZED. No spec or phase is required for quick tasks.
 
 ### Step 2: Parse Arguments
 
@@ -177,7 +177,8 @@ Use the Task tool to spawn specialized agents. The TDD implementer enforces Red-
 
 Spawn the `researcher` agent to understand the codebase area before making changes. Research findings will be persisted to the plan file for traceability.
 
-**Model selection for researcher:** If `$IMPLEMENTATION_MODE` is `"premium"`, omit the model parameter (inherit parent model). If `$IMPLEMENTATION_MODE` is `"economy"` or `"quality"`, pass `model: "sonnet"` (research is scanning work).
+See `skills/command-primitives/SKILL.md` Model Selection (Scanning).
+Inputs: `$IMPLEMENTATION_MODE`. Apply to the researcher (research is scanning work).
 
 ```
 Task(
@@ -227,7 +228,7 @@ AskUserQuestion(
 
 Spawn the `quick-implementer` agent with the research context, plan file path, and enriched plan content. The quick-implementer enforces TDD: it reads acceptance criteria from the plan file, writes failing tests first, then implements the minimal code to make tests pass.
 
-**Model selection:** If `$IMPLEMENTATION_MODE` is `"economy"`, pass `model: "sonnet"`. If `$IMPLEMENTATION_MODE` is `"quality"` or `"premium"`, omit the model parameter (inherit parent model).
+**Model selection:** apply the Model Selection (Reasoning) rule referenced at the top of this file (implementer is reasoning-heavy work).
 
 ```
 Task(
@@ -298,13 +299,8 @@ Replace `[X]` with the actual test count from the implementer's final message.
 
 If `$USE_REVIEW` is true, run a review before committing. The review pipeline uses 4 agents when a plan file exists (TDD mode) or 3 agents when no plan file exists (fast mode).
 
-**Build check:** If `package.json` has a `build` script, run `npm run build`. If it fails, display the error. Use AskUserQuestion: Question: "Build failed. How to proceed?" Options: "Fix first" (stop, user fixes), "Continue anyway" (note failure). If no build script, skip.
-
-**Test check:** Use `AskUserQuestion(question: "Run tests before review?", options: ["Yes", "No"])`. If "Yes":
-For each stack in `config.stacks`, resolve its test runner: read `stacks[i].testRunner` first, fall back to root `config.testRunner` if absent, then `"none"`. Run each stack's test runner scoped to its path. Report per-stack: "Tests: {stack.name} ({runner}): {result}".
-For each stack:
-1. Resolve the test runner using the fallback chain above. If `"none"`, display "Tests: {stack.name}: skipped (no test runner configured)" and continue to the next stack.
-2. Run the test command scoped to the stack path (`vitest`: `cd {stack.path} && npx vitest run`, `jest`: `cd {stack.path} && npx jest --maxWorkers=auto`, `pest`: `cd {stack.path} && ./vendor/bin/pest --parallel`). Display results. If tests fail, use AskUserQuestion: Question: "Tests failed. How to proceed?" Options: "Fix first" (stop), "Continue anyway" (note failures).
+See `skills/command-primitives/SKILL.md` Build & Test Gate (Interactive).
+Run per-stack build then user-opt-in tests; on failure prompt the user via AskUserQuestion.
 
 #### 4.5.0: Detect review scope and compute output path
 
@@ -330,23 +326,16 @@ Before spawning review agents, extract documented false positives so each agent 
 
 #### 4.5.15: Context Cache
 
-**Context Cache (read once, pass to all agents):**
-
-Before spawning any agents, read these files once and include their content in every agent's context packet:
-1. Stack skill: `plugins/bee/skills/stacks/{stack}/SKILL.md`
-2. Project context: `.bee/CONTEXT.md`
-3. False positives: `.bee/false-positives.md`
-4. User preferences: `.bee/user.md`
-
-Pass these as part of the agent's prompt context — agents should NOT re-read these files themselves.
+See `skills/command-primitives/SKILL.md` Context Cache + Dependency Scan.
+Read-once cache only (no dependency scan in quick mode -- modified-file scope is too small to need expansion).
 
 #### 4.5.2: Build context packets and spawn four agents in parallel
 
 Build four agent-specific context packets. Each includes the changed files list, review mode instruction, and the false-positives list from Step 4.5.1.
 
-**Model selection for review agents:** If `$IMPLEMENTATION_MODE` is `"economy"`, pass `model: "sonnet"` for all review agents. If `$IMPLEMENTATION_MODE` is `"quality"` or `"premium"`, omit the model parameter (inherit parent model) for all review agents.
+**Model selection for review agents:** apply the Model Selection (Reasoning) rule referenced at the top of this file to every review agent below.
 
-**Agent 1: Bug Detector** (`bee:bug-detector`, economy: `model: "sonnet"`, quality/premium: omit)
+**Agent 1: Bug Detector** (`bee:bug-detector` -- model per Model Selection (Reasoning))
 ```
 QUICK REVIEW MODE -- No spec, no TASKS.md, no phase context.
 
@@ -368,7 +357,7 @@ Review these files for bugs, logic errors, null handling issues, race conditions
 Target 1-3 findings. Only report issues you have HIGH confidence in.
 ```
 
-**Agent 2: Pattern Reviewer** (`bee:pattern-reviewer`, economy: `model: "sonnet"`, quality/premium: omit)
+**Agent 2: Pattern Reviewer** (`bee:pattern-reviewer` -- model per Model Selection (Reasoning))
 ```
 QUICK REVIEW MODE -- No spec, no TASKS.md, no phase context.
 
@@ -384,7 +373,7 @@ Compare changed files against existing codebase patterns only. There is no spec 
 Target 1-3 findings. Only report deviations you have HIGH confidence in.
 ```
 
-**Agent 3: Stack Reviewer** (`bee:stack-reviewer`, economy: `model: "sonnet"`, quality/premium: omit)
+**Agent 3: Stack Reviewer** (`bee:stack-reviewer` -- model per Model Selection (Reasoning))
 ```
 QUICK REVIEW MODE -- No spec, no TASKS.md, no phase context.
 
@@ -402,7 +391,7 @@ Check changed files against stack conventions only. Load the stack skill from co
 Target 1-3 findings. Only report violations you have HIGH confidence in.
 ```
 
-**Agent 4: Plan Compliance Reviewer** (`bee:plan-compliance-reviewer`, economy: `model: "sonnet"`, quality/premium: omit) -- **TDD mode only (skip if `$USE_FAST` is true)**
+**Agent 4: Plan Compliance Reviewer** (`bee:plan-compliance-reviewer` -- model per Model Selection (Reasoning)) -- **TDD mode only (skip if `$USE_FAST` is true)**
 
 This agent is spawned only when a plan file exists (TDD mode). It checks the implementation against the plan file's acceptance criteria.
 
@@ -426,7 +415,7 @@ Report findings in your standard CODE REVIEW MODE output format.
 Target 1-3 findings. Only report issues you have HIGH confidence in.
 ```
 
-Spawn all agents via Task tool calls in a SINGLE message (parallel execution). In TDD mode, spawn all 4 agents. In fast mode, spawn only the first 3 agents (no plan-compliance-reviewer -- no plan file exists). Apply model selection per `$IMPLEMENTATION_MODE`: economy = `model: "sonnet"` for all agents, quality/premium = omit model parameter (inherit) for all agents.
+Spawn all agents via Task tool calls in a SINGLE message (parallel execution). In TDD mode, spawn all 4 agents. In fast mode, spawn only the first 3 agents (no plan-compliance-reviewer -- no plan file exists). Apply the Model Selection (Reasoning) rule referenced at the top of this file to every agent.
 
 Wait for all agents to complete.
 
@@ -481,7 +470,7 @@ For each pair of findings from different agents, check if they reference the sam
 
 2. Display findings summary: "{N} findings from {agent_count} reviewers: {critical} critical, {high} high, {medium} medium"
 
-3. For each finding, spawn `finding-validator` agent -- up to 5 in parallel -- to classify as REAL BUG / FALSE POSITIVE / STYLISTIC / DROPPED. Model selection: **economy** mode passes `model: "sonnet"`, **quality or premium** mode omits model (inherit parent).
+3. For each finding, spawn `finding-validator` agent -- up to 5 in parallel -- to classify as REAL BUG / FALSE POSITIVE / STYLISTIC / DROPPED. Apply the Model Selection (Reasoning) rule referenced at the top of this file.
 
 4. Handle DROPPED findings (Evidence Strength gate failures): silently discard. Do NOT persist to `.bee/false-positives.md` -- DROPPED is a reviewer process error, not a code claim. Persisting would pollute the FP store and risks suppressing legitimate future findings via summary match. Display a brief tally: "{N} findings dropped at Evidence Strength gate (missing/[ASSUMED]/malformed citation)."
 
@@ -659,10 +648,10 @@ AskUserQuestion(
 - If the task seems too large (>5 files, complex architecture changes), recommend `/bee:new-spec` instead.
 - The quick task table uses a simple incrementing number (1, 2, 3...) separate from phase numbering. Only the LATEST quick task is shown in the table (old rows are replaced). The incrementing number and commit history serve as the audit trail.
 - **Default mode is TDD** (researcher on sonnet + quick-implementer with Red-Green-Refactor on inherit). `--fast` flag switches to direct execution in main context. The `quick.fast` config option controls the override: `true` = fast mode, `false` or not set = TDD mode (default). The `--fast` flag always forces fast mode regardless of config.
-- TDD mode research uses the `bee:researcher` agent which runs on sonnet in economy/quality mode (research is scanning work) and inherits parent model in premium mode. Implementation uses `bee:quick-implementer` which in `"quality"` or `"premium"` mode inherits parent model for code quality, and in `"economy"` mode uses sonnet to reduce cost. All modes enforce the TDD cycle (Red-Green-Refactor).
+- TDD mode research uses the `bee:researcher` agent governed by Model Selection (Scanning) -- research is scanning work. Implementation uses `bee:quick-implementer` governed by Model Selection (Reasoning). Both rules live in `skills/command-primitives/SKILL.md`. All modes enforce the TDD cycle (Red-Green-Refactor).
 - `--review` flag enables a review gate before commit. Can also be set permanently via `config.quick.review: true`.
 - Review gate uses four specialized agents in TDD mode (bug-detector, pattern-reviewer, stack-reviewer, plan-compliance-reviewer) or three agents in fast mode (no plan-compliance-reviewer -- no plan file exists). The plan-compliance-reviewer operates in CODE REVIEW MODE, checking implementation against the plan file's acceptance criteria.
-- All review agents run in parallel via Task tool calls in a single message. Model selection follows `$IMPLEMENTATION_MODE`: `"economy"` = all agents use `model: "sonnet"`, `"quality"` or `"premium"` = model parameter omitted (inherit parent model).
+- All review agents run in parallel via Task tool calls in a single message. Model selection follows the canonical Model Selection (Reasoning) rule referenced at the top of this file.
 - Before spawning agents, documented false positives are extracted and included in each agent's context packet so known non-issues are excluded.
 - Each agent targets 1-3 findings; combined target is 3-8 findings. Findings are consolidated, deduplicated (same file + line ranges within 5 lines merged), and written to `.bee/quick-reviews/`.
 - The standalone `/bee:review-implementation` command (in ad-hoc mode) shares the same agent parallel pattern and can also be used to review quick task changes independently.
