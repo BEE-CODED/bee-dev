@@ -4,24 +4,29 @@
 # Exit 0 with no stdout = allow, Exit 0 with JSON stdout = block
 # Do NOT use set -euo pipefail -- handle missing files gracefully
 #
-# Optimizations applied (vs. previous full-repo gate):
-#   1. Incremental lint: lint only staged files matching each linter's extensions
-#      (skip linter entirely if no matching staged files).
-#   2. Test impact analysis: vitest/jest run only tests related to staged files
-#      via `vitest related` / `jest --findRelatedTests`. Pest/PHPUnit fall back
-#      to the full suite (no clean equivalent — derived --filter is too brittle).
-#   3. Parallel lint + tests within each stack (background jobs + wait).
-#   4. Fast-path: skip gate entirely when no source files are staged
-#      (markdown-only, .bee/, dotfiles, JSON/YAML-only commits → instant).
+# Strategy:
+#   - Lint only staged files matching each linter's extensions (skip the linter
+#     entirely when no matching staged files exist; never accidentally run a
+#     full-repo lint).
+#   - For tests: vitest/jest use `related` / `--findRelatedTests` so only tests
+#     that import the staged files run. Pest/PHPUnit fall back to the full
+#     suite (deriving --filter from staged class names misses traits, factories,
+#     observers and other indirect deps -- too brittle to be safe).
+#   - Within each stack, lint and tests run in parallel (background jobs + wait).
+#     Stacks themselves stay sequential for debuggability.
+#   - Fast-path: when no source files are staged at all (markdown-only commits,
+#     .bee/ writes, dotfiles, JSON/YAML), skip the gate entirely.
 #
-# Robustness fixes (review pass):
-#   F-001 xargs uses null-delimited input (handles filenames with spaces/quotes).
-#   F-002 stack paths validated to reject "../" and absolute paths.
-#   F-003 vitest fallback also fires on empty log / non-zero exit without match.
-#   F-004 subshell trap comment restored (process substitution NOT pipe-while).
-#   F-005 prettier now restricted to code files (no .md/.json/.yml drift noise).
-#   F-006 STACK_NAME suffixed with index to avoid temp-file collisions.
-#   F-007 test commands wrapped in `timeout` (when available) to bound runtime.
+# Robustness:
+#   - xargs reads null-delimited input so filenames with spaces or quotes pass
+#     as single arguments.
+#   - Stack paths starting with `/` or containing `..` are rejected -- a stack
+#     always lives under the project root.
+#   - vitest's `related` falls back to the full suite when no matching tests
+#     are found (matched by error text or empty log) so genuine failures still
+#     surface.
+#   - When `timeout` is available, test commands are bounded to 100s -- well
+#     under the hook's outer 120s cap, so hangs cannot leak orphaned processes.
 #
 # Backwards compatibility: legacy global `.linter` / `.testRunner` (no `stacks`
 # array) is treated as one virtual stack at path "." with the global tools.
@@ -42,16 +47,17 @@ fi
 
 cd "$CLAUDE_PROJECT_DIR" 2>/dev/null || exit 0
 
-# Fix 4: Fast-path — if no source files are staged, skip gate entirely.
-# This makes markdown-only / config-only / dotfile commits instant.
+# Fast-path: if no source files are staged, skip gate entirely so
+# markdown-only / config-only / dotfile commits don't pay any lint/test cost.
 ALL_STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null)
 SOURCE_FILES=$(echo "$ALL_STAGED" | grep -E '\.(php|js|ts|jsx|tsx|vue|css|scss|svelte|mjs|mts|cjs|cts|less|py|go|rs|rb)$')
 if [ -z "$SOURCE_FILES" ]; then
   exit 0
 fi
 
-# F-007: detect `timeout` binary (GNU coreutils on Linux, gtimeout on macOS+brew).
-# When present, wrap test commands to bound runtime at 100s (under 120s hook cap).
+# Detect `timeout` binary (GNU coreutils on Linux, gtimeout on macOS+brew).
+# When present, wrap test commands to bound runtime under the hook's 120s cap
+# so a hung test can't leak background processes.
 if command -v timeout >/dev/null 2>&1; then
   TIMEOUT_CMD="timeout 100"
 elif command -v gtimeout >/dev/null 2>&1; then
@@ -109,17 +115,19 @@ filter_staged() {
   fi
 }
 
-# F-001: pipe a newline list to xargs as null-delimited so filenames with
-# spaces/quotes/tabs are passed as single args. Empty input is guarded by the
-# `if [ -n "$FILES" ]` check before each invocation. Works on macOS (BSD) and
+# Pipe a newline-delimited list to xargs as null-delimited so filenames with
+# spaces/quotes/tabs pass as single args. Each call site guards on
+# `if [ -n "$FILES" ]` to ensure xargs never runs the command with no args
+# (which for many linters means "lint everything"). Works on macOS (BSD) and
 # Linux (GNU) -- both `tr` and `xargs -0` are POSIX-portable.
 xargs0() {
   tr '\n' '\0' | xargs -0 "$@"
 }
 
-# F-004: process substitution (NOT pipe-while) -- pipe creates a subshell where
-# LINT_FAILED / TEST_FAILED writes are lost. Do not "simplify" to `| while`.
-# Process each stack sequentially; within a stack, lint + tests run in parallel.
+# Process each stack sequentially via process substitution (`done < <(...)`).
+# Do NOT "simplify" to a pipe-while (`echo ... | while read`): a pipe creates
+# a subshell where the LINT_FAILED / TEST_FAILED writes are silently dropped,
+# letting failures escape the gate.
 STACK_INDEX=0
 while IFS= read -r STACK; do
     [ -z "$STACK" ] && continue
@@ -127,15 +135,15 @@ while IFS= read -r STACK; do
 
     STACK_PATH=$(echo "$STACK" | jq -r '.path // "."')
 
-    # F-002: reject suspicious stack paths (defense in depth against malicious
-    # or corrupted .bee/config.json). Absolute paths and `..` traversal are
-    # never legitimate -- a stack always lives under the project root.
+    # Reject suspicious stack paths (defense in depth against a corrupted or
+    # malicious .bee/config.json). Absolute paths and `..` traversal are never
+    # legitimate -- a stack always lives under the project root.
     case "$STACK_PATH" in
         /*|*..*) continue ;;
     esac
 
-    # F-006: suffix with stack index so name collisions (e.g. `frontend/web`
-    # and `frontend.web` both sanitize to `frontend_web`) don't share temp files.
+    # Suffix with the loop index so name collisions (e.g. `frontend/web` and
+    # `frontend.web` both sanitize to `frontend_web`) don't share temp files.
     STACK_NAME_BASE=$(echo "$STACK" | jq -r '.name // .path // "default"' | tr -c 'A-Za-z0-9_' '_')
     STACK_NAME="${STACK_NAME_BASE}_${STACK_INDEX}"
     STACK_LINTER=$(echo "$STACK" | jq -r '.linter // empty')
@@ -164,7 +172,7 @@ while IFS= read -r STACK; do
     LINT_PID=""
     TEST_PID=""
 
-    # ---- Fix 1: Incremental lint (only staged files for this stack) ----
+    # ---- Incremental lint (only staged files for this stack) ----
     if [ "$STACK_LINTER" != "none" ] && [ -n "$STACK_LINTER" ]; then
         case "$STACK_LINTER" in
             pint)
@@ -187,8 +195,9 @@ while IFS= read -r STACK; do
                 ;;
             prettier)
                 if [ -f "$WORK_DIR/node_modules/.bin/prettier" ]; then
-                    # F-005: restrict prettier to code files only -- avoid drift
-                    # noise from unrelated .md / .json / .yml staged alongside.
+                    # Restrict prettier to code files only so unrelated .md /
+                    # .json / .yml staged alongside don't trigger format noise
+                    # outside the source change being committed.
                     PRETTIER_FILES=$(filter_staged '\.(js|ts|jsx|tsx|vue|css|scss|less|mjs|mts|cjs|cts)$' "$STACK_PATH")
                     if [ -n "$PRETTIER_FILES" ]; then
                         ( cd "$WORK_DIR" && echo "$PRETTIER_FILES" | xargs0 npx prettier --check > "$LINT_LOG" 2>&1; echo $? > "$LINT_RC_FILE" ) &
@@ -208,7 +217,7 @@ while IFS= read -r STACK; do
         esac
     fi
 
-    # ---- Fix 2: Test impact analysis (vitest/jest) + Fix 3: parallel run ----
+    # ---- Test impact analysis (vitest/jest); lint+tests run in parallel ----
     if [ "$STACK_RUNNER" != "none" ] && [ -n "$STACK_RUNNER" ]; then
         case "$STACK_RUNNER" in
             pest)
@@ -237,11 +246,11 @@ while IFS= read -r STACK; do
                 if [ -f "$WORK_DIR/node_modules/.bin/vitest" ]; then
                     JS_TEST_FILES=$(filter_staged '\.(js|ts|jsx|tsx|vue|mjs|mts|cjs|cts)$' "$STACK_PATH")
                     if [ -n "$JS_TEST_FILES" ]; then
-                        # F-003: vitest related: only tests that import the staged files.
-                        # Fallback to full suite if (a) "no test files" pattern in log,
-                        # (b) log is empty (vitest version mismatch on error message),
-                        # or (c) exit code is in the "no tests" family. Errs on the side
-                        # of running MORE rather than less.
+                        # `vitest related` runs only tests that import the staged
+                        # files. Fall back to the full suite when the log matches
+                        # a "no tests found" message OR is empty (vitest version
+                        # mismatch on the error string) -- err on the side of
+                        # running MORE rather than skipping a real failure.
                         ( cd "$WORK_DIR" && echo "$JS_TEST_FILES" | xargs0 $TIMEOUT_CMD npx vitest related --run > "$TEST_LOG" 2>&1
                           rc=$?
                           if [ $rc -ne 0 ]; then

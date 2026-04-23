@@ -144,13 +144,10 @@ const PSAR_COMMANDS = ['ship.md', 'review.md', 'review-implementation.md'];
 
 const AFL_AUTONOMOUS = ['ship.md', 'plan-all.md'];
 
-// Expected minimum number of skill references per command (one per primitive
-// applied). Some commands reference the skill more than once for the same
-// primitive (e.g. ship.md mentions Model Selection from multiple gate steps);
-// the assertion is a LOWER BOUND. If a future cleanup consolidates multiple
-// references to the same primitive into one, lower the corresponding number
-// here -- failure means the count dropped below this floor, NOT a regression
-// in primitive coverage. (T-003: documented the lower-bound semantics.)
+// Lower bound on skill references per command (one per primitive applied).
+// Some commands reference the skill multiple times for the same primitive
+// (e.g. ship.md mentions Model Selection from several spawn steps). When a
+// cleanup consolidates references, lower the corresponding number here.
 const MIN_REFERENCES = {
   'ship.md': 7,                   // VG, BTG-A, CC, SLR (via BTG), MSI, PSAR, AFL
   'review.md': 5,                 // VG, BTG-I, CC, MSI, PSAR
@@ -319,13 +316,14 @@ for (const rel of MSI_REASONING) {
     `${rel} full economy/quality/premium model rule (single-line) absent (got ${singleLine})`
   );
 
-  // Multi-line prose form must not appear either (the F-002 form: a paragraph
-  // spelling out "Economy mode (...): Pass model: \"sonnet\" ..." followed by
-  // "Quality or Premium mode (default): Omit ..."). Case-insensitive (T-002)
-  // to also catch lowercase variants like `**economy mode**`.
+  // Multi-line prose form must not appear either: a paragraph spelling out
+  // `**Economy mode** (...): Pass model: "sonnet" ...` followed by
+  // `**Quality or Premium mode** (default): Omit ...`. Case-sensitive on
+  // purpose -- lowercase mentions like "in economy mode" are legitimate spawn-
+  // strategy prose, not the MSI rule itself.
   const multiLine = countMatches(
     content,
-    /Economy mode[\s\S]{0,300}Quality or Premium mode/gi
+    /Economy mode[\s\S]{0,300}Quality or Premium mode/g
   );
   assert(
     multiLine === 0,
