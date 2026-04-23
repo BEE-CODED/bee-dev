@@ -81,7 +81,16 @@ Target approximately 30% of the implementer's context window per task. Include f
 
 ### Completion Signal (Pass 2)
 
-"Waves assigned: [N] tasks in [M] waves. Context packets defined. Ready for user approval."
+End with this exact one-line shape (no narrative paragraphs):
+
+```
+Phase {N}: {tasks} tasks, {waves} waves | conflicts: <N|0> | research: <ok|partial>
+```
+
+- `{N}` — phase number
+- `{tasks}` / `{waves}` — counts written to TASKS.md
+- `conflicts:` — number of file-ownership conflicts detected and resolved during wave assignment, or `0`
+- `research:` — `ok` if every task has a `research:` block from Pass 1, `partial` if any task is missing one
 
 ---
 

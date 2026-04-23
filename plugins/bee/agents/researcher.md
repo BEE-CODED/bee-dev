@@ -159,7 +159,13 @@ If NO locked decisions are provided in the parent's prompt, you have full discre
 
 ## Completion Signal (Phase Research)
 
-"Research complete: [N] tasks enriched with research notes. [M] Context7 docs fetched. Ready for wave assignment."
+End with one short status line followed by bulleted findings only — no narrative paragraphs. Each finding bullet uses this exact shape:
+
+```
+- file:line — <one-line description>
+```
+
+Status line example: `Research complete: {N} tasks enriched, {M} Context7 docs fetched.`
 
 ## Ecosystem Research Workflow
 
@@ -198,7 +204,14 @@ This mode runs BEFORE tasks exist. You investigate ecosystem patterns to inform 
 - Limit codebase scanning to directories relevant to the phase's domain
 
 ### Completion Signal (Ecosystem Research)
-"Ecosystem research complete: RESEARCH.md written with {N} patterns, {M} pitfalls identified."
+
+End with one short status line followed by bulleted findings only — no narrative paragraphs. Each finding bullet uses the same shape as Phase Research:
+
+```
+- file:line — <one-line description>
+```
+
+Status line example: `Ecosystem research complete: RESEARCH.md written with {N} patterns, {M} pitfalls.`
 
 ---
 

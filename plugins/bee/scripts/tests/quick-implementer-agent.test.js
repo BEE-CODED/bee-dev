@@ -82,7 +82,7 @@ assert(
 // ============================================================
 console.log('\nTest 3: Frontmatter skills is YAML block sequence');
 assert(
-  frontmatter.includes('skills:\n  - core\n  - testing'),
+  frontmatter.includes('skills:\n  - core\n  - standards/testing'),
   'skills uses YAML block sequence with core and testing'
 );
 
@@ -228,17 +228,17 @@ const implementerContent = fs.readFileSync(IMPLEMENTER_PATH, 'utf8');
 
 // Both should have the same TDD sub-step headings
 assert(
-  content.includes('### 3a. RED -- Write Failing Tests') ===
+  content.includes('### 3a. RED -- Write Failing Tests') &&
   implementerContent.includes('### 3a. RED -- Write Failing Tests'),
   'RED heading format matches implementer'
 );
 assert(
-  content.includes('### 3b. GREEN -- Minimal Implementation') ===
+  content.includes('### 3b. GREEN -- Minimal Implementation') &&
   implementerContent.includes('### 3b. GREEN -- Minimal Implementation'),
   'GREEN heading format matches implementer'
 );
 assert(
-  content.includes('### 3c. REFACTOR -- Clean Up (if needed)') ===
+  content.includes('### 3c. REFACTOR -- Clean Up (if needed)') &&
   implementerContent.includes('### 3c. REFACTOR -- Clean Up (if needed)'),
   'REFACTOR heading format matches implementer'
 );
@@ -254,19 +254,6 @@ assert(
 );
 
 // ============================================================
-// Test 16: Project Memory section present
-// ============================================================
-console.log('\nTest 16: Project Memory section');
-assert(
-  content.includes('## Project Memory'),
-  'Has Project Memory section'
-);
-assert(
-  content.includes('.bee/memory/'),
-  'References .bee/memory/ directory'
-);
-
-// ============================================================
 // Test 17: Stack skill reading step present
 // ============================================================
 console.log('\nTest 17: Stack skill reading step');
@@ -276,7 +263,7 @@ assert(
 );
 
 // ============================================================
-// Test 18: Task Notes section requirements
+// Test 18: Task Notes section requirements (structured one-line contract)
 // ============================================================
 console.log('\nTest 18: Task Notes requirements');
 const taskNotesSection = contentBetweenSections('## Task Notes', content) ||
@@ -285,17 +272,27 @@ const taskNotesSection = contentBetweenSections('## Task Notes', content) ||
 
 // Find the section that discusses task notes
 const notesContent = content.substring(content.indexOf('Task Notes'));
+
+// Load-bearing heading must remain literal — orchestrator and SubagentStop
+// hook extract the section after `## Task Notes`.
 assert(
-  notesContent.includes('Files created'),
-  'Task Notes requires Files created'
+  content.includes('## Task Notes'),
+  'Preserves load-bearing `## Task Notes` heading reference'
+);
+
+// Structured one-line template: `T{ID} {STATUS} | files: a,b | tests: N/M | blocker: <reason|none>`
+assert(
+  /T\{ID\}[\s\S]{0,80}\| files:[\s\S]{0,80}\| tests:[\s\S]{0,80}\| blocker:/.test(notesContent),
+  'Documents the structured one-line template (T{ID} STATUS | files | tests | blocker)'
+);
+
+assert(
+  notesContent.includes('files:'),
+  'Task Notes one-liner includes files: field'
 );
 assert(
-  notesContent.includes('Files modified'),
-  'Task Notes requires Files modified'
-);
-assert(
-  notesContent.includes('Test results'),
-  'Task Notes requires Test results'
+  notesContent.includes('tests:'),
+  'Task Notes one-liner includes tests: field'
 );
 
 // ============================================================

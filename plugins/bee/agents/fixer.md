@@ -99,20 +99,19 @@ Do NOT skip test verification. Every fix must be validated against the test suit
 
 ## 6. Report Fix
 
-End your final message with a structured fix report:
+End your final message with a structured one-line fix report under a `## Fix Report` heading. STATUS = `Fixed` / `Reverted` / `Failed`.
 
 ```
 ## Fix Report
 
-- **Finding:** F-{NNN}
-- **Status:** {Fixed | Reverted | Failed}
-- **Files Changed:** {list of modified file paths}
-- **What Changed:** {Brief description of the fix applied}
-- **Tests:** {All passing | Failed -- reason}
-- **Root Cause:** {Confirmed at reported location | Symptom -- root cause appears to be elsewhere | N/A -- straightforward fix}
+F-{NNN} {STATUS} | files: a,b | reason: <short>
 ```
 
-If you reverted, explain why the fix could not be applied safely.
+- `F-{NNN}` — the finding ID provided in your context
+- `files:` — comma-separated relative paths you modified (or `none` if reverted with no changes left)
+- `reason:` — short explanation. For `Fixed`, what the fix did. For `Reverted` or `Failed`, why the fix could not be applied safely (e.g., `symptom-not-root-cause`, `tests-fail-after-2-attempts`).
+
+Do not write narrative paragraphs. The conductor extracts this line for REVIEW.md updates.
 
 ---
 

@@ -171,26 +171,22 @@ After implementation, verify that all code follows the conventions from the stac
 
 ## 5. Write Task Notes (MANDATORY)
 
-In your final response message, write structured task notes under a `## Task Notes` heading. The conductor (parent command) extracts these and writes them to TASKS.md.
+In your final response message, write a structured one-line note under a `## Task Notes` heading. The literal `## Task Notes` heading is load-bearing — the conductor (execute-phase, ship) and the SubagentStop hook extract the section after this heading into TASKS.md `notes:`.
 
-Notes MUST include:
+Use this exact one-line shape (STATUS = `OK` / `FAILED`):
 
-- **Files created:** full paths of new files
-- **Files modified:** full paths of changed files
-- **Types/interfaces defined:** name, file, purpose
-- **Props/API surface exposed:** what downstream tasks need to know
-- **Patterns followed:** which existing code was used as reference
-- **Deviations applied:** rule number, type, description for each (or "None")
-- **Pre-existing issues observed:** issues seen but not fixed (or "None")
-- **Deviations from plan:** anything unexpected, with rationale
-- **Test results:** X tests passing, 0 failing
-- **Defense layers:** which layers (1-4) this task addresses, if applicable
-- **Architectural notes:** if implementation revealed design issues worth noting for future tasks
+```
+T{ID} {STATUS} | files: a,b | tests: N/M | blocker: <reason|none>
+```
 
-Your Task Notes MUST include a `## Deviations` section. If no deviations were applied, write `## Deviations\n\nNone -- task executed exactly as planned.` If deviations were applied, list each as a bullet with this exact format:
-- **Rule {N} ({type}):** {description}
+- `T{ID}` — task ID from the context packet (e.g., `T3.2`)
+- `files:` — comma-separated relative paths created or modified (omit duplicates)
+- `tests:` — `passing/total` for YOUR scoped test run (e.g., `8/8`)
+- `blocker:` — short reason if anything downstream needs to know, otherwise `none`
 
-Example: `- **Rule 1 (Bug):** Fixed null dereference in auth middleware when session is expired`
+If you applied deviations, append a second line `deviations: rule1=<short>, rule2=<short>` (omit if none). If you observed pre-existing unrelated issues you did not fix, append `pre-existing: <short>` (omit if none).
+
+Do not write narrative paragraphs. The conductor extracts this line verbatim — extra prose is wasted tokens and risks parsing drift.
 
 ## 6. Completion Signal
 

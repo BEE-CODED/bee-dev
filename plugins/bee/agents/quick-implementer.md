@@ -103,18 +103,20 @@ After implementation, verify that all code follows the conventions from the stac
 
 ## 5. Write Task Notes (MANDATORY)
 
-In your final response message, write structured task notes under a `## Task Notes` heading. The conductor (parent command) extracts these and writes them to TASKS.md.
+In your final response message, write a structured one-line note under a `## Task Notes` heading. The literal `## Task Notes` heading is load-bearing — the SubagentStop hook validates its presence and the parent command extracts the section after it.
 
-Notes MUST include:
+Use this exact one-line shape (STATUS = `OK` / `FAILED`):
 
-- **Files created:** full paths of new files
-- **Files modified:** full paths of changed files
-- **Types/interfaces defined:** name, file, purpose
-- **Props/API surface exposed:** what downstream tasks need to know
-- **Patterns followed:** which existing code was used as reference
-- **Deviations from plan:** anything unexpected, with rationale
-- **Test results:** X tests passing, 0 failing
-- **Defense layers:** which layers (1-2) this task addresses, if applicable
+```
+T{ID} {STATUS} | files: a,b | tests: N/M | blocker: <reason|none>
+```
+
+- `T{ID}` — task ID (use the quick task ID, e.g., `Q016`, when no phase task ID applies)
+- `files:` — comma-separated relative paths created or modified
+- `tests:` — `passing/total` for YOUR scoped test run (e.g., `5/5`)
+- `blocker:` — short reason if downstream consumers need to know, otherwise `none`
+
+If you applied deviations, append a second line `deviations: <short>`. Do not write narrative paragraphs.
 
 ## 5.5. Deviation Handling
 
