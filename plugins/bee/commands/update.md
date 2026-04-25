@@ -68,6 +68,42 @@ If "Keep": leave unchanged.
 
 If `implementation_mode` is already `"premium"` or absent (defaults to premium): skip this step silently.
 
+### Step 4c: Agent Teams Re-Detection (experimental)
+
+Re-check Agent Teams availability since the user may have upgraded Claude Code since `/bee:init`. Same logic as `/bee:init` Step 3.7, with one extra path: re-prompt previously-declined users IF the CC version has changed since they declined.
+
+**1. Read current state:**
+
+- Run `claude --version` via Bash. Extract `MAJOR.MINOR.PATCH` triple via `grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1`. Compare segments as integers (NOT lexicographic — see init.md Step 3.7 step 1 for full semver compare logic). Store as `$CURRENT_CC_VERSION`.
+- Read `.bee/config.json` `agent_teams` block (if absent, treat as fresh — apply Step 3.7 logic from `/bee:init`). Extract current `implementation_mode` for adaptive ceiling re-compute below.
+- Read `~/.claude/settings.json`. Env is enabled IFF `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is exactly the string `"1"`. Any other value (including `"0"`, empty string, unset) = disabled. Malformed JSON → treat as disabled + warn.
+
+**2. Decision tree:**
+
+- **Version too old** (< 2.1.32): set `agent_teams.status = "unavailable"`. If status was previously `enabled` or `declined`, note in summary that the feature is no longer available (CC was downgraded). Skip prompt.
+- **Already enabled** (env == "1"): set `agent_teams.status = "enabled"`. Skip prompt.
+- **Status is `enabled` in config but env now disabled**: user manually disabled via settings.json. Update `agent_teams.status = "declined"` and record `agent_teams.declined_at_cc_version = $CURRENT_CC_VERSION`. Note in summary.
+- **Status is `unavailable` and now version OK**: feature became available since `/bee:init`. Prompt user to enable (use the Step 3.7 prompt from `/bee:init`).
+- **Status is `declined` and `declined_at_cc_version` is `null`** (legacy state — declined before this field existed): backfill `declined_at_cc_version = $CURRENT_CC_VERSION` and respect the decline. Do NOT re-prompt this run. Future `/bee:update` runs will only re-prompt if version changes again.
+- **Status is `declined` and `declined_at_cc_version != $CURRENT_CC_VERSION`** (and not null): user upgraded CC since declining. Re-prompt — feature may have improved.
+- **Status is `declined` and version unchanged**: respect the decline. Skip prompt.
+- **Status is `enabled` and env still set**: nothing changed. Skip prompt.
+
+**3. Persist updates to `.bee/config.json`** (Read-Modify-Write).
+
+**3.5. Re-compute adaptive ceiling** (only if `agent_teams.status == "enabled"`):
+- premium → `max_tokens_per_team_op = 2400000`
+- quality → `1200000`
+- economy → `600000`
+
+If the existing config's `max_tokens_per_team_op` differs from the computed value AND the user has not manually overridden it (heuristic: value matches one of the 3 canonical defaults), update it. If user appears to have customized it (any other value), leave alone and note in summary: "Custom max_tokens_per_team_op preserved (skipped adaptive update)."
+
+**3.6. Settings.json edit safety** (only if user is being prompted to enable):
+- If editing `~/.claude/settings.json`, scan for `//` or `/* ... */` markers. If JSONC comments present, refuse auto-edit + display manual instructions (same as init.md Step 3.7 step 4 Enable path).
+- After write, re-read and verify the env var is set. If verification fails, set `agent_teams.status = "declined"` + display recovery guidance.
+
+**4. If status changed:** include a one-line note in the Step 5 summary (e.g., "Agent Teams: now enabled" or "Agent Teams: feature became available — declined").
+
 ### Step 5: Summary
 
 Display the result:

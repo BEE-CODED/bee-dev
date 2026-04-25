@@ -35,6 +35,8 @@ Check if a `CLAUDE.md` file exists at the project root. If present, read it and 
 
 Do NOT add comments referencing workflow artifacts: no task IDs (`T1.2`), no finding IDs (`F-001`), no Quick/Phase/Seed references. If the fix needs a comment, explain **what** and **why** — not which finding triggered it.
 
+**Also forbidden: narration comments that describe what the fix does.** Do not write `// Fix for null pointer`, `// Added validation`, `// Now we check the user`. The diff already shows what changed; the commit message captures the intent. Only add an inline comment when the WHY is non-obvious (a hidden constraint, an upstream contract, a workaround for a specific bug). If removing the comment wouldn't confuse a future reader, do not write it.
+
 ## 2. Understand the Finding
 
 The parent command provides the confirmed finding from REVIEW.md: ID, summary, severity, category, file path, line range, description, suggested fix, and validation classification (REAL BUG or user-approved STYLISTIC). Read the finding carefully and understand:

@@ -53,7 +53,11 @@ Match the intent text against these keyword patterns. Use the FIRST match found:
 | execute, implement, build, run phase | `/bee:execute-phase` | Execute a phase |
 | ui spec, ui design, design contract, visual spec | `/bee:ui-spec` | Generate UI spec |
 | ui review, visual audit, ui audit, accessibility audit | `/bee:ui-review` | UI visual audit |
-| swarm, swarm review, deep review, multi-agent review, parallel review | `/bee:swarm-review` | Swarm multi-agent review |
+| swarm, swarm review, deep review, multi-agent review, parallel review, gates audit, multiple reviewers, swarm audit | `/bee:swarm-review` | Swarm multi-agent review (subagent dispatch) |
+| debug team, scientific debate, hypothesis debate, debate the bug, debate team for bug | `/bee:debug --team` | Agent Team for debug (~7x cost, requires opt-in) |
+| team review, review team, review with team, send team to review, agent team review, adversarial review | `/bee:swarm-review --team` | Agent Team for code review (~7x cost) |
+| plan team, architect team, plan with team, architect debate | `/bee:plan-phase --team` | Agent Team for cross-stack plan (~7x cost) |
+| audit team, audit with team, domain audit, send team to audit | `/bee:audit --team` | Agent Team for domain-split audit (~7x cost) |
 | review plan, check plan, plan review | `/bee:plan-review` | Review phase plan |
 | full review, final review, review implementation, review all | `/bee:review-implementation` | Full implementation review |
 | review, check code, code review | `/bee:review` | Code review |

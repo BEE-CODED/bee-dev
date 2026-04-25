@@ -101,8 +101,36 @@ This guide teaches you to use Bee intelligently -- when to suggest commands, wha
 |--------|---------|----------|
 | Systematic bug investigation | `/bee:debug` | Complex, multi-symptom bug |
 | Stuck/failed workflow diagnosis | `/bee:forensics` | Workflow anomaly, not code bug |
-| Project health diagnostics | `/bee:health` | 13-check structural validation |
+| Project health diagnostics | `/bee:health` | 14-check structural validation |
 | Forensics found root cause | Forensics handoff | Transitions to debug with pre-populated symptoms |
+
+### Agent Teams (experimental, opt-in)
+
+Bee supports Claude Code Agent Teams (v2.1.32+, requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). Teams unlock peer-to-peer reviewer debate and scientific-debate debugging at ~7x the token cost of subagents. `/bee:init` and `/bee:update` detect availability and offer opt-in.
+
+**When teams add value (use `--team` flag):**
+| Scenario | Command | Why team beats subagent |
+|---|---|---|
+| Intermittent bug, multi-subsystem error | `/bee:debug --team` | Adversarial hypothesis debate beats single-investigator anchoring bias |
+| Pre-merge review of security-critical code | `/bee:swarm-review --team` | Real-time cross-lens dedup; security challenger questions performance verdicts |
+| Cross-stack architectural phase planning | `/bee:plan-phase --team` | Architects negotiate contracts upfront before implementation discovers mismatches |
+| Large codebase audit (200+ files) | `/bee:audit --team` | Domain-split (auth/payments/reporting) eliminates discipline-overlap noise |
+
+**When subagents are sufficient (no flag — default):**
+- Routine post-phase reviews
+- Single-file fixes
+- Quick tasks
+- Sequential dependencies
+- Anything where the 7x cost isn't justified by exploration depth
+
+**Auto-mode behavior:** if `agent_teams.allow_in_auto_mode == true` in `.bee/config.json`, `/bee:ship`, `/bee:plan-all`, and `/bee:autonomous` MAY auto-spawn ONE team per run when the operation scores ≥ 70 on the team-decisions scorer (5-axis weighted: hypothesis breadth, cross-layer coverage, independence, uncertainty, stakes). Hard cap: one team per autonomous run (slow shutdown + one-team-per-session limit).
+
+**Anti-patterns:**
+- Don't use teams for execute-phase, fix-implementation, or quick (wave/file structure already parallelizes)
+- Don't auto-enable teams without measuring cost
+- Don't use plan mode unless the architectural decision justifies 7x cost
+
+See `skills/team-decisions/SKILL.md` for full scoring rules, `skills/agent-teams/SKILL.md` for skill bridge mechanism, `skills/team-templates/SKILL.md` for spawn prompt patterns.
 
 ### Session Management
 | Intent | Command |

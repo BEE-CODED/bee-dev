@@ -37,6 +37,26 @@ Comments in code must explain **what the code does and why**, never reference wo
 
 These are workflow context that becomes meaningless after the spec is archived. Write comments that make sense to a reader who has never seen the TASKS.md.
 
+**Also forbidden: comments that narrate implementation steps.** Do not comment obvious code. Prefer self-documenting names and tight logic.
+
+```
+// DON'T -- narrating obvious code
+// Get the email from the request
+$email = $request->input('email');
+// Check if valid
+if (! filter_var($email, FILTER_VALIDATE_EMAIL)) { ... }
+// Create user if missing
+$user = User::firstOrCreate(['email' => $email]);
+// Return the user
+return $user;
+
+// DO -- comment only the WHY when non-obvious
+// Email is the canonical identifier for password reset flow; phone is optional
+$email = $request->input('email');
+```
+
+Default to writing no comment. Only add one when the WHY is non-obvious (a hidden constraint, a subtle invariant, a workaround for a specific bug, behavior that would surprise a reader). If removing the comment wouldn't confuse a future reader, do not write it.
+
 ## 2.5. Architectural Clarity
 
 Before writing tests, ensure the task's architecture is sound:
@@ -173,7 +193,7 @@ After implementation, verify that all code follows the conventions from the stac
 
 In your final response message, write a structured one-line note under a `## Task Notes` heading. The literal `## Task Notes` heading is load-bearing — the conductor (execute-phase, ship) and the SubagentStop hook extract the section after this heading into TASKS.md `notes:`.
 
-Use this exact one-line shape (STATUS = `OK` / `FAILED`):
+Use this exact one-line shape (STATUS = `OK` / `FAILED` / `BLOCKED`):
 
 ```
 T{ID} {STATUS} | files: a,b | tests: N/M | blocker: <reason|none>
@@ -182,7 +202,7 @@ T{ID} {STATUS} | files: a,b | tests: N/M | blocker: <reason|none>
 - `T{ID}` — task ID from the context packet (e.g., `T3.2`)
 - `files:` — comma-separated relative paths created or modified (omit duplicates)
 - `tests:` — `passing/total` for YOUR scoped test run (e.g., `8/8`)
-- `blocker:` — short reason if anything downstream needs to know, otherwise `none`
+- `blocker:` — short reason if anything downstream needs to know, otherwise `none`. For `BLOCKED` STATUS, this MUST contain the architectural reason from the Rule 4 STOP signal (one short phrase).
 
 If you applied deviations, append a second line `deviations: rule1=<short>, rule2=<short>` (omit if none). If you observed pre-existing unrelated issues you did not fix, append `pre-existing: <short>` (omit if none).
 

@@ -231,6 +231,87 @@ Map "High" → `"high"`, "None" → `"none"`.
 
 Store the selected values for Step 4 (config.json creation).
 
+### Step 3.7: Agent Teams Detection (experimental)
+
+Check whether Claude Code Agent Teams are available + enabled, and if available but disabled, offer opt-in. Agent Teams unlock peer-to-peer reviewer debate, scientific-debate debugging, and cross-stack architectural negotiation. They use ~7x more tokens than subagents and require Claude Code v2.1.32+.
+
+**1. Version check (semver compare, not lexicographic):**
+
+Run `claude --version` via Bash. Output looks like `2.1.32 (Claude Code)` or similar — extract just the `MAJOR.MINOR.PATCH` triple. Parse via Bash:
+```bash
+VER=$(claude --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+
+# Empty/unparseable guard -- claude binary missing, slow, or output not in expected format.
+# Without this, the integer compare below would error with "[: : integer expression expected".
+if [ -z "$VER" ]; then
+  echo "[bee] Could not detect Claude Code version (claude --version returned no semver)." >&2
+  echo "[bee] Setting agent_teams.status = unavailable. Re-run /bee:update after fixing." >&2
+  # Set status=unavailable, skip rest of Step 3.7. CURRENT_CC_VERSION stays unset (safe — declined_at_cc_version is null).
+  AGENT_TEAMS_STATUS="unavailable"
+fi
+
+MAJOR=$(echo "$VER" | cut -d. -f1)
+MINOR=$(echo "$VER" | cut -d. -f2)
+PATCH=$(echo "$VER" | cut -d. -f3)
+```
+
+Pre-release suffixes (e.g., `2.1.32-rc.1`) are dropped silently and treated as the base version (`2.1.32`) — accepted by design.
+
+Compare each segment as INTEGER (not string — lexicographic compare misclassifies `2.1.5` vs `2.1.32`). The version is older than 2.1.32 if:
+`MAJOR < 2 OR (MAJOR == 2 AND MINOR < 1) OR (MAJOR == 2 AND MINOR == 1 AND PATCH < 32)`
+
+If older, set `agent_teams.status = "unavailable"` and skip the rest of this step (no prompt, no error — feature simply not available yet). Store `$CURRENT_CC_VERSION = "$MAJOR.$MINOR.$PATCH"` for use in step 4 (decline path).
+
+**2. Read user-level settings:**
+
+Read `~/.claude/settings.json` (if missing, treat as `{}`). Check whether `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is exactly the string `"1"`. **Any other value (including `"0"`, empty string, or unset) counts as disabled.** If the file contains malformed JSON, treat as `{}` and continue (do not block init on a corrupted user settings file — log a one-line warning).
+
+Read `~/.claude.json` (if missing, treat as `{}`). Check `teammateMode` field (valid values: `"auto"`, `"in-process"`, `"tmux"`). Store as informational only — don't change it.
+
+**3. Decision tree:**
+
+- **Already enabled** (env var == "1"): set `agent_teams.status = "enabled"`, no prompt. Skip to step 6.
+- **Available but disabled** (version OK, env not set, no prior decline marker in any existing `.bee/config.json`): proceed to step 4 (prompt user).
+- **Previously declined** (existing `.bee/config.json` has `agent_teams.status = "declined"`): set `agent_teams.status = "declined"`, no re-prompt unless `/bee:update` detects a new CC version newer than the one recorded at decline time. Skip to step 6.
+
+**4. Prompt user (only if available + disabled + not previously declined):**
+
+```
+Display: "Agent Teams unlock /bee:debug --team scientific debate + adversarial reviews. ~7x token cost. Bee auto-detects when teams add value."
+
+AskUserQuestion(
+  question: "Enable Claude Code Agent Teams (experimental)?",
+  options: ["Enable (Recommended)", "Skip", "Custom"]
+)
+```
+
+- **Enable**: edit `~/.claude/settings.json` to add `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"`. Preserve any existing `env` keys and other top-level settings (Read-Modify-Write).
+
+  **JSONC guard:** before editing, scan the file for `//` or `/* ... */` comment markers. If found, do NOT auto-edit (your JSON edit would strip user comments silently). Display: "settings.json contains comments — bee won't auto-edit. Add this line manually:\n  `\"env\": { \"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS\": \"1\" }`\nThen rerun /bee:init or /bee:update." Set `agent_teams.status = "declined"` for now (user can re-enable manually + rerun).
+
+  **Write verification:** after writing, re-read the file, parse JSON, confirm `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS == "1"`. If parse fails or value missing → display: "Could not write ~/.claude/settings.json (permission issue or filesystem error). Add manually: `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = \"1\"`. Setting status to declined." Set `agent_teams.status = "declined"`.
+
+  If file does not exist: create it with `{ "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" } }`. Verify post-write same way.
+
+  On success: set `agent_teams.status = "enabled"`.
+- **Skip**: set `agent_teams.status = "declined"`. Record `agent_teams.declined_at_cc_version = "<current version>"` so `/bee:update` can re-prompt if user upgrades CC later. Do NOT modify `~/.claude/settings.json`.
+- **Custom**: free text — interpret intent, default to "Skip" if unclear.
+
+**5. Skill probe deferral + adaptive ceiling computation:**
+
+Skill injection probe (verifying that bee skills load correctly inside teammates) is deferred to first team-using command, not run at init (it would require actually spawning a team, which costs tokens unnecessarily during init). Set `agent_teams.skill_injection = "untested"` for now. The first time a team-eligible command runs, bee will probe and persist the result.
+
+**Compute `max_tokens_per_team_op` adaptively from `implementation_mode`:**
+- `premium` (Opus, default for cost-tolerant users) → `2400000` (tolerates 5-teammate plan-mode silently)
+- `quality` (mixed Opus+Sonnet) → `1200000`
+- `economy` (Sonnet only — 200K context per teammate, can't realistically exceed 1M total anyway) → `600000`
+
+Use the resolved `implementation_mode` from earlier step. If unset, default to `premium` ceiling.
+
+**6. Persist agent_teams block in config.json:**
+
+Whatever the outcome (`enabled`, `declined`, `unavailable`), include the `agent_teams` block in the `.bee/config.json` written in Step 4. Default values for unset fields are documented in the config schema below.
+
 ### Step 4: Create .bee/ Directory and config.json
 
 Create the `.bee/` directory and write `.bee/config.json` with the confirmed values.
@@ -275,9 +356,52 @@ The `stacks` array contains one entry per each confirmed stack-path pair from St
   "adaptive": {
     "learning": true,
     "escalation": true
+  },
+  "agent_teams": {
+    "status": "{from Step 3.7: enabled | declined | unavailable}",
+    "allow_in_auto_mode": false,
+    "auto_decision": "smart",
+    "high_cost_confirm": true,
+    "skill_injection": "untested",
+    "skill_bridge_method": "auto",
+    "max_team_size": 5,
+    "max_tokens_per_team_op": "{adaptive_ceiling}",
+    "block_if_dangerous_perms": true,
+    "declined_at_cc_version": null,
+    "metrics": {
+      "team_runs": 0,
+      "team_runs_succeeded": 0,
+      "team_token_cost_total": 0,
+      "subagent_runs_avoided": 0
+    }
   }
 }
 ```
+
+**`agent_teams` field reference:**
+
+| Field | Default | Purpose |
+|---|---|---|
+| `status` | `"unavailable"` | Detection result: `enabled` / `declined` / `unavailable`. Bee treats env value as enabled IFF the string is exactly `"1"`. Any other value (including `"0"`, empty, unset) = disabled. |
+| `allow_in_auto_mode` | `false` | Whether `/bee:ship`, `/bee:plan-all`, `/bee:autonomous` may auto-spawn teams without asking. Keep `false` until comfortable with cost. |
+| `auto_decision` | `"smart"` | Scorer strategy: `smart` (5-axis weighted), `always-prefer` (use teams whenever eligible), `never-prefer` (subagents only). |
+| `high_cost_confirm` | `true` | Even in auto-mode, ask before team operations estimated > `max_tokens_per_team_op`. |
+| `skill_injection` | `"untested"` | Probe result: `verified-auto`, `verified-via-claude-md`, `broken`. Updated by first team command. |
+| `skill_bridge_method` | `"auto"` | How teammates load bee skills: `auto` (default, hope for the best), `claude-md` (write skills snippet to project CLAUDE.md), `inline` (embed in spawn prompts), `none` (probe failed, accept degraded quality). |
+| `max_team_size` | `5` | Hard cap on teammates per team. Per docs, 3-5 is optimal. |
+| `max_tokens_per_team_op` | adaptive: `2400000` (premium) / `1200000` (quality) / `600000` (economy) | Total estimated tokens (across all teammates × team lifetime, including plan-mode 7x multiplier where applicable) above which `high_cost_confirm` triggers. Default computed from `implementation_mode` at init: premium tolerates a 5-teammate plan-mode team silently; economy stays well under Sonnet's per-teammate context. |
+| `block_if_dangerous_perms` | `true` | Refuse team spawn if lead is in `--dangerously-skip-permissions` mode (permissions cascade to all teammates). |
+| `declined_at_cc_version` | `null` | If user declined, record CC version so `/bee:update` can re-prompt on upgrade. `null` means unrecorded — `/bee:update` backfills it on first detection. |
+| `metrics` | `{}` (zeros) | Telemetry counters incremented by team operations. Read by `bee:health` for tuning thresholds. |
+
+**Substitute `{adaptive_ceiling}`** in both single-stack and multi-stack JSON templates above with the integer computed from `implementation_mode` (Step 3.7 step 5):
+- `premium` → `2400000`
+- `quality` → `1200000`
+- `economy` → `600000`
+
+The placeholder must be replaced with a bare integer (no quotes) before writing config.json.
+
+**Note on team naming:** all bee-spawned teams use the literal `bee-` prefix (fixed, not configurable). Hooks self-identify via this prefix.
 
 **Multi-stack example:**
 ```json
@@ -318,6 +442,24 @@ The `stacks` array contains one entry per each confirmed stack-path pair from St
   "adaptive": {
     "learning": true,
     "escalation": true
+  },
+  "agent_teams": {
+    "status": "{from Step 3.7}",
+    "allow_in_auto_mode": false,
+    "auto_decision": "smart",
+    "high_cost_confirm": true,
+    "skill_injection": "untested",
+    "skill_bridge_method": "auto",
+    "max_team_size": 5,
+    "max_tokens_per_team_op": "{adaptive_ceiling}",
+    "block_if_dangerous_perms": true,
+    "declined_at_cc_version": null,
+    "metrics": {
+      "team_runs": 0,
+      "team_runs_succeeded": 0,
+      "team_token_cost_total": 0,
+      "subagent_runs_avoided": 0
+    }
   }
 }
 ```

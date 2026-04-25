@@ -67,6 +67,12 @@ The parent command indicates which pass to perform. Detect the mode from the ins
    - Wave 1: Tasks with no dependencies and no file conflicts with each other
    - Wave N+1: Tasks that depend on Wave N outputs
    - Within any wave: NO two tasks modify the same file
+5b. Wave consolidation (anti-fragmentation pass):
+   - After all waves are assigned, scan for waves containing only 1-2 tasks.
+   - For each small wave, check if its task(s) can move to a preceding wave WITHOUT introducing a file conflict and WITHOUT violating dependencies (the task only depends on tasks already in earlier waves).
+   - If yes, merge the small wave into the preceding wave (reduces orchestration overhead, parallelizes more aggressively).
+   - Target: 3-5 parallel tasks per wave. Single-task waves are anti-pattern unless the task genuinely depends on the prior wave's output AND no earlier wave has capacity.
+   - If a 1-task wave cannot be merged (genuine sequential dependency), keep it but note in the completion signal.
 6. Context packet definition per task:
    - Task description + acceptance criteria
    - Research notes for this task
@@ -84,13 +90,14 @@ Target approximately 30% of the implementer's context window per task. Include f
 End with this exact one-line shape (no narrative paragraphs):
 
 ```
-Phase {N}: {tasks} tasks, {waves} waves | conflicts: <N|0> | research: <ok|partial>
+Phase {N}: {tasks} tasks, {waves} waves | conflicts: <N|0> | research: <ok|partial> | fragmentation: <ok|warn>
 ```
 
 - `{N}` — phase number
 - `{tasks}` / `{waves}` — counts written to TASKS.md
 - `conflicts:` — number of file-ownership conflicts detected and resolved during wave assignment, or `0`
 - `research:` — `ok` if every task has a `research:` block from Pass 1, `partial` if any task is missing one
+- `fragmentation:` — `ok` if `waves * 2.5 <= tasks` (average ≥ 2.5 tasks/wave, the consolidation target) OR if every 1-2 task wave has a documented genuine sequential dependency; otherwise `warn`. The thresholds are complementary — there is no gap. When `warn`, append a one-line `## Fragmentation Note` to TASKS.md listing which 1-2 task waves could not be merged and why.
 
 ---
 

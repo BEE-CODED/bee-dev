@@ -1,6 +1,6 @@
 ---
 description: Create a detailed execution plan for a spec phase with researched tasks and wave grouping
-argument-hint: "[phase-number]"
+argument-hint: "[phase-number] [--team] [--no-team]"
 ---
 
 ## Current State (load before proceeding)
@@ -322,6 +322,44 @@ Check for active LEARNINGS.md files from prior phases to generate predictive war
    - Add after the existing context: "PREDICTIVE WARNING: {warning text}. Ensure task acceptance criteria address this pattern."
 
 6. **No warning case:** If no cross-phase pattern is detected, proceed normally without any warning.
+
+### Step 2.7: Team-vs-Solo Decision (cross-stack architectural negotiation)
+
+For phases that span multiple stacks or require architectural negotiation, an Agent Team of architects (data + API + UI) can negotiate contracts upfront. This is a Tier 2 integration — high cost (plan mode = 7x), justified for foundational/cross-stack phases only.
+
+Read `agent_teams` block from `.bee/config.json`. If absent or `agent_teams.status != "enabled"`, skip this step entirely and proceed to Step 3 (solo phase-planner — current behavior).
+
+**Argument override:**
+- `--team` in `$ARGUMENTS`: force team path (must pass pre-flight checks).
+- `--no-team` in `$ARGUMENTS`: force solo path. Skip scoring.
+
+**No override → score via team-decisions skill.** See `skills/team-decisions/SKILL.md`:
+- "Per-command scoring" → `plan-phase` section for the 5 signal computation rules
+- "Hard constraints", "Scoring formula", "Threshold map" — identical to other team-aware commands
+
+Inputs: command="plan-phase", mode (auto detected via `.bee/.autonomous-run-active`), 5 signals per the plan-phase rules, agent_teams config block.
+
+If team path chosen: run pre-flight per `skills/agent-teams/SKILL.md`, then spawn using **Cross-Stack Architectural Planning template** (Template 3 in `skills/team-templates/SKILL.md`). Parameters:
+- `phase_goal`: phase title + summary from ROADMAP.md
+- `stacks_affected`: stacks resolved via path-overlap of phase scope
+- `architects`: 2-4 architect roles. Default: `["data-architect", "api-architect", "ui-architect"]` for cross-stack; reduce to 2 if only 2 layers affected
+- `output_path`: `{phase-dir}/ARCHITECTURE-NOTES.md`
+
+Plan mode (cost warning, ~7x): display estimate before spawn.
+
+**Auto-mode detection:** check if `.bee/.autonomous-run-active` exists (file existence is the sole signal — see `skills/command-primitives/SKILL.md` Auto-Mode Marker).
+
+If marker exists → AUTO-MODE.
+
+In AUTO-MODE:
+- Do NOT call AskUserQuestion (autonomous contract: no pause).
+- Apply config rules: if `agent_teams.allow_in_auto_mode==true && agent_teams.high_cost_confirm==false`: spawn team. Else: fall back to solo planner + log to `.bee/team-suggestions.md` for later review.
+
+If `.bee/.autonomous-run-active` does NOT exist → INTERACTIVE MODE: AskUserQuestion to confirm cost.
+
+After team produces ARCHITECTURE-NOTES.md, the file becomes input to Step 3 (phase-planner Pass 1) — pass it as additional context. Step 3 should reference negotiated contracts when defining tasks. Append to `.bee/team-metrics.log`.
+
+If solo path: proceed to Step 3 unchanged.
 
 ### Step 3: Plan What -- Spawn phase-planner Agent (Pass 1)
 

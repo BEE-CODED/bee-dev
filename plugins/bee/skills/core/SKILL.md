@@ -9,7 +9,7 @@ description: BeeDev workflow rules -- TDD mandatory, disk-is-truth, no auto-comm
 
 These rules apply to ALL work within a Bee-managed project. No exceptions.
 
-### TDD is mandatory
+### TDD is mandatory (for code with business logic)
 
 ```
 NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
@@ -20,6 +20,23 @@ Write code before the test? **Delete it. Start over.**
 - Don't "adapt" it while writing tests
 - Don't look at it
 - Delete means delete
+
+**TDD applies to business logic, NOT infrastructure boilerplate.** If a file has no branching logic (no `if`/`else`/`switch`/`match`/`when`/`loop`), it does NOT need a dedicated test — it gets covered implicitly through feature tests that exercise it.
+
+| SKIP TDD (infrastructure) | DO TDD (business logic) |
+|---|---|
+| Migrations (column definitions, indexes, foreign keys) | Controllers, actions, services |
+| Seeders (data population) | Policies and authorization rules |
+| Factories (test data definitions) | Form requests / validation logic |
+| Route registration (`Route::resource`, `Route::get`) | Custom validation rules |
+| Middleware registration (binding only — TDD the middleware logic itself) | Components/pages with state, conditionals, or computed values |
+| Config changes (`config/*.php` values) | Custom hooks, composables, observers, listeners |
+| Simple models — `$fillable` + native `$casts` + plain relationships ONLY (no custom casts, no `Attribute::make()` accessors, no `boot()`/`booted()`, no global scopes) | Models with scopes, mutators, custom casts, or domain methods |
+| Simple Inertia pages with no logic (just render server props) | Pages with conditional rendering, derived state, form handling |
+
+**Mixed tasks:** test the business-logic parts, skip the infrastructure parts. A task that adds a migration + a service + a controller writes tests for the service and controller, not the migration.
+
+Stack-specific implementer agents apply this rule via the "TDD Applicability Check" section. Apply this rule consistently across all stacks.
 
 **The Red-Green-Refactor cycle:**
 1. **Red:** Write a failing test. Run it. Watch it FAIL. Verify the failure is about missing implementation, not test logic errors.
@@ -80,6 +97,38 @@ The user decides when and what to commit via `/bee:commit`. Never commit automat
 - Never make forced decisions -- always confirm before destructive actions
 - Present options and let the user choose
 - Show what will change before making changes
+
+### Concise interaction (questions and responses)
+
+Bee commands and agents communicate frequently via `AskUserQuestion`, status updates, and step summaries. Default to terse, scannable text. The user can always ask for more detail.
+
+**Question style:**
+- One sentence per question. State what is being decided, not the full process leading to it.
+- Options: 2-4 short labels (≤ 6 words each). Mark the recommended option with "(Recommended)".
+- "Custom" is always the LAST option when present.
+- Do NOT explain the full step-by-step process before asking. The user understands the workflow.
+
+```
+GOOD:
+  question: "Bump plugin version to 4.3.0?"
+  options: ["Yes (Recommended)", "Skip — keep 4.2.0", "Custom"]
+
+BAD:
+  question: "We have completed the v4.2 spec which involved Phase 1 and Quick 016 and Quick 017 with 618 passing tests across all suites. The next step in the standard release ceremony is to bump the plugin version. Per semver, since these are mostly refactors with no breaking changes, this would be a minor bump from 4.2.0 to 4.3.0. The marketplace.json would also bump from 1.6.0 to 1.7.0. Would you like to proceed?"
+  options: ["Yes, bump to 4.3.0 (Recommended for the standard release flow)", "No, skip", "Custom"]
+```
+
+**Status update style:**
+- Use tables, bullet lists, and short paragraphs. Avoid prose narration.
+- Lead with the result, follow with evidence. Do not narrate the process unless the user asked.
+- File paths and line numbers as `path/to/file:NN` (clickable in most IDEs).
+- Reserve verbose explanations for review/audit deliverables that the user needs to evaluate carefully — terse for everything else.
+
+**Anti-patterns:**
+- Multi-paragraph preambles before a question.
+- Repeating context the user just provided.
+- Step-by-step narration of what the command will do (the user knows what `/bee:ship` does).
+- Ending each turn with "Let me know if you'd like to..." menus when the next action is obvious.
 
 ## Firm Rules
 

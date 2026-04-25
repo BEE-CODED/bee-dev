@@ -31,6 +31,9 @@ You are running `/bee:autonomous` -- the multi-phase autonomous orchestrator for
 
 ### Step 1: Validation Guards
 
+See `skills/command-primitives/SKILL.md` Auto-Mode Marker.
+Setup at start of this step; cleanup runs at Step 6 completion AND on any error exit.
+
 Check these guards in order. Stop immediately if any fails:
 
 1. **NOT_INITIALIZED guard:** If the dynamic context above contains "NOT_INITIALIZED" (meaning `.bee/STATE.md` does not exist), tell the user:
@@ -452,6 +455,8 @@ AskUserQuestion(
 - **Custom**: Free text
 
 ### Step 6: Update STATE.md
+
+**Auto-mode marker cleanup (always, regardless of outcome):** delete `.bee/.autonomous-run-active`, `.bee/.autonomous-team-spawned`, and `.bee/.autonomous-team-claimed` if any exists.
 
 After autonomous execution completes (all phases done or stopped), re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern) and update the Last Action section:
 

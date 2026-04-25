@@ -1,6 +1,6 @@
 ---
 description: Investigate bugs systematically with hypothesis testing, persistent debug sessions, and codebase analysis
-argument-hint: "[bug description] | --resume {slug}"
+argument-hint: "[bug description] | --resume {slug} | --team | --no-team"
 ---
 
 ## Current State (load before proceeding)
@@ -238,7 +238,65 @@ suggested_fix: pending
 6. Store `$DEBUG_FILE` as `.bee/debug/sessions/{slug}/state.json` (machine-readable path for agent)
 7. Store `$REPORT_FILE` as `.bee/debug/sessions/{slug}/report.md` (human-readable path)
 
+### Step 4.5: Team-vs-Subagent Decision
+
+Decide whether to dispatch via Agent Team (scientific debate pattern) or solo subagent (current default). Read `agent_teams` block from `.bee/config.json`. If absent or `agent_teams.status != "enabled"`, skip this step entirely and proceed to Step 5 (subagent path).
+
+**Argument override (highest priority):**
+- `--team` in `$ARGUMENTS`: force team path. If `agent_teams.status != "enabled"`, tell user "Agent Teams not enabled. Run `/bee:update` to enable, or remove `--team` flag to use subagent dispatch." Stop.
+- `--no-team` in `$ARGUMENTS`: force subagent path. Skip scoring.
+
+**No override → score via team-decisions skill.** See `skills/team-decisions/SKILL.md`:
+- "Per-command scoring" → `debug` section for the 5 signal computation rules (input: `$DESCRIPTION`, `$ERRORS`, `$REPRODUCTION`, `$SLUG`, prior session state)
+- "Hard constraints" table for immediate fall-through cases
+- "Scoring formula" for weighted average
+- "Threshold map" for recommendation by score range + auto-mode behavior
+
+Inputs to provide: command="debug", mode="interactive" or "auto" (detected via `.bee/.autonomous-run-active` presence), the 5 signal values computed per the skill's debug rules, plus the loaded `agent_teams` config block.
+
+Output: recommendation = `subagent` | `team-with-confirm` | `team`. Apply the threshold map's per-mode behavior.
+
+Store decision as `$DEBUG_PATH = "subagent" | "team"`. If "team", proceed to Step 4.6. Otherwise jump to Step 5.
+
+### Step 4.6: Pre-flight + Team Spawn (only if $DEBUG_PATH == "team")
+
+Run pre-flight checks per `skills/agent-teams/SKILL.md` Pre-flight check section. If any check fails, fall back to subagent (set `$DEBUG_PATH = "subagent"`, jump to Step 5) and display the failure reason.
+
+**Skill probe gate:** if `agent_teams.skill_injection == "untested"`, run the probe procedure now (per `agent-teams/SKILL.md`). Persist result. If probe shows broken AND no bridge works, fall back to subagent.
+
+**Spawn team using Debug Scientific Debate template** from `skills/team-templates/SKILL.md` Template 1. Parameters:
+- `bug_description`: $DESCRIPTION + $EXPECTED + $ACTUAL + $ERRORS condensed to 1 paragraph
+- `hypothesis_lenses`: derive 3-5 lenses from `$ERRORS`, `$REPRODUCTION`, and the layer paths counted by `cross_layer_coverage`. Heuristics:
+  - If $ERRORS mentions race/timing/concurrency → include "race-condition" lens
+  - If multi-subsystem → include 1 lens per subsystem (frontend/backend/data)
+  - Always include "input-validation" if user input is in the trace
+  - Add "state-management" if symptom involves stale or inconsistent data
+  - Add "config-drift" if symptom appeared after a deploy or config change
+  - Cap at 5 (per `max_team_size` config). Order by relevance (most likely root cause first).
+- `slug`: $SLUG (already created in Step 4)
+- `N`: number of lenses (3-5)
+- `output_path`: $SESSION_DIR/team-findings.md
+
+Stack-aware agent resolution: per `team-templates/SKILL.md` Stack-aware section. For multi-stack projects, resolve `bug-detector` to the appropriate stack-specific variant per file scope.
+
+After team completes (lead synthesizes, cleanup invoked), parse `$SESSION_DIR/team-findings.md`. Per Template 1's required wrapper section, the file contains both `## ROOT CAUSE FOUND` and `## PATTERN` sections in addition to the consensus findings — set `$AGENT_RESULT = team-findings.md content` and proceed to Step 6 with that result.
+
+**Mirror team output into state.json** (since Step 5's debug-investigator was skipped, state.json is at Step 4 defaults):
+- For each consensus finding in team-findings.md → append to `state.json.hypotheses[]` with `status: "confirmed"` (STRONG consensus) or `status: "partial"` (QUALIFIED).
+- For each entry in "Hypotheses Falsified" section → append to `state.json.archived_hypotheses[]` with the refuting evidence.
+- For each evidence chain → append to `state.json.evidence[]`.
+- Set `state.json.current_focus.team_resolved = true` for traceability.
+
+Append to `.bee/team-metrics.log` (append-only, no race risk):
+```
+{ISO 8601 timestamp} | command=debug | team_size={N} | result=success|abandoned | tokens_estimated={estimate}
+```
+
+Then jump to Step 6 (which now sees a valid `## ROOT CAUSE FOUND` signal and populated state.json).
+
 ### Step 5: Spawn debug-investigator Agent
+
+(Skipped if $DEBUG_PATH == "team" — see Step 4.6.)
 
 Build the investigation prompt with symptoms, session paths, and mode.
 

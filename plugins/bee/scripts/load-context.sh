@@ -3,6 +3,8 @@
 # Stdout is added as context that Claude can see
 # Do NOT use set -euo pipefail -- if one file is missing, continue reading others
 
+shopt -s nullglob
+
 BEE_DIR="$CLAUDE_PROJECT_DIR/.bee"
 
 # Skip if .bee/ doesn't exist (project not initialized)
@@ -56,13 +58,29 @@ if [ -f "$BEE_DIR/user.md" ]; then
 fi
 
 # Load session context if exists (prefer COMPACT-CONTEXT.md over SESSION-CONTEXT.md)
+# Cap at 100 lines to prevent unbounded context growth — the recent decisions
+# stay visible, the historical archive is reachable via Read tool when needed.
 if [ -f "$BEE_DIR/COMPACT-CONTEXT.md" ]; then
   echo "## Previous Session Context"
-  cat "$BEE_DIR/COMPACT-CONTEXT.md"
+  LINES=$(wc -l < "$BEE_DIR/COMPACT-CONTEXT.md" | tr -d ' ')
+  if [ "$LINES" -gt 100 ]; then
+    head -n 100 "$BEE_DIR/COMPACT-CONTEXT.md"
+    echo ""
+    echo "(COMPACT-CONTEXT.md truncated at 100/$LINES lines -- read full file with Read tool if needed)"
+  else
+    cat "$BEE_DIR/COMPACT-CONTEXT.md"
+  fi
   echo ""
 elif [ -f "$BEE_DIR/SESSION-CONTEXT.md" ]; then
   echo "## Previous Session Context"
-  cat "$BEE_DIR/SESSION-CONTEXT.md"
+  LINES=$(wc -l < "$BEE_DIR/SESSION-CONTEXT.md" | tr -d ' ')
+  if [ "$LINES" -gt 100 ]; then
+    head -n 100 "$BEE_DIR/SESSION-CONTEXT.md"
+    echo ""
+    echo "(SESSION-CONTEXT.md truncated at 100/$LINES lines -- read full file with Read tool if needed)"
+  else
+    cat "$BEE_DIR/SESSION-CONTEXT.md"
+  fi
   echo ""
 fi
 

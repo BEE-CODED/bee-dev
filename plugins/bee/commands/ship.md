@@ -26,6 +26,9 @@ You are running `/bee:ship` -- the autonomous orchestrator that executes all pla
 See `skills/command-primitives/SKILL.md` Validation Guards.
 Apply: NOT_INITIALIZED, NO_SPEC, NO_PHASES, then the work-list guard below.
 
+See `skills/command-primitives/SKILL.md` Auto-Mode Marker.
+Setup at start of this step; cleanup runs at Step 5 completion AND on any error exit.
+
 **Phases needing work guard:** Read the Phases table from STATE.md. At least one phase must need work. A phase needs work if its Status is one of:
 - `PLAN_REVIEWED` -- ready for execution
 - `EXECUTING` -- execution in progress (resume)
@@ -803,6 +806,8 @@ Report bugs that span multiple files or phases -- the kind that single-file revi
 3. Write updated STATE.md to disk.
 
 ### Step 5: Completion Summary
+
+**Auto-mode marker cleanup (always, regardless of outcome):** delete `.bee/.autonomous-run-active`, `.bee/.autonomous-team-spawned`, and `.bee/.autonomous-team-claimed` if any exists. These markers are per-run, not persisted across runs. If the command exits early on error before reaching this step, the next `/bee:health` Check 14 will surface and recommend manual cleanup.
 
 Read the final state from disk. Build and display the completion summary.
 

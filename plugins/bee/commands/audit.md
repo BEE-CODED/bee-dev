@@ -1,6 +1,6 @@
 ---
 description: Run a comprehensive code audit with specialized agents -- security, errors, database, architecture, API, frontend, performance, testing, integration wiring, and end-to-end bug detection
-argument-hint: "[--only security,database,...] [--skip-validation] [--severity critical,high]"
+argument-hint: "[--only security,database,...] [--skip-validation] [--severity critical,high] [--team] [--no-team]"
 ---
 
 ## Current State (load before proceeding)
@@ -66,6 +66,39 @@ Before spawning any agents, read these files once and include their content in e
 Pass these as part of the agent's prompt context — agents should NOT re-read these files themselves.
 
 Note: Unlike `/bee:review` and `/bee:swarm-review` which scan specific files and expand dependencies, `/bee:audit` scans the ENTIRE codebase. Dependency expansion is not needed — all files are already in scope. Agents discover import/require relationships as part of their domain analysis (e.g., integration-checker builds dependency graphs, architecture-auditor traces cross-layer calls).
+
+### Step 3.7: Team-vs-Subagent Decision (domain split for large codebases)
+
+For large codebases, splitting the audit by DOMAIN (auth, payments, reporting) instead of by DISCIPLINE (security, performance, architecture) reduces overlap. The Domain Split team template addresses user feedback that 10-agent flat parallel produces near-identical findings under different IDs.
+
+Read `agent_teams` block from `.bee/config.json`. If absent or `agent_teams.status != "enabled"`, skip this step entirely and proceed to Step 4 (current flat-parallel behavior).
+
+**Argument override:**
+- `--team` in `$ARGUMENTS`: force team path.
+- `--no-team` in `$ARGUMENTS`: force subagent path. Skip scoring.
+
+**No override → score via team-decisions skill.** See `skills/team-decisions/SKILL.md`:
+- "Per-command scoring" → `audit` section for the 5 signal computation rules
+- "Hard constraints", "Scoring formula", "Threshold map" — identical to other team-aware commands
+
+Inputs: command="audit", mode (auto detected via `.bee/.autonomous-run-active`), 5 signals per the audit rules, agent_teams config block.
+
+If team path chosen: run pre-flight per `skills/agent-teams/SKILL.md`, then spawn using **Audit Domain Split template** (Template 4 in `skills/team-templates/SKILL.md`). Parameters:
+- `codebase_root`: project root (or `--scope` value if specified)
+- `domains`: 3-4 domain partitions. Auto-detect from codebase top-level structure:
+  - For Laravel: `app/Http/Controllers/{Auth,Payments,...}` → one domain per Auth-style sub-namespace
+  - For monorepo: each `packages/` or `apps/` entry = one domain
+  - Fallback if no clean structure: layer-based `["frontend", "backend-api", "data-layer"]`
+- `output_path`: `.bee/AUDIT-REPORT-{date}.md` (matches Step 6 output)
+
+After team produces report, **post-process every finding** to add the per-finding fields required by `/bee:fix-implementation` consumption (mirrors `commands/swarm-review.md` Step 5.6 — without these, fix-implementation Step 2 filter rejects the finding silently):
+- `- **Validation:** REAL BUG (in-team cross-evaluation)` — REQUIRED on every `### F-{...}` finding heading. The exact prefix `REAL BUG` is what the filter matches; the `(in-team cross-evaluation)` suffix preserves traceability (no separate audit-finding-validator pass was run on this team output).
+- `- **Fix Status:** pending` — REQUIRED.
+- Preserve any in-team consensus tag (CONSENSUS / MAJORITY / SOLO) inside the Description field for audit trail.
+
+Then skip Steps 4-6 entirely. Append to `.bee/team-metrics.log`. Proceed to Step 7 (Prepare Results Data) with the team-produced (and post-stamped) report.
+
+If subagent path: proceed to Step 4 unchanged.
 
 ### Step 4: Run Audit Agents
 

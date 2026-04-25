@@ -145,9 +145,21 @@ If reports exist:
 - If HIGH > 0 but CRITICAL == 0: PASS with "Recent forensics: {HIGH count} HIGH findings (no CRITICAL)"
 - If both are 0: PASS with "Latest forensic report is clean"
 
+**Check 14 -- Agent Teams orphan detection:**
+
+Skip this check entirely if `agent_teams.status != "enabled"` in `.bee/config.json` (PASS with "Agent Teams not enabled").
+
+Otherwise scan `~/.claude/teams/bee-*` for orphaned bee-spawned teams. An orphan is any directory whose `config.json` shows the team is older than 1 hour AND no task in `~/.claude/tasks/{team-name}/` is `in_progress`. These typically result from interrupted sessions where cleanup was never invoked.
+
+Also check `.bee/.autonomous-run-active`, `.bee/.autonomous-team-spawned`, and `.bee/.autonomous-team-claimed`: if any exists AND was last modified more than 1 hour ago, flag as stale auto-mode marker (autonomous run never completed cleanup).
+
+- PASS: no orphan teams + no stale markers
+- WARN: orphan teams found -> recovery: "Found {N} orphan bee teams in `~/.claude/teams/`. Manually clean: `rm -rf ~/.claude/teams/{team-name}/` and `rm -rf ~/.claude/tasks/{team-name}/`. Stale auto-markers: `rm .bee/.autonomous-*`."
+- FAIL: never (orphans are recoverable, not blocking)
+
 ### Write Health History Entry
 
-After completing all 13 checks, write a health history entry. This is the ONE exception to health being read-only -- it writes its own history for longitudinal tracking.
+After completing all 14 checks, write a health history entry. This is the ONE exception to health being read-only -- it writes its own history for longitudinal tracking.
 
 1. Read `.bee/metrics/health-history.json` if it exists. If it does not exist, start with an empty array `[]`. If `.bee/metrics/` directory does not exist, create it with `mkdir -p .bee/metrics/` via Bash.
 2. Construct a new entry object:
@@ -169,7 +181,8 @@ After completing all 13 checks, write a health history entry. This is the ONE ex
     "workflow_health": "{PASS|WARN|FAIL}",
     "code_quality": "{PASS|WARN|FAIL}",
     "productivity": "{PASS|WARN|FAIL}",
-    "forensic_xref": "{PASS|WARN|FAIL}"
+    "forensic_xref": "{PASS|WARN|FAIL}",
+    "agent_teams": "{PASS|WARN|FAIL}"
   }
 }
 ```
@@ -182,7 +195,7 @@ After completing all 13 checks, write a health history entry. This is the ONE ex
 After writing the health history entry, compute the baseline:
 
 1. Read the health-history.json array. If fewer than 5 entries, skip baseline computation -- no baseline display. Store `baseline_available = false` and `baseline_sessions_count = {N}` for Display.
-2. If 5+ entries exist, compute the baseline for each of the 13 check dimensions:
+2. If 5+ entries exist, compute the baseline for each of the 14 check dimensions:
    - For each check key in `checks`, count occurrences of each status (PASS, WARN, FAIL) across all entries.
    - The baseline for that check is the mode (most common status). If tied, use the better status (PASS > WARN > FAIL).
 3. Determine overall baseline status:
@@ -197,7 +210,7 @@ After writing the health history entry, compute the baseline:
 After computing baseline, run trend detection:
 
 1. Take the last 5 entries from health-history.json (or all entries if fewer than 5). If fewer than 3 entries, skip trend detection (no trends possible).
-2. For each of the 13 check dimensions, examine the status values in chronological order.
+2. For each of the 14 check dimensions, examine the status values in chronological order.
 3. A degradation trend exists when a check has been at a WORSE status than its baseline for 3+ consecutive entries (counting from the most recent backward). Worse means: PASS->WARN, PASS->FAIL, or WARN->FAIL. If no baseline is available (fewer than 5 entries), use PASS as the assumed baseline for trend detection.
 4. For each degradation trend detected, record:
    - `check_name`: which check degraded (e.g., 'git', 'workflow_health')
@@ -218,6 +231,7 @@ After computing baseline, run trend detection:
      - code_quality: 'Review recent review findings for recurring patterns'
      - productivity: 'Consider breaking large phases into smaller scopes'
      - forensic_xref: 'Run /bee:forensics to investigate recurring findings'
+     - agent_teams: 'Clean orphan teams: rm -rf ~/.claude/teams/bee-* and rm .bee/.autonomous-*'
 5. Store detected trends for the Display section.
 
 ### Display Results
@@ -240,8 +254,9 @@ Project Health: {OVERALL_STATUS}
   [checkmark] Code Quality: {result}
   [checkmark] Productivity: {result}
   [checkmark] Forensic cross-ref: {result}
+  [checkmark] Agent Teams: {result}
 
-Summary: X/13 passed, Y warnings, Z failures
+Summary: X/14 passed, Y warnings, Z failures
 ```
 
 Use a checkmark icon for PASS, warning triangle for WARN, and X icon for FAIL.

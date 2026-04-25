@@ -1,6 +1,6 @@
 ---
 description: Multi-agent parallel review with segmentation, consensus scoring, and evidence chains -- dispatches specialized reviewers per code segment
-argument-hint: "[path] [--phase N] [--cross-phase N-M] [--pre-commit] [--only bug-detector,security,...] [--skip-validation] [--severity critical,high]"
+argument-hint: "[path] [--phase N] [--cross-phase N-M] [--pre-commit] [--since GIT_REF] [--scope GLOB] [--only bug-detector,security,...] [--skip-validation] [--severity critical,high] [--team] [--no-team]"
 ---
 
 ## Current State (load before proceeding)
@@ -51,6 +51,10 @@ Check `$ARGUMENTS` for flags:
 3. **`--severity` flag:** Comma-separated severity filter for the final report. Valid values: `critical`, `high`, `medium`. If present, only include findings of the specified severities in the output. If absent, include all severities.
 
 4. **`--segment` flag:** Force segmentation strategy. Valid values: `file`, `component`, `layer`. Overrides auto-detection in Step 4.
+
+5. **`--since GIT_REF` flag:** Limit the file scope to files changed since the given git ref. Run `git diff --name-only {GIT_REF}...HEAD` (three-dot syntax — files changed on the current branch since it diverged from the ref) and intersect with the file scope from Step 1. Common refs: `main`, `HEAD~5`, a tag, a commit hash. Combines with any other scope path: e.g., `--phase 3 --since main` reviews only the phase-3 files that changed since main. If the intersection is empty, display "No files changed since {GIT_REF} match the requested scope." and stop. If the ref does not exist (`git rev-parse --verify` fails), tell the user the ref is invalid and stop.
+
+6. **`--scope GLOB` flag:** Limit the file scope to files matching the glob pattern. Use the Glob tool with the given pattern, then intersect with the file scope from Step 1. Examples: `--scope "src/**/*.ts"`, `--scope "app/Http/Controllers/*.php"`, `--scope "**/Auth*.tsx"`. Combines with `--since` and other scope flags via intersection. If the intersection is empty, display "No files match {GLOB} within the requested scope." and stop. If the glob is malformed (no matches at all in the project), warn the user but proceed with empty scope (which will trigger the empty-scope guard).
 
 ### Step 3: Detect Stack and Build Context Cache
 
@@ -152,7 +156,67 @@ Dispatch plan: {total_agents} agent instances across {N} segments
   ...
 ```
 
+### Step 5.5: Team-vs-Subagent Decision
+
+Before dispatching subagents (Step 6), decide whether this review benefits from Agent Team adversarial debate (real-time cross-lens dedup). Read `agent_teams` block from `.bee/config.json`. If absent or `agent_teams.status != "enabled"`, skip this step entirely and proceed to Step 6 (subagent dispatch — current behavior).
+
+**Argument override (highest priority):**
+- `--team` in `$ARGUMENTS`: force team path. If `agent_teams.status != "enabled"`, tell user to enable via `/bee:update` and stop.
+- `--no-team` in `$ARGUMENTS`: force subagent path. Skip scoring.
+
+**No override → score via team-decisions skill.** See `skills/team-decisions/SKILL.md`:
+- "Per-command scoring" → `swarm-review` section for the 5 signal computation rules
+- "Hard constraints", "Scoring formula", "Threshold map" — apply identically to debug.md integration
+
+Inputs: command="swarm-review", mode (auto detected via `.bee/.autonomous-run-active`), 5 signals per the swarm-review rules, agent_teams config block.
+
+Store decision as `$REVIEW_PATH = "subagent" | "team"`. If "team", proceed to Step 5.6. Otherwise proceed to Step 6.
+
+### Step 5.6: Pre-flight + Team Spawn (only if $REVIEW_PATH == "team")
+
+Run pre-flight checks per `skills/agent-teams/SKILL.md` Pre-flight check section. If any check fails, fall back to subagent (set `$REVIEW_PATH = "subagent"`, jump to Step 6) and display the failure reason.
+
+If `agent_teams.skill_injection == "untested"`, run probe per agent-teams skill, persist result, fall back if broken.
+
+**Spawn team using Cross-Layer Review template** from `skills/team-templates/SKILL.md` Template 2. Parameters:
+- `scope`: file scope from Step 1 (intersected with `--since`/`--scope` from Step 2 if applied)
+- `lenses`: derive from segment types in Step 4 with explicit precedence:
+  - **Single-type scope:** apply the matching override:
+    - Controllers/Routes/Pages → `["security", "performance", "api"]`
+    - Models/Data → `["database", "security", "performance"]`
+    - UI → `["frontend", "pattern", "performance"]`
+    - Other (Tests/Config/Middleware) → `["security", "pattern", "performance"]`
+  - **Multi-type scope (2+ segment types present):** UNION the matching lens lists, dedup, then cap at 3 by frequency (most-common-across-types first; tie-break by `["security", "performance", "pattern"]` priority order).
+  - **No segments classified:** default `["security", "performance", "pattern"]`
+  - Final list always exactly 3 lenses (Template 2 caps at 3)
+- `output_path`: same path swarm-review would write to (Step 9 logic) — `{spec-path}/SWARM-REVIEW.md` or `.bee/reviews/SWARM-{date}-{n}.md`
+
+Stack-aware agent resolution: per `team-templates/SKILL.md`. Each lens maps to a generic agent type; resolve to stack-specific variant if exists.
+
+After team completes (real-time cross-evaluation produces consolidated findings), the lead must wrap the team output in the Step 9 schema before completing. Specifically:
+
+1. Read team-produced findings file (raw consensus output from Template 2).
+2. **For each team finding, set the per-finding fields required by `/bee:fix-implementation` consumption:**
+   - `- **Validation:** REAL BUG (in-team cross-evaluation)` — REQUIRED. Without this exact prefix, fix-implementation Step 2 filter rejects the finding silently. The "(in-team cross-evaluation)" suffix preserves traceability (no separate validator pass was run).
+   - `- **Fix Status:** pending` — REQUIRED. Marks finding as actionable.
+   - Preserve the in-team consensus tag (CONSENSUS / MAJORITY / SOLO) inside the Description field for audit trail.
+3. Compute Step 9-compatible metrics from the raw findings:
+   - `Raw findings`: total finding count from team output
+   - `After dedup`: same as Raw findings (Template 2 already deduped via cross-eval)
+   - `Validated`: same as Raw findings (in-team cross-evaluation replaces a separate validator pass)
+   - `FP rate`: `n/a (no validator pass)` — explicit note
+4. Synthesize segmentation summary: each lens-teammate's contribution count → `Segmentation Detail` table (lens name, finding count, primary severity).
+5. Write final report at the same `output_path` Step 9 would use (`{spec-path}/SWARM-REVIEW.md` or `.bee/reviews/SWARM-{date}-{n}.md`) using the Step 9 schema (Summary + Metrics + Segmentation + Findings list + Agent Performance — last is "Lens Performance" with teammate counts instead of agent counts).
+6. Skip Steps 6-8 entirely. Proceed to Step 9 status display only (the file write was just done).
+
+Append to `.bee/team-metrics.log` (append-only, no race risk):
+```
+{ISO 8601 timestamp} | command=swarm-review | team_size={N} | scope={scope_summary} | findings_count={N} | tokens_estimated={estimate}
+```
+
 ### Step 6: Dispatch Review Agents
+
+(Skipped if $REVIEW_PATH == "team" — see Step 5.6.)
 
 Spawn agents in parallel batches per `$IMPLEMENTATION_MODE`:
 

@@ -35,6 +35,8 @@ Read ALL `## Pattern References` files from disk before writing any code. These 
 
 Comments in code must explain **what the code does and why**, never reference workflow artifacts. Forbidden in comments: task IDs (`T1.2`, `T3.12`), Quick/Phase references (`Quick 011`, `Phase 3`), finding IDs (`F-001`), seed IDs (`S-001`), acceptance criteria numbers. Write comments that make sense to a reader who has never seen the plan file.
 
+**Also forbidden: comments that narrate implementation steps.** Do not comment obvious code (`// Get the email`, `// Check if valid`, `// Create user if missing`, `// Return the user`). Prefer self-documenting names. Default to writing no comment — add one only when the WHY is non-obvious (hidden constraint, subtle invariant, workaround). If removing it wouldn't confuse a future reader, do not write it.
+
 ## 2.5. Architectural Clarity
 
 Before writing tests, verify the task's approach:
@@ -105,7 +107,7 @@ After implementation, verify that all code follows the conventions from the stac
 
 In your final response message, write a structured one-line note under a `## Task Notes` heading. The literal `## Task Notes` heading is load-bearing — the SubagentStop hook validates its presence and the parent command extracts the section after it.
 
-Use this exact one-line shape (STATUS = `OK` / `FAILED`):
+Use this exact one-line shape (STATUS = `OK` / `FAILED` / `BLOCKED`):
 
 ```
 T{ID} {STATUS} | files: a,b | tests: N/M | blocker: <reason|none>
@@ -114,7 +116,7 @@ T{ID} {STATUS} | files: a,b | tests: N/M | blocker: <reason|none>
 - `T{ID}` — task ID (use the quick task ID, e.g., `Q016`, when no phase task ID applies)
 - `files:` — comma-separated relative paths created or modified
 - `tests:` — `passing/total` for YOUR scoped test run (e.g., `5/5`)
-- `blocker:` — short reason if downstream consumers need to know, otherwise `none`
+- `blocker:` — short reason if downstream consumers need to know, otherwise `none`. For `BLOCKED` STATUS, this MUST contain the architectural reason from the Rule 4 STOP signal (one short phrase).
 
 If you applied deviations, append a second line `deviations: <short>`. Do not write narrative paragraphs.
 

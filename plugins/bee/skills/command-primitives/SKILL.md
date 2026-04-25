@@ -79,6 +79,55 @@ If the detected phase Plan column is `Yes`, warn before overwriting:
 PLANNED → soft warning; EXECUTING+ → strong warning that progress may be
 lost. Stop unless the user confirms.
 
+## Auto-Mode Marker
+
+Used by `/bee:ship`, `/bee:plan-all`, `/bee:autonomous` to flag an autonomous
+run in progress so downstream commands (`/bee:plan-phase`, agent-team
+decision logic) can detect auto-mode and enforce the one-team-per-run cap.
+
+**Composition syntax used by commands:** `Apply: AUTO_MODE_MARKER` at Step 1
+(after Validation Guards). The cleanup step is named in the command's exit
+section (typically the final step + any error-exit branch).
+
+### Setup (at command start)
+
+If `agent_teams.status == "enabled"` in `.bee/config.json`:
+- Write `.bee/.autonomous-run-active` with content `$(date -u +%Y-%m-%dT%H:%M:%SZ)\n`
+  (single ISO-8601 timestamp line; useful only for debugging stuck markers).
+- Downstream auto-mode detection uses **file existence** as the sole signal.
+  No PID, no nonce, no content parsing — Bash tool invocations don't share
+  shell PIDs across calls, so any identity scheme would always misfire.
+
+If `agent_teams.status != "enabled"`: skip marker creation entirely (no-op).
+
+### Cleanup (at command end — success AND every error-exit branch)
+
+Always remove all three markers:
+- `rm -f .bee/.autonomous-run-active`
+- `rm -f .bee/.autonomous-team-spawned`
+- `rm -f .bee/.autonomous-team-claimed`
+
+The cleanup is unconditional: even if the markers were not created (e.g.,
+agent_teams disabled), `rm -f` is a no-op on missing files.
+
+### Detection (downstream consumer pattern)
+
+Other commands check for auto-mode by file existence only:
+```
+if [ -e .bee/.autonomous-run-active ]; then
+  # AUTO MODE: skip AskUserQuestion, follow autonomous policy
+else
+  # INTERACTIVE MODE: prompt the user
+fi
+```
+
+There is no "own-session vs cross-session" distinction — commands trust the
+marker's presence. If a stale marker remains from a crashed run, it persists
+until the user runs another auto-command (which cleans up at end) or removes
+it manually. The user-facing trade-off (occasional stale-marker cleanup) is
+acceptable because the previous PID-based detection was always-broken
+(every Bash tool call gets a fresh shell PID).
+
 ## Build & Test Gate (Interactive)
 
 Used by `/bee:review`, `/bee:review-implementation`, and `/bee:quick`.

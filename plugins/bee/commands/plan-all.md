@@ -26,6 +26,9 @@ You are running `/bee:plan-all` -- the orchestrator that plans all unplanned pha
 See `skills/command-primitives/SKILL.md` Validation Guards.
 Apply: NOT_INITIALIZED, NO_SPEC, NO_PHASES, then the work-list guard below.
 
+See `skills/command-primitives/SKILL.md` Auto-Mode Marker.
+Setup at start of this step; cleanup runs at Step 5 completion AND on any error exit.
+
 **Phases needing work guard:** Read the Phases table from STATE.md. At least one phase must need planning work. A phase needs work if:
 - Its Plan column is empty (not yet planned), OR
 - Its Plan Review column is empty (planned but not yet reviewed)
@@ -380,6 +383,8 @@ Decision log entry per iteration:
 - **Alternative rejected:** Ignoring cross-plan issues -- these are structural problems that would surface as bugs during execution.
 
 ### Step 5: Completion Summary
+
+**Auto-mode marker cleanup (always, regardless of outcome):** delete `.bee/.autonomous-run-active`, `.bee/.autonomous-team-spawned`, and `.bee/.autonomous-team-claimed` if any exists.
 
 Read the final state from disk. For each phase, read its TASKS.md and count tasks and waves.
 

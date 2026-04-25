@@ -30,11 +30,13 @@ Check these guards first:
    **(b) Auto-detect** (no argument provided): Try these locations in order, stopping at the first one found:
 
    1. `{spec-path}/REVIEW-IMPLEMENTATION.md` -- Read STATE.md to extract the Current Spec Path. If a spec path exists, check if `{spec-path}/REVIEW-IMPLEMENTATION.md` exists on disk.
-   2. Most recent file in `.bee/reviews/` -- Run `ls -t .bee/reviews/` via Bash to list files sorted by modification time. Use the first (newest) file if the directory exists and is not empty.
-   3. `{spec-path}/REVIEW-PROJECT.md` -- If a spec path exists, check if `{spec-path}/REVIEW-PROJECT.md` exists on disk.
+   2. `{spec-path}/SWARM-REVIEW.md` -- If a spec path exists, check on disk. Produced by `/bee:swarm-review` in post-phase / post-implementation modes.
+   3. Most recent file in `.bee/reviews/` -- Run `ls -t .bee/reviews/` via Bash to list files sorted by modification time. Use the first (newest) file if the directory exists and is not empty. This catches ad-hoc `SWARM-YYYY-MM-DD-N.md` files written by `/bee:swarm-review` outside a spec context.
+   4. `.bee/AUDIT-REPORT.md` -- Produced by `/bee:audit`. Check on disk.
+   5. `{spec-path}/REVIEW-PROJECT.md` -- If a spec path exists, check on disk.
 
    If none of these locations yield a review file, tell the user:
-   "No review file found. Run `/bee:review` or `/bee:review-implementation` first, or provide a path: `/bee:fix-implementation path/to/REVIEW.md`."
+   "No review file found. Run `/bee:review`, `/bee:swarm-review`, `/bee:review-implementation`, or `/bee:audit` first, or provide a path: `/bee:fix-implementation path/to/REVIEW.md`."
    Do NOT proceed.
 
 3. Display to user: "Fixing findings from: {resolved_review_file_path}"
@@ -42,9 +44,9 @@ Check these guards first:
 ### Step 2: Parse Findings
 
 1. Read the resolved review file from disk.
-2. Scan for `### F-NNN` sections (e.g., `### F-001`, `### F-002`, etc.).
+2. Scan for finding sections matching the pattern `### ([A-Z]+-)+[0-9]+` (one or more uppercase-letter segments separated by dashes, ending in digits). This covers all documented bee finding prefixes: 2-segment forms (`F-NNN` from review, `SF-NNN` from swarm-consolidator) AND 3+-segment forms emitted by audit specialists (`F-SEC-NNN`, `F-DB-NNN`, `F-API-NNN`, `F-FE-NNN`, `F-PERF-NNN`, `F-ARCH-NNN`, `F-ERR-NNN`, `F-INT-NNN`, `F-BUG-NNN`, `F-TEST-NNN` per `hooks.json` SubagentStop validators). Use the prefix from the actual heading for the rest of the parse — do NOT rewrite SF-001 as F-001 or strip the domain segment from F-SEC-001.
 3. For each finding section, extract:
-   - Finding ID (F-NNN)
+   - Finding ID (the full `{PREFIX}-NNN` token from the heading)
    - One-line summary (from the heading after the ID)
    - Severity (from `- **Severity:**` field)
    - Category (from `- **Category:**` field)
@@ -76,11 +78,13 @@ Sort the filtered findings by priority order:
 Display the sorted list:
 ```
 Fix order:
-1. F-{NNN}: {summary} (Critical)
-2. F-{NNN}: {summary} (High)
-3. F-{NNN}: {summary} (Standards-Medium)
+1. {ID}: {summary} (Critical)
+2. {ID}: {summary} (High)
+3. {ID}: {summary} (Standards-Medium)
 ...
 ```
+
+`{ID}` is the full finding ID with whatever prefix was parsed in Step 2 (`F-001`, `SF-001`, `AUDIT-001`, etc.) — preserve the prefix verbatim, do not rewrite.
 
 ### Step 3.5: Context Cache
 
@@ -112,7 +116,7 @@ Example: 6 findings on 3 files → 3 parallel fixer groups (instead of 6 sequent
 
 For EACH file group:
 
-1. Display: "Fixing F-{NNN}: {summary}..." (for each finding in the group)
+1. Display: "Fixing {ID}: {summary}..." (for each finding in the group; `{ID}` is the full parsed identifier including prefix)
 
 2. Build fixer context packet:
    - Finding details: ID, summary, severity, category, file path, line range, description, suggested fix
@@ -132,7 +136,7 @@ For EACH file group:
 8. Write the updated review file to disk.
 
 9. If the fixer reports "Reverted" or "Failed" (tests broke and changes were reverted):
-   - Display: "Fix for F-{NNN} failed -- changes reverted. Skipping."
+   - Display: "Fix for {ID} failed -- changes reverted. Skipping."
    - Update the review file Fix Status to "Skipped (tests failed)"
 
 CRITICAL: Within the same file group, spawn fixers SEQUENTIALLY, one at a time. Never spawn multiple fixers for the same file in parallel. One fix may change the context for the next finding on that file. Cross-file fixer groups may run in parallel safely.
@@ -155,7 +159,7 @@ Findings: {total} processed
 - Failed: {failed}
 
 {For each finding, one line:}
-  F-{NNN}: {summary} — {status} {if failed/skipped: "({reason})"}
+  {ID}: {summary} — {status} {if failed/skipped: "({reason})"}
 
 Next steps:
   git diff                   (review all changes)
@@ -187,8 +191,9 @@ AskUserQuestion(
 **Design Notes (do not display to user):**
 
 - This command never auto-commits. The user decides when to commit via `/bee:commit`.
-- This command does NOT perform a review. It operates on existing review output (REVIEW-IMPLEMENTATION.md, REVIEW-PROJECT.md, or any review file in `.bee/reviews/`).
-- The auto-detect priority (REVIEW-IMPLEMENTATION.md > newest in .bee/reviews/ > REVIEW-PROJECT.md) assumes the most specific review is most relevant.
+- This command does NOT perform a review. It operates on existing review output produced by `/bee:review`, `/bee:swarm-review`, `/bee:review-implementation`, or `/bee:audit`.
+- The auto-detect priority (REVIEW-IMPLEMENTATION.md > spec/SWARM-REVIEW.md > newest in `.bee/reviews/` > `.bee/AUDIT-REPORT.md` > REVIEW-PROJECT.md) prefers the most specific spec-scoped review first, then falls back to ad-hoc swarm output, then to whole-codebase audit output.
+- The finding-ID parser accepts any `### ([A-Z]+-)+[0-9]+` heading. Documented prefixes: `F-NNN` (review), `SF-NNN` (swarm-consolidator), and 3-segment audit specialists `F-SEC-NNN`, `F-DB-NNN`, `F-API-NNN`, `F-FE-NNN`, `F-PERF-NNN`, `F-ARCH-NNN`, `F-ERR-NNN`, `F-INT-NNN`, `F-BUG-NNN`, `F-TEST-NNN` (`audit-*` agents per hooks.json). Display templates use `{ID}` to preserve the parsed prefix verbatim — never collapse multi-segment IDs.
 - Fixer agents are spawned with file-based parallelism (parallel across files, sequential within the same file) using the parent model (omit model parameter) because they write production code and need full reasoning.
 - The Read-Modify-Write pattern ensures each fixer's status is persisted immediately, so progress survives if the session is interrupted.
 - Stack resolution uses per-finding path-overlap logic (matching review-implementation.md Step 6.2): compare each finding's file path against stack paths, use the matching stack name. Supports multi-stack projects and v2 config backward compatibility (`config.stacks` first, then `config.stack` fallback).
