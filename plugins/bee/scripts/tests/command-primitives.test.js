@@ -121,12 +121,13 @@ const VG_COMMANDS = [
   'complete-spec.md',
   'archive-spec.md',
   'review-implementation.md',
+  'quick-phase.md',
 ];
 
 const BTG_INTERACTIVE = ['review.md', 'review-implementation.md', 'quick.md'];
-const BTG_AUTONOMOUS = ['ship.md'];
+const BTG_AUTONOMOUS = ['ship.md', 'quick-phase.md'];
 
-const CC_COMMANDS = ['ship.md', 'review.md', 'review-implementation.md', 'quick.md', 'audit.md', 'plan-phase.md', 'eod.md', 'execute-phase.md'];
+const CC_COMMANDS = ['ship.md', 'review.md', 'review-implementation.md', 'quick.md', 'audit.md', 'plan-phase.md', 'eod.md', 'execute-phase.md', 'quick-phase.md'];
 
 const SLR_COMMANDS = ['ship.md', 'review.md', 'review-implementation.md', 'quick.md'];
 
@@ -137,13 +138,14 @@ const MSI_REASONING = [
   'plan-phase.md',
   'review-implementation.md',
   'quick.md',
+  'quick-phase.md',
 ];
 
-const MSI_SCANNING = ['quick.md'];
+const MSI_SCANNING = ['quick.md', 'quick-phase.md'];
 
 const PSAR_COMMANDS = ['ship.md', 'review.md', 'review-implementation.md'];
 
-const AFL_AUTONOMOUS = ['ship.md', 'plan-all.md'];
+const AFL_AUTONOMOUS = ['ship.md', 'plan-all.md', 'quick-phase.md'];
 
 // Lower bound on skill references per command (one per primitive applied).
 // Some commands reference the skill multiple times for the same primitive
@@ -161,6 +163,7 @@ const MIN_REFERENCES = {
   'audit.md': 1,                  // CC
   'eod.md': 1,                    // CC
   'execute-phase.md': 1,          // CC
+  'quick-phase.md': 6,            // VG, BTG-A, CC, MSI (reasoning), MSI (scanning), AFL
 };
 
 // ---------------------------------------------------------------------------
@@ -1145,6 +1148,85 @@ console.log('\n=== v4.5.0 Surface Contracts — pipeline orchestration bundle ==
   assert(/[Mm]id-pipeline cross-plan/.test(changelogMd_local) || /cross-plan.*incremental/i.test(changelogMd_local), 'CHANGELOG mentions mid-pipeline cross-plan');
   assert(/[Cc]onsolidation [Ll]og/.test(changelogMd_local) || /root-cause signature/.test(changelogMd_local), 'CHANGELOG mentions consolidation/dedup');
   assert(/research-enriched/i.test(changelogMd_local) || /merged.*pass/i.test(changelogMd_local), 'CHANGELOG mentions merged Pass 1 + research');
+}
+
+// ===== v4.5.0 Surface Contracts — quick-phase command =====
+console.log('\n=== v4.5.0 Surface Contracts — quick-phase command ===');
+
+{
+  const quickPhaseMd = readFile(path.join(COMMANDS_DIR, 'quick-phase.md')) || '';
+
+  // QP-1: File exists + frontmatter
+  assert(quickPhaseMd.length > 0, 'commands/quick-phase.md exists and is non-empty');
+  assert(/^---\nname:|^---\ndescription:/m.test(quickPhaseMd), 'quick-phase.md has frontmatter');
+  assert(/argument-hint:/.test(quickPhaseMd), 'quick-phase.md frontmatter has argument-hint');
+
+  // QP-2: Flag parsing literals
+  const flagLiterals = [
+    '--mode=',
+    '--review',
+    '--amend',
+    '--no-plan-checker',
+  ];
+  for (const flag of flagLiterals) {
+    assert(quickPhaseMd.includes(flag), `quick-phase.md documents flag ${flag}`);
+  }
+
+  // QP-3: Validation Guard reference (NOT_INITIALIZED only — no spec/phase required)
+  assert(/NOT_INITIALIZED/.test(quickPhaseMd), 'quick-phase.md applies NOT_INITIALIZED guard');
+  assert(/No spec or phase is required/.test(quickPhaseMd) || /no spec.*required/i.test(quickPhaseMd), 'quick-phase.md notes no spec/phase required');
+
+  // QP-4: Mini-research before scope-confirm (Step 2.5)
+  assert(/bee:researcher/.test(quickPhaseMd), 'quick-phase.md spawns bee:researcher (mini-research pass)');
+  assert(/mini-research|1-2 clarifying|light.{0,10}research/i.test(quickPhaseMd), 'quick-phase.md mentions lightweight research before scope-confirm');
+
+  // QP-5: phase-planner reuse (merged Pass 1 + Pass 2)
+  assert(/bee:phase-planner/.test(quickPhaseMd), 'quick-phase.md reuses bee:phase-planner agent');
+  assert(/Pass 1.*Plan What.*merged decompose.research|Plan What.*merged|merged.*decompose.*research/i.test(quickPhaseMd), 'quick-phase.md invokes Pass 1 merged contract');
+  assert(/Pass 2.*Plan Who|Plan Who.*wave/i.test(quickPhaseMd), 'quick-phase.md invokes Pass 2 wave assignment');
+
+  // QP-6: plan-checker invocation
+  assert(quickPhaseMd.includes('node ${CLAUDE_PLUGIN_ROOT}/scripts/plan-checker.js'), 'quick-phase.md invokes plan-checker.js');
+  assert(/FAIL-OPEN|fail.open/i.test(quickPhaseMd), 'quick-phase.md documents fail-open on plan-checker error');
+
+  // QP-7: 3 execute modes
+  const executeModes = ['execute as quick', 'execute as phase', 'plan-only'];
+  for (const mode of executeModes) {
+    assert(new RegExp(mode, 'i').test(quickPhaseMd), `quick-phase.md documents execute mode "${mode}"`);
+  }
+
+  // QP-8: Implementer agent (generic NOT quick-implementer per R4)
+  assert(/bee:.{0,20}implementer|implementer agent/i.test(quickPhaseMd), 'quick-phase.md references implementer agent for wave execution');
+  // Must NOT exclusively use quick-implementer (it has plan-shape mismatch with per-task TASKS.md)
+  // We allow quick-implementer mention but the main wave-execute agent should be the generic implementer
+  assert(/stack.specific|stacks\/.*implementer|fallback.{0,20}implementer/i.test(quickPhaseMd), 'quick-phase.md uses stack-specific implementer fallback pattern from execute-phase.md');
+
+  // QP-9: Wave execution loop (inline from execute-phase)
+  assert(/wave.by.wave|per.wave|wave loop|each wave/i.test(quickPhaseMd), 'quick-phase.md describes wave-by-wave execution');
+  assert(/aggregate.validate|aggregate verdict/i.test(quickPhaseMd), 'quick-phase.md mentions per-wave aggregate-validate (for execute-as-phase mode)');
+
+  // QP-10: STATE.md write — Quick Tasks table with [quick-phase] prefix
+  assert(/\[quick-phase\]/.test(quickPhaseMd), 'quick-phase.md prefixes Quick Tasks table description with [quick-phase]');
+  assert(/Quick Tasks/.test(quickPhaseMd), 'quick-phase.md updates the Quick Tasks table in STATE.md');
+
+  // QP-11: Plan-file path convention
+  assert(/\.bee\/quick-phases\//.test(quickPhaseMd), 'quick-phase.md writes to .bee/quick-phases/');
+
+  // QP-12: CHANGELOG entry
+  assert(/quick.phase|quick-phase/i.test(changelogMd), 'CHANGELOG mentions quick-phase command');
+
+  // QP-29: Plan-review agent prompts copy operational expansions from plan-phase.md verbatim
+  // Failure mode this catches: paraphrased agent prompts drop the concrete review-quality
+  // guidance (same-class scanning, edge-case enumeration, crash-path tracing) and degrade
+  // plan-review depth — these literals MUST be present byte-equal in Step 6.1.
+  const operationalExpansions = [
+    'scan ALL similar constructs',
+    'verify loop bounds',
+    'trace what happens if the session crashes',
+  ];
+  for (const expansion of operationalExpansions) {
+    assert(quickPhaseMd.includes(expansion), `quick-phase.md Step 6.1 contains operational expansion: ${expansion}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
