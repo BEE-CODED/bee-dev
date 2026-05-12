@@ -947,6 +947,97 @@ for (const [cmdFile, literals] of Object.entries(REVIEW_BATCH_LITERALS)) {
 }
 
 // ---------------------------------------------------------------------------
+// v4.5.0 Surface Contracts — plan-checker.js Opt-5 -- paired-contract pinning
+// for the new static pre-LLM TASKS.md validator integrated into plan-phase.md
+// (Step 5.5) and plan-all.md (Step 3f.1.5).
+// ---------------------------------------------------------------------------
+
+console.log('\n=== v4.5.0 Surface Contracts — plan-checker.js Opt-5 ===');
+
+const planCheckerScriptPath = path.join(PLUGIN_DIR, 'scripts', 'plan-checker.js');
+assert(
+  fs.existsSync(planCheckerScriptPath),
+  'plan-checker.js script exists at plugins/bee/scripts/plan-checker.js'
+);
+
+const planPhaseMd = readFile(path.join(COMMANDS_DIR, 'plan-phase.md'));
+const planAllMdForChecker = readFile(path.join(COMMANDS_DIR, 'plan-all.md'));
+
+// PC-1: plan-phase.md Step 5.5 heading is present
+assert(
+  /###\s+Step\s+5\.5:\s+Static Plan-Checker/.test(planPhaseMd),
+  'plan-phase.md contains "### Step 5.5: Static Plan-Checker" heading'
+);
+
+// PC-2: plan-phase.md Step 5.5 invokes the canonical bash command
+assert(
+  /node \$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/plan-checker\.js/.test(planPhaseMd),
+  'plan-phase.md Step 5.5 invokes node ${CLAUDE_PLUGIN_ROOT}/scripts/plan-checker.js'
+);
+
+// PC-3: plan-phase.md Step 5.5 documents the LLM-context injection prefix
+assert(
+  planPhaseMd.includes('PRE-LLM PLAN-CHECKER FINDINGS'),
+  'plan-phase.md Step 5.5 uses the "PRE-LLM PLAN-CHECKER FINDINGS" context-injection prefix'
+);
+
+// PC-4: plan-phase.md Step 5.5 documents FAIL-OPEN failure handling
+assert(
+  planPhaseMd.includes('FAIL-OPEN'),
+  'plan-phase.md Step 5.5 documents FAIL-OPEN behavior for exit 2 / missing script'
+);
+
+// PC-5: plan-phase.md does NOT contain the --no-plan-checker flag (REQ-11: interactive)
+const bareNoPlanCheckerFlag = /(^|\s)--no-plan-checker(\s|$)/;
+assert(
+  !bareNoPlanCheckerFlag.test(planPhaseMd),
+  'plan-phase.md does NOT contain --no-plan-checker (REQ-11: interactive command excluded from autonomous-flag list)'
+);
+
+// PC-6: plan-all.md Step 3f.1.5 heading is present (bold convention)
+assert(
+  /\*\*3f\.1\.5:\s+Static plan-checker/.test(planAllMdForChecker),
+  'plan-all.md contains "**3f.1.5: Static plan-checker" bold-heading'
+);
+
+// PC-7: plan-all.md Step 3f.1.5 invokes the canonical bash command
+assert(
+  /node \$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/plan-checker\.js/.test(planAllMdForChecker),
+  'plan-all.md Step 3f.1.5 invokes node ${CLAUDE_PLUGIN_ROOT}/scripts/plan-checker.js'
+);
+
+// PC-8: plan-all.md Step 3f.1.5 documents the LLM-context injection prefix
+assert(
+  planAllMdForChecker.includes('PRE-LLM PLAN-CHECKER FINDINGS'),
+  'plan-all.md Step 3f.1.5 uses the "PRE-LLM PLAN-CHECKER FINDINGS" context-injection prefix'
+);
+
+// PC-9: plan-all.md Step 3f.1.5 documents FAIL-OPEN failure handling
+assert(
+  planAllMdForChecker.includes('FAIL-OPEN'),
+  'plan-all.md Step 3f.1.5 documents FAIL-OPEN behavior for exit 2 / missing script'
+);
+
+// PC-10: plan-all.md frontmatter argument-hint declares --no-plan-checker
+const argHintLine = planAllMdForChecker.split('\n').find(l => l.startsWith('argument-hint:'));
+assert(
+  argHintLine && argHintLine.includes('--no-plan-checker'),
+  'plan-all.md frontmatter argument-hint declares --no-plan-checker'
+);
+
+// PC-11: plan-all.md args-parsing step recognizes --no-plan-checker via exact-token regex
+assert(
+  /\(\^\|\\s\)--no-plan-checker\(\\s\|\$\)/.test(planAllMdForChecker),
+  'plan-all.md uses boundary-anchored regex (^|\\s)--no-plan-checker(\\s|$) for flag parsing'
+);
+
+// PC-12: plan-all.md sets $PLAN_CHECKER_MODE
+assert(
+  planAllMdForChecker.includes('$PLAN_CHECKER_MODE'),
+  'plan-all.md introduces $PLAN_CHECKER_MODE variable for flag-controlled gating'
+);
+
+// ---------------------------------------------------------------------------
 // Final results
 // ---------------------------------------------------------------------------
 

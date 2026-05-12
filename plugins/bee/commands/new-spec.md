@@ -601,11 +601,11 @@ AskUserQuestion(
 **Design Notes (do not display to user):**
 
 - The discovery conversation runs IN MAIN CONTEXT (not delegated to a subagent). AskUserQuestion only works in main context, enabling structured options the user can click.
-- The brainstorming-style adaptive flow replaces the old fixed 2-5 round structure. Key principles ported from the superpowers brainstorming skill: one question per message, multiple choice preferred, no fixed round limit, decomposition check for multi-subsystem features, 2-3 approaches with trade-offs and recommendation, YAGNI principle.
+- The brainstorming-style adaptive flow replaces the old fixed 2-5 round structure. Key principles: one question per message, multiple choice preferred, no fixed round limit, decomposition check for multi-subsystem features, 2-3 approaches with trade-offs and recommendation, YAGNI principle.
 - The self-check every 3 questions prevents both premature convergence and interview fatigue without imposing a hard limit.
 - The decomposition check (Phase 2) catches multi-subsystem features early, preventing oversized specs that should be separate specs with their own lifecycle.
 - The approaches phase (Phase 4) uses research findings to present concrete options with codebase-informed trade-offs and a recommendation, not generic alternatives.
-- The spec review loop (Step 9.5) dispatches a spec-reviewer agent after spec-writer completes. This catches completeness, consistency, clarity, YAGNI, and scope issues before the user sees the spec. Issues are auto-fixed and re-reviewed (max 5 iterations). This pattern is adapted from the superpowers brainstorming skill's spec-document-reviewer loop.
+- The spec review loop (Step 9.5) dispatches a spec-reviewer agent after spec-writer completes. This catches completeness, consistency, clarity, YAGNI, and scope issues before the user sees the spec. Issues are auto-fixed and re-reviewed (max 7 iterations).
 - The researcher agent (sonnet) does the codebase scan. Its findings inform the discovery questions.
 - The spec-shaper agent is ONLY used for `--amend` mode. For new specs, the command itself handles discovery.
 - requirements.md is written by the command directly (it has all the Q&A data).

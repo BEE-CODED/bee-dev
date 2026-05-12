@@ -1,6 +1,6 @@
 ---
 description: Plan all unplanned phases sequentially with plan review and cross-plan consistency check
-argument-hint: "[--no-aggregate-validate]"
+argument-hint: "[--no-aggregate-validate] [--no-plan-checker]"
 ---
 
 ## Current State (load before proceeding)
@@ -45,6 +45,8 @@ See `skills/command-primitives/SKILL.md` Model Selection (Reasoning).
 Inputs: `$IMPLEMENTATION_MODE`. Output: `$RESOLVED_MODEL`.
 
 **Resolve `$VALIDATE_MODE`** (REQ-10, REQ-11 — first tier of two-tier Auto-Mode Marker defense). If `$ARGUMENTS` matches the exact-token regex `(^|\s)--no-aggregate-validate(\s|$)` (boundary-anchored; a hypothetical `--no-no-aggregate-validate` would NOT match because the preceding character is `o`, not whitespace/start), set `$VALIDATE_MODE = false`. Otherwise default to `$VALIDATE_MODE = true`. When `$VALIDATE_MODE` is true, every aggregate-validate sub-step below invokes the matching batch validator under `${CLAUDE_PLUGIN_ROOT}/scripts/hooks/validators/batch/` (REQ-09). When false, those sub-steps are skipped entirely. Precedence: `--no-aggregate-validate` overrides the Auto-Mode Marker. When the flag is set, batch validators are not invoked at all (the marker-skip prelude inside each batch validator is a separate defense-in-depth check for runs where the flag is absent). NOTE: `--no-aggregate-validate` is distinct from any other `--skip-*` flags used elsewhere; it controls only batch-validator aggregation.
+
+**Resolve `$PLAN_CHECKER_MODE`** (Opt-5). If `$ARGUMENTS` matches the exact-token regex `(^|\s)--no-plan-checker(\s|$)` (boundary-anchored, same collision-resistant pattern as `--no-aggregate-validate`), set `$PLAN_CHECKER_MODE = false`. Otherwise default to `$PLAN_CHECKER_MODE = true`. When `$PLAN_CHECKER_MODE` is true, Step 3f.1.5 runs the static `plan-checker.js` BEFORE the 4 LLM plan-review agents spawn. When false, Step 3f.1.5 is skipped entirely (autonomous opt-out for fast re-runs). The flag controls ONLY the static plan-checker; LLM plan review still runs.
 
 ### Step 2: Discover Phases
 
@@ -232,6 +234,22 @@ Phase number: {N}
 
 Read TASKS.md to understand the planned tasks. Load the stack skill dynamically from config.json and check whether the planned approach follows the stack's conventions and best practices. Use Context7 to verify framework best practices. Report only HIGH confidence violations in your standard output format.
 ```
+
+**3f.1.5: Static plan-checker (pre-LLM filter)**
+
+Before spawning the 4 LLM plan-review agents in 3f.2, run the deterministic static `plan-checker.js` on the wave-assigned TASKS.md. This catches mechanical drift (file-ownership conflicts, dangling `needs` refs, missing waves, REQ anchors, `depends_on` typos, empty acceptance) in milliseconds so LLM tokens go to semantic concerns. Read-only — never writes TASKS.md. Side artifact: `plan-checker-report.md` next to TASKS.md.
+
+If `$PLAN_CHECKER_MODE = false` (because `--no-plan-checker` was passed), display "plan-checker: skipped (--no-plan-checker)" and proceed directly to 3f.2. Otherwise run:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/plan-checker.js {phase_directory}/TASKS.md {requirements.md path if it exists}
+```
+
+Capture the exit code as `$PLAN_CHECKER_EXIT`. Branch:
+
+- **Exit 0 (clean):** No active findings. Display: "plan-checker: clean (0 findings)". Proceed to 3f.2.
+- **Exit 1 (issues):** Active findings present. Read the report file at `{phase_directory}/plan-checker-report.md`. Inject the report contents into each of the 4 plan-review agents' context packets (built in 3f.1) under a section labeled `PRE-LLM PLAN-CHECKER FINDINGS` so the LLM reviewers can confirm/escalate/dismiss each item.
+- **Exit 2 (internal error) or missing script:** FAIL-OPEN. Log the failure, display: "plan-checker FAIL-OPEN: <reason>", and proceed to 3f.2 as if the checker had returned clean. Never block the autonomous pipeline on plan-checker internal errors.
 
 **3f.2: Spawn all four agents in parallel**
 

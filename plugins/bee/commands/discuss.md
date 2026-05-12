@@ -412,7 +412,7 @@ AskUserQuestion(
 **Design Notes (do not display to user):**
 
 - The discussion runs IN MAIN CONTEXT (not delegated to a subagent). AskUserQuestion only works in main context, enabling structured options the user can click.
-- The brainstorming-style adaptive flow replaces the old fixed 2-5 round structure. Key principles ported from the superpowers brainstorming skill: one question per message, multiple choice preferred, no fixed round limit, decomposition check for complex topics, 2-3 approaches with trade-offs and recommendation.
+- The brainstorming-style adaptive flow replaces the old fixed 2-5 round structure. Key principles: one question per message, multiple choice preferred, no fixed round limit, decomposition check for complex topics, 2-3 approaches with trade-offs and recommendation.
 - The self-check every 3 questions prevents both premature convergence (too few questions) and interview fatigue (too many without progress).
 - The decomposition check (Phase 1) catches multi-subsystem topics early, preventing unfocused discussions that try to cover too much ground.
 - The approaches phase (Phase 3) uses scan results to present concrete options with codebase-informed trade-offs, not generic alternatives.

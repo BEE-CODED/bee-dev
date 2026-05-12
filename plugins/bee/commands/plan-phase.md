@@ -447,6 +447,22 @@ grep "Wave" {phase-directory}/TASKS.md
 
 If no wave sections were added, tell the user the wave assignment failed and stop.
 
+### Step 5.5: Static Plan-Checker (pre-LLM filter)
+
+Before spawning the 4 LLM plan-review agents in Step 6, run the deterministic static `plan-checker.js` on the wave-assigned TASKS.md. This catches mechanical drift (file-ownership conflicts, dangling `needs` refs, missing waves, REQ anchors, `depends_on` typos, empty acceptance) in milliseconds so LLM tokens go to semantic concerns. The checker is READ-ONLY (never writes TASKS.md). Side artifact: `plan-checker-report.md` next to TASKS.md.
+
+Run the checker. The interactive plan-phase has NO `--no-plan-checker` flag (REQ-11 — plan-phase is interactive and is NOT in the autonomous-flag list); the static check ALWAYS runs.
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/plan-checker.js {phase_directory}/TASKS.md {requirements.md path if it exists}
+```
+
+Capture the exit code as `$PLAN_CHECKER_EXIT`. Branch:
+
+- **Exit 0 (clean):** No active findings. Display: "plan-checker: clean (0 findings)". Proceed directly to Step 6.
+- **Exit 1 (issues):** Active findings present. Read the report file at `{phase_directory}/plan-checker-report.md`. Inject the report contents into the 4 plan-review agents' context packets (Step 6.1) under a section labeled `PRE-LLM PLAN-CHECKER FINDINGS` so the LLM reviewers can confirm/escalate/dismiss each item as they review.
+- **Exit 2 (internal error) or missing script:** FAIL-OPEN. Log the failure, display: "plan-checker FAIL-OPEN: <reason>", and proceed to Step 6 as if the checker had returned clean. Never block the pipeline on plan-checker internal errors.
+
 ### Step 6: Plan Review -- Spawn Four Specialized Agents in Parallel
 
 Initialize `$PLAN_REVIEW_ISSUES_COUNT = 0` at the very start of this step (defensive default — overwritten by the exit-path assignments below). This variable is read by Step 9 to decide whether to render the "Plan Review" or "Re-review" menu label.
