@@ -79,6 +79,36 @@ Apply the SMALLEST change that addresses the finding:
 
 The minimal fix principle: if you can fix it by changing 3 lines, do not change 10. The goal is surgical precision, not code improvement.
 
+## 4.5. Self-Verify Each Edit
+
+After every Edit or Write, run a deterministic self-check matching the fix type. Each fix you apply must pass its corresponding verification BEFORE you report the Fix Report. Mirror the style of Section 3.5 — concrete grep / spot-read instructions per case.
+
+The 5 verification classes:
+
+1. **Remove X from file Y** — grep Y for X. Expect 0 matches. If non-zero, the removal didn't happen (typo in the pattern, regex too permissive, wrong line).
+
+2. **Add Z to file Y** — grep Y for Z. Expect ≥1 match. If zero, the addition didn't happen.
+
+3. **Replace X→Z in file Y** — grep Y for X (expect 0) AND grep Y for Z (expect ≥1). Both must hold.
+
+4. **Rename A→B across N files** — for each of the N files: grep for A (expect 0) AND grep for B (expect ≥1). All N must pass. The enumerate-all step is mandatory; partial application is the most common fixer failure mode (see same-class note below).
+
+5. **Structural inserts (new block, section, or paragraph)** — spot-read 5 lines BEFORE the insertion point and 5 lines AFTER. Confirm context is preserved: no truncation, no duplication, surrounding structure intact.
+
+### Retry-once protocol
+
+On first self-verify failure: ONE retry with a different approach (e.g., re-read the file to check current state, then re-apply with a corrected pattern).
+
+If the second attempt also fails: stop. Report `Verification: FAILED — <one-line reason>` in the Fix Report. Do NOT silently work around — the orchestrator decides whether to accept the failure or re-spawn a different fix strategy.
+
+### Same-class enumeration for cross-file fixes
+
+When the finding's `Suggested Fix:` mentions "across N sites" / "all callers" / "every consumer" / similar same-class language, you MUST enumerate ALL matching sites BEFORE applying any fix, then verify each site after.
+
+Concrete example from v4.5.0 Phase 2: F-003 was a `require()` path rename across 5 sites. Iter 1 fixer applied the fix to 2 sites and missed 3. Iter 2 plan-review rediscovered the miss (F-004) — an extra round-trip that enumerate-all-then-verify-each would have prevented.
+
+The enumeration step is a `grep -rn '<old-pattern>' .` (or equivalent) BEFORE the first Edit. Compare the count to the number of sites your fix touched.
+
 ## 5. Run Tests
 
 After applying the fix, run the project's test suite:
@@ -115,6 +145,7 @@ F-{NNN} {STATUS} | files: a,b | reason: <short>
 - `F-{NNN}` — the finding ID provided in your context
 - `files:` — comma-separated relative paths you modified (or `none` if reverted with no changes left)
 - `reason:` — short explanation. For `Fixed`, what the fix did. For `Reverted` or `Failed`, why the fix could not be applied safely (e.g., `symptom-not-root-cause`, `tests-fail-after-2-attempts`).
+- `Verification:` — `PASS` (Section 4.5 self-check succeeded) | `FAILED — <one-line reason>` (self-check failed after the retry-once attempt) | `N/A` (fix type doesn't admit a deterministic verify, e.g., timing-dependent). Set per Section 4.5 outcome.
 
 Do not write narrative paragraphs. The conductor extracts this line for REVIEW.md updates.
 

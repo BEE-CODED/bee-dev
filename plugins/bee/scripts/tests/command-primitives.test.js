@@ -1037,6 +1037,57 @@ assert(
   'plan-all.md introduces $PLAN_CHECKER_MODE variable for flag-controlled gating'
 );
 
+// ===== v4.5.0 Surface Contracts — fixer self-verify Opt-1 =====
+console.log('\n=== v4.5.0 Surface Contracts — fixer self-verify Opt-1 ===');
+
+const fixerMd = readFile(path.join(AGENTS_DIR, 'fixer.md'));
+
+// FSV-1: Section 4.5 heading present
+assert(
+  /^##\s+4\.5\.\s+Self-Verify Each Edit\s*$/m.test(fixerMd),
+  'fixer.md contains "## 4.5. Self-Verify Each Edit" section heading'
+);
+
+// FSV-2: 5-class verification taxonomy literals (the 5 fix-type cases)
+assert(fixerMd.includes('Remove X from file Y'), 'fixer.md Section 4.5 documents "Remove X from file Y" verification class');
+assert(fixerMd.includes('Add Z to file Y'), 'fixer.md Section 4.5 documents "Add Z to file Y" verification class');
+assert(/Replace X.*Z/.test(fixerMd), 'fixer.md Section 4.5 documents "Replace X→Z" verification class');
+assert(/Rename A.*B.*across N/i.test(fixerMd), 'fixer.md Section 4.5 documents "Rename A→B across N files" verification class');
+assert(fixerMd.includes('Structural inserts'), 'fixer.md Section 4.5 documents "Structural inserts" verification class');
+
+// FSV-3: Retry-once protocol
+assert(
+  /(ONE retry|retry-once|one retry)/i.test(fixerMd),
+  'fixer.md Section 4.5 documents the retry-once protocol'
+);
+assert(fixerMd.includes('Verification: FAILED'), 'fixer.md Section 4.5 documents "Verification: FAILED" report value');
+
+// FSV-4: Same-class enumeration requirement (across N sites)
+assert(
+  /(same-class|across N sites|enumerate all)/i.test(fixerMd),
+  'fixer.md Section 4.5 documents same-class enumeration requirement for cross-file fixes'
+);
+
+// FSV-5: Fix Report template extended with Verification field
+// The "## 6. Report Fix" section's field-bullets list must include Verification
+const reportSection = fixerMd.split(/^##\s+6\./m)[1] || '';
+assert(
+  /Verification:/.test(reportSection),
+  'fixer.md "## 6. Report Fix" section includes Verification: field in the template'
+);
+
+// FSV-6: Section ordering — 4.5 must come AFTER Section 4 and BEFORE Section 5
+const idx4 = fixerMd.indexOf('## 4. Apply the Minimal Fix');
+const idx45 = fixerMd.indexOf('## 4.5. Self-Verify Each Edit');
+const idx5 = fixerMd.indexOf('## 5. Run Tests');
+assert(idx4 > 0 && idx45 > idx4 && idx5 > idx45, 'fixer.md sections in order: 4 < 4.5 < 5');
+
+// FSV-7: CHANGELOG mentions Opt-1
+assert(
+  /Opt-1.*[Ff]ixer (self-?verif|self verif)/.test(changelogMd) || /[Ff]ixer self-?verif.*Opt-1/.test(changelogMd),
+  'CHANGELOG.md mentions Opt-1 fixer self-verification'
+);
+
 // ---------------------------------------------------------------------------
 // Final results
 // ---------------------------------------------------------------------------
