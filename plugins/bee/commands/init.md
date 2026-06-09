@@ -33,7 +33,7 @@ If the dynamic context above does NOT contain `NO_EXISTING_CONFIG` (meaning `.be
 - If the config has a `stack` key whose value is a **string** (not an array), it is **v2 format** -- run the migration:
   1. Read the current `stack` string value (e.g. `"nextjs"`).
   2. Replace the `stack` key with `stacks: [{ "name": "<value>", "path": "." }]`.
-  3. Add `"implementation_mode": "premium"` as a top-level field if not already present. Valid values are `"economy"`, `"quality"`, and `"premium"`.
+  3. Add `"implementation_mode": "premium"` as a top-level field if not already present. Valid values are `"economy"`, `"quality"`, `"premium"`, `"max-critical"`, and `"max"` (the max tiers route critical work to `config.models.critical`, default `"fable"` — see `skills/command-primitives/SKILL.md` Model Selection (Reasoning)).
   4. Write the updated config back to `.bee/config.json`.
   5. Show the user a migration summary:
      ```
@@ -310,6 +310,8 @@ Skill injection probe (verifying that bee skills load correctly inside teammates
 - `premium` (Opus, default for cost-tolerant users) → `2400000` (tolerates 5-teammate plan-mode silently)
 - `quality` (mixed Opus+Sonnet) → `1200000`
 - `economy` (Sonnet only — 200K context per teammate, can't realistically exceed 1M total anyway) → `600000`
+- `max-critical` / `max` (critical-model tiers) → `2400000` (same ceiling as premium — the critical model is at least as capable)
+- any unrecognized value → `2400000` (behaves as premium; new mode values must never fall through unmapped)
 
 Use the resolved `implementation_mode` from earlier step. If unset, default to `premium` ceiling.
 
@@ -345,6 +347,26 @@ These resolved values feed directly into the `mcp` block written by Step 4 — t
 
 **Re-discovery:** if MCP tools are not yet enumerable at first init (plugin installed later, or ToolSearch returned nothing), `/bee:refresh-context` re-runs this same discovery contract on every refresh and repopulates `config.mcp` in a later session. The discovery contract (ToolSearch + fingerprint-match rule + the `context7`/`laravel_boost` capability keys) is identical across init and refresh — do not let them diverge.
 
+### Step 3.9: LSP Availability Discovery
+
+Discover whether language-server navigation is available per configured stack, and persist the result into a new `lsp` config section that agents key off (thinking-principles Rule 13: LSP-first navigation). The probe is prose-driven — there is no probe script: the environment `LSP` tool errors when no language server is configured for a file type, and that error IS the "unavailable" signal.
+
+**1. Probe per stack:**
+
+For each confirmed stack, pick ONE representative source file of the stack's primary file type (Glob inside the stack path — e.g. a `.ts`/`.tsx` file for React/Next stacks, a `.php` file for Laravel stacks, a `.vue`/`.ts` for Vue). Call the **LSP** tool with `operation: "documentSymbol"` on that file at line 1, character 1.
+
+- The call returns symbols (or an empty result) → language server present → `available: true` for that stack.
+- The call errors (no server configured for the file type, executable not found, tool absent) → `available: false` for that stack.
+- The stack has no source files yet (greenfield) → `available: false` (re-discovery via `/bee:refresh-context` picks it up later).
+
+**2. Persist into Step 4 (forward reference):**
+
+These per-stack results feed the `lsp` block written by Step 4 — one `lsp.{stack_name}.available` boolean per configured stack (overwriting the all-false default the schema documents).
+
+**Discovery NEVER hard-fails.** If the LSP tool is unavailable, errors, or probing is not possible, write the all-false default and continue init — agents then use pure grep navigation exactly as before this feature existed. A missed discovery degrades gracefully, never a blocking error.
+
+**Re-discovery:** `/bee:refresh-context` re-runs this same discovery contract on every refresh and repopulates `config.lsp` in a later session (language servers are often configured after first init). The discovery contract (documentSymbol probe on a representative file per stack + error-as-unavailable rule + per-stack `available` booleans) is identical across init and refresh — do not let them diverge.
+
 ### Step 4: Create .bee/ Directory and config.json
 
 Create the `.bee/` directory and write `.bee/config.json` with the confirmed values.
@@ -363,6 +385,12 @@ The `stacks` array contains one entry per each confirmed stack-path pair from St
   "mcp": {
     "context7": { "available": false, "resolve": null, "query": null },
     "laravel_boost": { "available": false, "tools": [] }
+  },
+  "lsp": {
+    "{stack_name}": { "available": false }
+  },
+  "models": {
+    "critical": "fable"
   },
   "research_policy": "{research_policy}",
   "review": {
@@ -449,10 +477,24 @@ The `stacks` array contains one entry per each confirmed stack-path pair from St
 | `mcp.laravel_boost.available` | `false` | Whether Laravel Boost MCP tools were found under any per-install name. Populated by Step 3.8 MCP discovery; default false/null until discovery runs. |
 | `mcp.laravel_boost.tools` | `[]` | String array of matched per-install Laravel Boost tool names. Populated by Step 3.8 MCP discovery; default false/null until discovery runs. |
 
+**`lsp` field reference:**
+
+| Field | Default | Purpose |
+|---|---|---|
+| `lsp.{stack_name}.available` | `false` | Whether a language server answered the Step 3.9 probe for this stack's primary file type. One entry per configured stack. When the section is ABSENT (older installs) or all-false, every consumer behaves exactly as before this feature: pure grep navigation, no errors (thinking-principles Rule 13 fallback). |
+
+**`models` field reference:**
+
+| Field | Default | Purpose |
+|---|---|---|
+| `models.critical` | `"fable"` | The model the `max-critical`/`max` implementation modes route critical work to. When the key (or the `models` section) is absent, consumers resolve the default — additive, older configs keep working. Spawn failure on this model falls back to inherit with a one-time notice (never blocks). |
+
 **Substitute `{adaptive_ceiling}`** in both single-stack and multi-stack JSON templates above with the integer computed from `implementation_mode` (Step 3.7 step 5):
 - `premium` → `2400000`
 - `quality` → `1200000`
 - `economy` → `600000`
+- `max-critical` / `max` → `2400000`
+- any unrecognized value → `2400000` (behaves as premium — must match the Step 3.7 step 5 mapping exactly; do not let the two lists diverge)
 
 The placeholder must be replaced with a bare integer (no quotes) before writing config.json.
 
@@ -471,6 +513,12 @@ The placeholder must be replaced with a bare integer (no quotes) before writing 
   "mcp": {
     "context7": { "available": false, "resolve": null, "query": null },
     "laravel_boost": { "available": false, "tools": [] }
+  },
+  "lsp": {
+    "{stack_name}": { "available": false }
+  },
+  "models": {
+    "critical": "fable"
   },
   "research_policy": "{research_policy}",
   "review": {
@@ -528,7 +576,7 @@ The `"metrics": { "enabled": true }` section is always included by default. No u
 
 Replace `{detected_stack}`, `{detected_linter}`, `{detected_runner}`, and `{detected_ci}` with the confirmed values from Steps 2-3. For multi-stack projects, populate the `stacks` array with all confirmed stack-path pairs, each with their own `linter` and `testRunner`.
 
-**Populate the `mcp` block with the capability values resolved in Step 3.8** (MCP Tool Discovery): write the discovered `context7.{available,resolve,query}` and `laravel_boost.{available,tools}` values. Use the all-false default shown in the templates ONLY when Step 3.8 discovery found no matching tools or ToolSearch was unavailable — a successful discovery MUST overwrite the default with the resolved per-install tool names, otherwise every downstream consumer falls back to defaults and the discovery is wasted.
+**Populate the `lsp` block with the per-stack results from Step 3.9** (LSP Availability Discovery) — one `{stack_name}: { "available": <bool> }` entry per configured stack; a successful probe MUST overwrite the all-false default. **Populate the `mcp` block with the capability values resolved in Step 3.8** (MCP Tool Discovery): write the discovered `context7.{available,resolve,query}` and `laravel_boost.{available,tools}` values. Use the all-false default shown in the templates ONLY when Step 3.8 discovery found no matching tools or ToolSearch was unavailable — a successful discovery MUST overwrite the default with the resolved per-install tool names, otherwise every downstream consumer falls back to defaults and the discovery is wasted.
 
 ### Step 5: Verify Statusline
 

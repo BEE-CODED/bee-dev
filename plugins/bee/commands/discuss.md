@@ -428,6 +428,6 @@ AskUserQuestion(
 - The self-check every 3 questions prevents both premature convergence (too few questions) and interview fatigue (too many without progress).
 - The decomposition check (Phase 1) catches multi-subsystem topics early, preventing unfocused discussions that try to cover too much ground.
 - The approaches phase (Phase 3) uses scan results to present concrete options with codebase-informed trade-offs, not generic alternatives.
-- The scan spawn uses `model: "sonnet"` for economy/quality mode (structured codebase scanning) and omits the model for premium mode. The write-notes spawn always omits the model (inherits parent -- deeper reasoning for distillation).
+- The scan spawn uses `model: "sonnet"` for economy/quality mode (structured codebase scanning), omits the model for premium and max-critical mode (scanning never elevates), and passes `model: $CRITICAL_MODEL` under max (Model Selection (Scanning), command-primitives). The write-notes spawn always omits the model (inherits parent -- deeper reasoning for distillation).
 - The output path `.bee/discussions/{YYYY-MM-DD}-{slug}.md` follows the same dating convention as specs.
 - This command never auto-commits. The user decides when to commit via `/bee:commit`.

@@ -283,6 +283,16 @@ const PASS_SKELETONS = {
     'false positive rate: 0%',
   ].join('\n'),
 
+  'finding-validator.js': [
+    '## Classification',
+    '',
+    'Finding: F-001',
+    'Verdict: REAL BUG',
+    'Confidence: HIGH',
+    'Source Agent: bug-detector',
+    'Reason: traced the null deref to src/auth.ts:42 and reproduced it.',
+  ].join('\n'),
+
   // Semantic (2) — TDD red→green + Task complete + N tests passing
   'implementer.js': TDD_TASK_COMPLETE_MSG,
   'quick-implementer.js': TDD_TASK_COMPLETE_MSG,

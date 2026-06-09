@@ -218,11 +218,9 @@ Include in each context packet:
 
   Store the learnings content as `$PHASE_LEARNINGS` for reuse across all context packets in the phase (read once, inject into every task).
 
-**Model tier resolution (implementation_mode):** Read `config.implementation_mode` from `.bee/config.json` (defaults to `"premium"` if the field is absent). This determines which model tier the implementer agents receive:
-- **economy** mode: pass `model: "sonnet"` -- faster and cheaper, suitable when tasks are straightforward or the user opts for speed over depth
-- **quality or premium** mode (default): omit the model parameter (agents inherit the parent model) -- full reasoning capability for production code
+**Model tier resolution (implementation_mode):** Read `config.implementation_mode` from `.bee/config.json` (defaults to `"premium"` if the field is absent) and apply `skills/command-primitives/SKILL.md` Model Selection (Reasoning) — economy passes `model: "sonnet"`; quality/premium omit the model parameter (inherit); `max-critical` passes `model: $CRITICAL_MODEL` (from `config.models.critical`, default `"fable"`) on tasks stamped `criticality: high` in TASKS.md and inherits on `criticality: normal`/unstamped tasks; `max` passes `$CRITICAL_MODEL` on every task. The critical-model fallback (spawn failure → inherit + one-time notice) and the unknown-mode-behaves-as-premium rule from that section apply verbatim.
 
-Store the resolved model tier for use in Step 5b when spawning agents.
+Store the resolved model tier (per task, when the mode is criticality-routed) for use in Step 5b when spawning agents.
 
 Keep each context packet to approximately 30% of context window. Phase learnings add ~2-5% context overhead -- this is acceptable and within budget. Include file paths for the agent to read at runtime, not file contents.
 
@@ -239,7 +237,7 @@ Check if `agents/stacks/{stack.name}/implementer.md` exists. If yes, use `{stack
 Spawn ALL pending tasks in the current wave simultaneously using the Task tool. Each task becomes one parallel agent invocation:
 
 - Agent: resolved agent name (stack-specific `{stack.name}-implementer` if available, otherwise generic `implementer`)
-- Model: use the resolved model from Step 5a's implementation_mode logic. In economy mode, pass `model: "sonnet"`. In quality or premium mode, omit (inherit parent model).
+- Model: use the resolved model from Step 5a's implementation_mode logic (per the Model Selection (Reasoning) rule): economy → `model: "sonnet"`; quality/premium → omit (inherit); max-critical → `model: $CRITICAL_MODEL` when THIS task is stamped `criticality: high`, omit otherwise; max → `model: $CRITICAL_MODEL`.
 - Context: the assembled context packet for that task
 - Each agent runs independently in its own context window
 

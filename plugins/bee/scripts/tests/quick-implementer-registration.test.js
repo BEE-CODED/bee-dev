@@ -62,28 +62,11 @@ if (quickImplStop) {
     'quick-implementer SubagentStop has hooks array'
   );
 
-  const promptHook = stopHooks.find((h) => h.type === 'prompt');
-  assert(promptHook !== undefined, 'quick-implementer SubagentStop has a prompt hook');
+  const cmdHook = stopHooks.find((h) => h.type === 'command' && h.command && h.command.includes('quick-implementer.js'));
+  assert(cmdHook !== undefined, 'quick-implementer SubagentStop has a command validator (quick-implementer.js)');
 
-  if (promptHook) {
-    const prompt = promptHook.prompt;
-    assert(
-      prompt.includes('TDD'),
-      'Prompt validates TDD compliance'
-    );
-    assert(
-      prompt.toLowerCase().includes('test') && prompt.toLowerCase().includes('pass'),
-      'Prompt validates tests passing'
-    );
-    assert(
-      prompt.includes('Task Notes') || prompt.includes('task notes'),
-      'Prompt validates Task Notes heading'
-    );
-    assert(
-      prompt.includes("Task complete. [X] tests passing."),
-      'Prompt validates task completion signal with exact format'
-    );
-  }
+  // prompt-content checks removed: validator content now lives in quick-implementer.js,
+  // pinned by the v4.5.0 validator suites
 }
 
 // ============================================================
@@ -118,7 +101,7 @@ try {
   process.exit(1);
 }
 
-const caseMatch = scriptContent.match(/case\s+"\$(?:AGENT_TYPE|1)"\s+in\s*\n([\s\S]*?)\nesac/);
+const caseMatch = scriptContent.match(/case\s+"\$(?:AGENT_TYPE|1)"\s+in\s*\n([\s\S]*?)\n\s*esac/);
 assert(caseMatch !== null, 'case statement for AGENT_TYPE exists');
 
 if (caseMatch) {

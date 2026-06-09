@@ -243,16 +243,16 @@ assert(
 // ============================================================
 console.log('\nTest 11: Standard flow preserved in Step 6');
 assert(
-  step6Content.includes('Round 1') || step6Content.includes('#### Round 1'),
-  'Step 6 still has Round 1 section'
+  step6Content.includes('#### Phase 1'),
+  'Step 6 has Phase 1 (adaptive discovery)'
 );
 assert(
-  step6Content.includes('Round 2') || step6Content.includes('#### Round 2'),
-  'Step 6 still has Round 2 section'
+  step6Content.includes('#### Phase 2'),
+  'Step 6 has Phase 2 (adaptive discovery)'
 );
 assert(
-  step6Content.includes('Round 3') || step6Content.includes('#### Round 3'),
-  'Step 6 still has Round 3+ / Convergence section'
+  step6Content.includes('Convergence'),
+  'Step 6 has a Convergence phase'
 );
 
 // ============================================================

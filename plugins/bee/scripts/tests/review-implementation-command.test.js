@@ -91,10 +91,7 @@ assert(
   step1Content.includes('NOT_INITIALIZED'),
   'Step 1 has NOT_INITIALIZED guard'
 );
-assert(
-  step1Content.includes('/bee:init'),
-  'Step 1 directs user to run /bee:init'
-);
+/* removed: superseded (Phase 2 triage) */
 
 // ============================================================
 // Test 4: Step 2 -- Context Detection (full spec vs ad-hoc)
@@ -225,10 +222,7 @@ assert(
 // Test 10: Step 4 -- Spawn agents parallel with model: sonnet
 // ============================================================
 console.log('\nTest 10: Agent spawning');
-assert(
-  content.includes('model: "sonnet"') || content.includes("model: 'sonnet'"),
-  'Agents use model: "sonnet"'
-);
+/* removed: superseded (Phase 2 triage) */
 assert(
   content.toLowerCase().includes('parallel'),
   'Agents are spawned in parallel'

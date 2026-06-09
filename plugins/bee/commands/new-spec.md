@@ -288,11 +288,13 @@ Use AskUserQuestion to ask about implementation mode. Store the user's choice as
 question: "How should this feature be implemented?"
 header: "Implementation Mode"
 options:
-  - "Premium mode (default) -- opus for everything (maximum quality)" → $IMPLEMENTATION_MODE = "premium"
-  - "Quality mode -- opus for implementation and review, sonnet for scanning" → $IMPLEMENTATION_MODE = "quality"
+  - "Premium mode (default) -- inherit the session model for everything (maximum quality)" → $IMPLEMENTATION_MODE = "premium"
+  - "Max-critical mode -- the critical model (config.models.critical, default fable) on criticality:high tasks and critical reviews; inherit elsewhere" → $IMPLEMENTATION_MODE = "max-critical"
+  - "Quality mode -- inherit for implementation and review, sonnet for scanning" → $IMPLEMENTATION_MODE = "quality"
   - "Economy mode -- sonnet for everything (faster, lower cost)" → $IMPLEMENTATION_MODE = "economy"
-  - "Custom"
 ```
+
+The automatic "Other" option covers custom input — including `max` (the critical model for ALL work, scanning included) for users who want fable everywhere. Map a typed "max" to `$IMPLEMENTATION_MODE = "max"`.
 
 #### Phase 6: Convergence
 

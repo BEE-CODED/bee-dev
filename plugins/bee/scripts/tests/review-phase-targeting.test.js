@@ -56,8 +56,8 @@ const reviewPhaseDetection = reviewContent.substring(
 );
 
 assert(
-  reviewPhaseDetection.toLowerCase().includes('last'),
-  'review.md phase detection says "last"'
+  reviewPhaseDetection.toLowerCase().includes('last') || reviewPhaseDetection.toLowerCase().includes('recent') || reviewPhaseDetection.toLowerCase().includes('executed'),
+  'review.md phase detection targets the most recently executed phase'
 );
 assert(
   !reviewPhaseDetection.toLowerCase().includes('find the first phase'),

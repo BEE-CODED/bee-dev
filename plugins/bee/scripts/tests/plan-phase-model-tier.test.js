@@ -8,8 +8,9 @@
 //   - Planning Steps 3 and 5 reuse $RESOLVED_MODEL (no hardcoded `model: "sonnet"`).
 //   - Step 4 was REMOVED (research merged into Pass 1 / Step 3).
 //   - Step 6.2 delegates model tier to the same centralized rule.
-//   - plan-review.md Step 3.2 still branches economy→sonnet vs quality/premium→inherit
-//     inline (it has not migrated to $RESOLVED_MODEL — pin what it actually does).
+//   - plan-review.md Step 3.2 branches inline: economy→sonnet, quality/premium→inherit,
+//     max-critical/max→$CRITICAL_MODEL (v4.6: plan-review convergence is a critical
+//     review spot). It has not migrated to $RESOLVED_MODEL — pin what it actually does.
 
 const fs = require('fs');
 const path = require('path');
@@ -292,5 +293,84 @@ assert(
 // ============================================================
 // Results
 // ============================================================
+// ============================================================
+// Phase 4 (v4.6): max-critical / max tiers in the centralized rule
+// ============================================================
+console.log('\nTest 14: max-critical/max modes in Model Selection (centralized)');
+const cpSkill = fs.readFileSync(path.join(__dirname, '..', '..', 'skills', 'command-primitives', 'SKILL.md'), 'utf8');
+const reasoning = cpSkill.substring(cpSkill.indexOf('## Model Selection (Reasoning)'), cpSkill.indexOf('## Per-Stack Agent Resolution'));
+assert(
+  reasoning.includes('"max-critical"') && reasoning.includes('"max"'),
+  'Model Selection (Reasoning) defines the max-critical and max modes'
+);
+assert(
+  reasoning.includes('criticality: high'),
+  'max-critical routes on the per-task criticality stamp'
+);
+assert(
+  reasoning.includes('config.models.critical') && reasoning.includes('"fable"'),
+  'critical model resolves from config.models.critical with the fable default (absent key -> default, additive)'
+);
+assert(
+  /fall back to omitting the `model` parameter/.test(reasoning) && /ONE-TIME notice/.test(reasoning),
+  'critical-model spawn failure falls back to inherit with a one-time notice (never blocks)'
+);
+assert(
+  /Unknown mode values never crash a consumer/.test(reasoning),
+  'unknown implementation_mode values behave as premium (consumers never crash)'
+);
+assert(
+  /under `"max"`, ALL fixers use/.test(reasoning) && /Critical or High severity OR/.test(reasoning),
+  'fixer exception extended with the precise max/max-critical trigger; always-inherit unchanged for the existing modes'
+);
+const scanning = cpSkill.substring(cpSkill.indexOf('## Model Selection (Scanning)'), cpSkill.indexOf('## Per-Stack Agent Resolution'));
+assert(
+  /max-critical.*behaves exactly as `"premium"`/s.test(scanning) || scanning.includes('behaves exactly as `"premium"`'),
+  'Scanning: max-critical behaves as premium (scanning never elevates)'
+);
+assert(
+  scanning.includes('max means everything, scanning'),
+  'Scanning: max routes scanning to the critical model too'
+);
+// criticality stamp producer (phase-planner) and consumers (execute-phase, ship)
+const plannerMd = fs.readFileSync(path.join(__dirname, '..', '..', 'agents', 'phase-planner.md'), 'utf8');
+assert(
+  plannerMd.includes('criticality: high|normal') && plannerMd.includes('Criticality stamp'),
+  'phase-planner stamps criticality: high|normal per task (mechanical routing field, plan-review-verified)'
+);
+const execMd = fs.readFileSync(path.join(__dirname, '..', '..', 'commands', 'execute-phase.md'), 'utf8');
+const shipMd = fs.readFileSync(path.join(__dirname, '..', '..', 'commands', 'ship.md'), 'utf8');
+assert(
+  execMd.includes('criticality: high') && execMd.includes('$CRITICAL_MODEL'),
+  'execute-phase routes criticality:high tasks to the critical model'
+);
+assert(
+  shipMd.includes('criticality:') && shipMd.includes('$CRITICAL_MODEL'),
+  'ship routes stamped tasks and the critical review spots to the critical model'
+);
+
+console.log('\nTest 15b: plan-review.md Step 3.2 routes the max tiers to the critical model');
+assert(
+  prStep3_2.includes('$CRITICAL_MODEL') && /[Mm]ax-critical/.test(prStep3_2),
+  'Step 3.2 passes $CRITICAL_MODEL under max-critical/max (plan-review convergence is a critical review spot)'
+);
+
+console.log('\nTest 15: init.md adaptive-ceiling mapping covers the max tiers at BOTH mapping sites');
+// init.md maps implementation_mode -> teammate context ceiling in TWO places (Step 3.7
+// step 5 and the {adaptive_ceiling} substitution note). Both must name every mode the
+// centralized rule defines, or a mode init writes to config.json has no ceiling at the
+// site where the value is actually substituted (this drifted once in v4.6 review).
+const initMd = fs.readFileSync(path.join(__dirname, '..', '..', 'commands', 'init.md'), 'utf8');
+const maxTierCeilings = initMd.match(/`max-critical` \/ `max`[^\n]*`2400000`/g) || [];
+assert(
+  maxTierCeilings.length >= 2,
+  'max-critical/max -> 2400000 appears at both ceiling-mapping sites in init.md'
+);
+const unknownCeilings = initMd.match(/any unrecognized value[^\n]*`2400000`/g) || [];
+assert(
+  unknownCeilings.length >= 2,
+  'unrecognized-mode -> 2400000 fallthrough appears at both ceiling-mapping sites in init.md'
+);
+
 console.log(`\nResults: ${passed} passed, ${failed} failed out of ${passed + failed} assertions`);
 process.exit(failed > 0 ? 1 : 0);

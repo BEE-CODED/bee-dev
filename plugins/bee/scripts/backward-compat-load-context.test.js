@@ -263,5 +263,48 @@ console.log('Test 10: missing config.json does not output Bee Config section');
   assert(!result.output.includes('## Bee Config'), 'Should not include config header when config.json is missing');
 }
 
+// ============================================================
+// Digest contract (Phase 5, v4.6): the loader injects Current Spec + Phases +
+// Last Action only -- never the Decisions Log (the old head-60 slice injected
+// ~20KB of history while NEVER reaching Last Action)
+// ============================================================
+console.log('\nTest: STATE.md digest -- sections in, Decisions Log out');
+{
+  const DIGEST_STATE = `# Bee Project State
+
+## Current Spec
+- Name: digest-spec
+- Status: IN_PROGRESS
+
+## Phases
+| # | Name | Status |
+|---|------|--------|
+| 1 | Alpha | PLANNED |
+
+## Quick Tasks
+
+| # | Description |
+|---|-------------|
+
+## Decisions Log
+
+- **[Some decision]:** DECISIONS_LOG_MARKER_MUST_NOT_APPEAR ${'x'.repeat(500)}
+
+## Last Action
+- Command: /bee:test
+- Result: LAST_ACTION_MARKER_MUST_APPEAR
+
+## Previous Last Action
+- Result: PREVIOUS_ACTION_MARKER_MUST_NOT_APPEAR
+`;
+  const result = runLoadContext(DIGEST_STATE);
+  assert(result.exitCode === 0, 'digest run exits 0');
+  assert(result.output.includes('| 1 | Alpha | PLANNED |'), 'digest includes the Phases table');
+  assert(result.output.includes('LAST_ACTION_MARKER_MUST_APPEAR'), 'digest includes the Last Action section (the old head-60 slice never reached it)');
+  assert(!result.output.includes('DECISIONS_LOG_MARKER_MUST_NOT_APPEAR'), 'digest excludes the Decisions Log');
+  assert(!result.output.includes('PREVIOUS_ACTION_MARKER_MUST_NOT_APPEAR'), 'digest excludes Previous Last Action history');
+  assert(result.output.includes('read') && result.output.includes('STATE.md'), 'digest points at the full file for everything else');
+}
+
 console.log(`\nResults: ${passed} passed, ${failed} failed out of ${passed + failed} assertions`);
 process.exit(failed > 0 ? 1 : 0);

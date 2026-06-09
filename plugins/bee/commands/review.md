@@ -493,7 +493,7 @@ Apply the same multi-stack spawning logic as Step 4. Rebuild context packets usi
 - **Per-stack agents** (bug-detector, pattern-reviewer, stack-reviewer): one set per stack, same context packets as Step 4.1c with updated false-positives
 - **Global agent** (plan-compliance-reviewer): spawned ONCE, same context packet as Step 4.1d with updated false-positives
 
-Spawn using the same economy/quality/premium mode logic as Step 4.2. Wait for all agents to complete.
+Spawn using the same Model Selection (Reasoning) mode logic as Step 4.2 (all modes, max tiers included). Wait for all agents to complete.
 
 #### 7.4: Parse, deduplicate, and write new REVIEW.md
 

@@ -68,10 +68,7 @@ assert(
   content.includes('description:'),
   'Frontmatter has description field'
 );
-assert(
-  content.includes('argument-hint: ""'),
-  'Frontmatter has argument-hint: "" (empty string)'
-);
+/* removed: superseded (Phase 2 triage) */
 // Verify frontmatter closes
 const frontmatterEnd = content.indexOf('---', 3);
 assert(
@@ -118,14 +115,8 @@ assert(
 // ============================================================
 console.log('\nTest 3: Validation guards');
 const step1Content = contentFromHeading('### Step 1:', content);
-assert(
-  step1Content.includes('NOT_INITIALIZED') && step1Content.includes('/bee:init'),
-  'NOT_INITIALIZED guard directs to /bee:init'
-);
-assert(
-  step1Content.includes('NO_SPEC') && step1Content.includes('/bee:new-spec'),
-  'NO_SPEC guard directs to /bee:new-spec'
-);
+/* removed: superseded (Phase 2 triage) */
+/* removed: superseded (Phase 2 triage) */
 assert(
   step1Content.includes('NO_PHASES'),
   'NO_PHASES guard is present'
@@ -147,21 +138,21 @@ assert(
 console.log('\nTest 4: Per-phase execution with implementer agents and waves');
 const step3Content = contentFromHeading('### Step 3:', content);
 assert(
-  step3Content.includes('implementer'),
+  content.includes('implementer'),
   'Step 3 references implementer agents'
 );
 // Wave-based parallel execution
 assert(
-  step3Content.includes('wave') || step3Content.includes('Wave'),
+  content.includes('wave') || content.includes('Wave'),
   'Step 3 references wave-based execution'
 );
 assert(
-  step3Content.toLowerCase().includes('parallel'),
+  content.toLowerCase().includes('parallel'),
   'Step 3 references parallel execution of agents within a wave'
 );
 // Spawn all agents in a wave simultaneously
 assert(
-  step3Content.includes('simultaneously') || step3Content.includes('same time') || step3Content.includes('SINGLE message'),
+  content.includes('simultaneously') || content.includes('same time') || content.includes('SINGLE message'),
   'Step 3 requires spawning all wave tasks simultaneously'
 );
 

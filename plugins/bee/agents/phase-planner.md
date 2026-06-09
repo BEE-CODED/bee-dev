@@ -45,6 +45,24 @@ Pass 1 is the **merged decompose+research pass**: it produces a research-enriche
     - **Fallback is narrow.** The "say so rather than invent a home" fallback applies STRICTLY when the taxonomy EXISTS but lacks an entry for one specific artifact type a task genuinely creates — never as a substitute for the disabled-when-no-taxonomy case above.
     - **Review-time checkability (avoids the plan-time tautology).** The stamp is a comparison INPUT the reviewer READS; it is NEVER itself a finding emitter. At plan-review the check is STAMP-CORRECTNESS + COMPLETENESS (the stamp names the CORRECT taxonomy home for the artifact TYPE, and is present on every class-creating task) — NOT a "planned location vs taxonomy" comparison (that would be tautological). At post-implementation the substantive on-disk-file-location-vs-taxonomy-home check runs.
     - **Gating-scope asymmetry.** The stamp fires whenever a class-creating task exists AND a placement taxonomy exists. But the placement VERIFIERS (the net-new-subsystem anchoring + sweep checks) are gated by the net-new-subsystem trigger. So a stamp on a class-creating task in an ORDINARY (non-net-new) phase carries instruction force on the implementer but is NOT independently re-verified by the net-new placement path unless the phase also trips that trigger — ordinary phases still get neighbor-anchored review.
+    **Criticality stamp (EVERY task, Pass 1).** Stamp each task with an inline
+    `criticality: high|normal` field (a task-header field like `needs:` — a MECHANICAL
+    routing field consumed by execute-phase/ship for model selection, NOT an acceptance
+    criterion and NOT checked by the SubagentStop hook). A task is `criticality: high`
+    when it matches ANY of the defined traits: (a) data-model or migration work (schema,
+    persisted shapes, storage contracts); (b) security-sensitive surfaces (auth, secrets,
+    permissions, input validation at trust boundaries); (c) cross-cutting contracts
+    (shared interfaces, owned literals, producer/consumer seams multiple components key
+    off); (d) concurrency / race-prone orchestration; (e) public API changes (endpoints,
+    exported surfaces, CLI contracts). Everything else is `criticality: normal`. State
+    the matched trait in the task's `research:` notes when stamping high (one clause —
+    the reviewer verifies stamp correctness at plan review, same review-time-checkability
+    model as the placement stamp). Under the `max-critical` implementation mode,
+    `criticality: high` tasks are routed to `config.models.critical` (see
+    `skills/command-primitives/SKILL.md` Model Selection (Reasoning)); in all other modes
+    the stamp is inert metadata — stamping is unconditional so mode can change later
+    without replanning.
+
 11. Task IDs use the format `T{phase}.{task}` (e.g., T3.1, T3.2)
 12. **Codebase research (merged contract — REQUIRED before finalizing each task).** Before writing the task to TASKS.md, run codebase research and populate a `research:` block:
     - Use **Grep** to locate similar patterns / existing implementations (search for component names, route definitions, service shapes, similar acceptance flows)

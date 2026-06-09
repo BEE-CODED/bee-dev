@@ -50,7 +50,8 @@ const executePhaseContent = fs.readFileSync(EXECUTE_PHASE_PATH, 'utf8');
 console.log('Test 1: review.md - Bug Detector stack-specific agent routing');
 
 // The 4.1c section should mention checking for stack-specific bug-detector
-const step41c = contentFromHeading('**4.1c:', reviewContent);
+// 4.1c was consolidated into the design-notes routing contract (review.md ~:610)
+const step41c = reviewContent;
 
 assert(
   step41c.includes('agents/stacks/') && step41c.includes('bug-detector'),
@@ -58,19 +59,18 @@ assert(
 );
 
 assert(
-  step41c.includes('bug-detector.md'),
+  step41c.includes('{role}.md'),
   'Step 4.1c checks for bug-detector.md file existence'
 );
 
 assert(
   (step41c.includes('fallback') || step41c.includes('else')) &&
-  step41c.includes('bee:bug-detector'),
+  step41c.includes('bee:{role}'),
   'Step 4.1c has fallback to generic bee:bug-detector'
 );
 
 assert(
-  step41c.includes('{stack.name}-bug-detector') ||
-  step41c.includes('stack.name}-bug-detector'),
+  step41c.includes('laravel-inertia-vue-bug-detector') || step41c.includes('agents/stacks/{stack.name}/'),
   'Step 4.1c uses {stack.name}-bug-detector when stack-specific agent exists'
 );
 
@@ -80,19 +80,18 @@ assert(
 console.log('\nTest 2: review.md - Pattern Reviewer stack-specific agent routing');
 
 assert(
-  step41c.includes('pattern-reviewer.md'),
+  step41c.includes('pattern-reviewer'),
   'Step 4.1c checks for pattern-reviewer.md file existence'
 );
 
 assert(
   (step41c.includes('fallback') || step41c.includes('else')) &&
-  step41c.includes('bee:pattern-reviewer'),
+  step41c.includes('bee:{role}') && step41c.includes('pattern-reviewer'),
   'Step 4.1c has fallback to generic bee:pattern-reviewer'
 );
 
 assert(
-  step41c.includes('{stack.name}-pattern-reviewer') ||
-  step41c.includes('stack.name}-pattern-reviewer'),
+  step41c.includes('agents/stacks/{stack.name}/'),
   'Step 4.1c uses {stack.name}-pattern-reviewer when stack-specific agent exists'
 );
 
@@ -102,19 +101,18 @@ assert(
 console.log('\nTest 3: review.md - Stack Reviewer stack-specific agent routing');
 
 assert(
-  step41c.includes('stack-reviewer.md'),
+  step41c.includes('stack-reviewer'),
   'Step 4.1c checks for stack-reviewer.md file existence'
 );
 
 assert(
   (step41c.includes('fallback') || step41c.includes('else')) &&
-  step41c.includes('bee:stack-reviewer'),
+  step41c.includes('bee:{role}') && step41c.includes('stack-reviewer'),
   'Step 4.1c has fallback to generic bee:stack-reviewer'
 );
 
 assert(
-  step41c.includes('{stack.name}-stack-reviewer') ||
-  step41c.includes('stack.name}-stack-reviewer'),
+  step41c.includes('agents/stacks/{stack.name}/'),
   'Step 4.1c uses {stack.name}-stack-reviewer when stack-specific agent exists'
 );
 

@@ -317,7 +317,7 @@ Include in each context packet:
 - **TDD instruction:** "Follow TDD cycle: RED (write failing tests first), GREEN (minimal implementation to pass), REFACTOR (clean up with tests as safety net). Write structured Task Notes in your final message under a `## Task Notes` heading."
 
 See `skills/command-primitives/SKILL.md` Model Selection (Reasoning).
-Inputs: `$IMPLEMENTATION_MODE`. Apply to every implementer/reviewer/validator below.
+Inputs: `$IMPLEMENTATION_MODE`. Apply to every implementer/reviewer/validator below. Under `max-critical`, implementer spawns read each task's `criticality:` stamp from TASKS.md (high → `model: $CRITICAL_MODEL`, normal/unstamped → inherit), and the CRITICAL REVIEW SPOTS — the per-phase review convergence loop, any deep re-review, and the Step 4 final implementation review — also use `$CRITICAL_MODEL` (reviews are where the model gap shows most). Under `max`, everything below uses `$CRITICAL_MODEL`. Spawn-failure fallback + one-time notice per the rule.
 
 **Live progress -- TaskCreate:** After assembling context packets, call TaskCreate for each pending task in the wave. Use the task ID as the title and the full task description line as the body.
 
@@ -595,7 +595,7 @@ Wait for all agents to complete.
 
 If `$VALIDATE_MODE` is true:
 
-After all review agents complete (the per-stack Bug Detector / Pattern Reviewer / Stack Reviewer trio plus the global Plan Compliance Reviewer), collect per-agent outputs: `{agent: "bug-detector" | "pattern-reviewer" | "stack-reviewer" | "plan-compliance-reviewer", transcript_path: <path>, exit_code: 0}`. The `agent` field MUST be the un-prefixed canonical slug matching a `VALIDATOR_ROSTER` entry from `validators-lib.js` (strip any stack prefix like `laravel-inertia-vue-` before building agent_outputs — `runPerAgentValidator` resolves the validator path by literal filename concat, NOT by hooks.json's non-anchored regex routing). Build stdin payload `{cwd: $ROOT, agent_outputs: [...], expected_count: <N>}` where `N` equals the total review-agent spawn count for this phase (mode-dependent — economy spawns sequentially per stack; quality/premium spawns all at once). Invoke:
+After all review agents complete (the per-stack Bug Detector / Pattern Reviewer / Stack Reviewer trio plus the global Plan Compliance Reviewer), collect per-agent outputs: `{agent: "bug-detector" | "pattern-reviewer" | "stack-reviewer" | "plan-compliance-reviewer", transcript_path: <path>, exit_code: 0}`. The `agent` field MUST be the un-prefixed canonical slug matching a `VALIDATOR_ROSTER` entry from `validators-lib.js` (strip any stack prefix like `laravel-inertia-vue-` before building agent_outputs — `runPerAgentValidator` resolves the validator path by literal filename concat, NOT by hooks.json's non-anchored regex routing). Build stdin payload `{cwd: $ROOT, agent_outputs: [...], expected_count: <N>}` where `N` equals the total review-agent spawn count for this phase (mode-dependent — economy spawns sequentially per stack; all other modes, max tiers included, spawn all at once). Invoke:
 
 ```bash
 node ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/validators/batch/ship-per-phase-review.js
@@ -905,7 +905,7 @@ Trace complete user flows from entry point to completion. For each flow:
 Report bugs that span multiple files or phases -- the kind that single-file reviewers miss. Report only HIGH confidence findings in your standard output format.
 ```
 
-**Spawn agents:** Spawn agents using the same economy/quality/premium mode logic as Step 3b.6. The agent set depends on `$FINAL_REVIEW_MODE`:
+**Spawn agents:** Spawn agents using the same Model Selection (Reasoning) mode logic as Step 3b.6 (all modes — under max-critical this final review is a critical review spot and uses `$CRITICAL_MODEL`). The agent set depends on `$FINAL_REVIEW_MODE`:
 - **Lean mode (default):** spawn ONLY `plan-compliance-reviewer` + `audit-bug-detector`. Total agents in lean mode: 2.
 - **Full mode:** spawn per-stack agents (Bug Detector + Pattern Reviewer + Stack Reviewer per stack) + the 2 global agents. Total agents in full mode: (3 x N) + 2 where N is number of stacks.
 

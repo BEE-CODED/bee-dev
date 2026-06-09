@@ -10,7 +10,7 @@ Read these files using the Read tool:
 - `.bee/config.json` — if not found: use `{}`
 - `.bee/PROJECT.md` — if not found: skip (project index not available)
 
-Read `config.implementation_mode` and store as `$IMPLEMENTATION_MODE`. If not set, defaults to `"premium"`. Valid values: `"economy"`, `"quality"`, `"premium"`. Per-agent model resolution follows the rule below.
+Read `config.implementation_mode` and store as `$IMPLEMENTATION_MODE`. If not set, defaults to `"premium"`. Valid values: `"economy"`, `"quality"`, `"premium"`, `"max-critical"`, `"max"` (max tiers per `skills/command-primitives/SKILL.md` Model Selection; unrecognized values behave as premium). Per-agent model resolution follows the rule below.
 
 See `skills/command-primitives/SKILL.md` Model Selection (Reasoning).
 Inputs: `$IMPLEMENTATION_MODE`. Apply to implementer / reviewer / validator agents.

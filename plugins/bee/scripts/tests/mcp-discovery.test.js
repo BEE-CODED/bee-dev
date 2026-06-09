@@ -267,6 +267,42 @@ assert(
 );
 
 // ============================================================
+// 13. LSP availability discovery (Phase 3: config.lsp mirrors the config.mcp
+//     discovery contract — same never-hard-fail default, same init/refresh
+//     do-not-diverge rule, refresh mutates ONLY its own key)
+// ============================================================
+console.log('\n13. LSP availability discovery contract');
+// (a) lsp block declared in BOTH init.md JSON templates (beside mcp)
+assert(
+  countMatches(initMd, '"lsp"') >= 2,
+  'init.md declares the "lsp" config block in both JSON templates'
+);
+// (b) both files name the LSP tool + the documentSymbol probe
+assert(
+  initMd.includes('documentSymbol') && initMd.includes('LSP'),
+  'init.md describes the LSP documentSymbol probe'
+);
+assert(
+  refreshMd.includes('documentSymbol') && refreshMd.includes('LSP'),
+  'refresh-context.md describes the same LSP documentSymbol probe (do-not-diverge)'
+);
+// (c) refresh mutates ONLY the lsp key (single-key RMW like the mcp refresh)
+assert(
+  refreshMd.includes('mutating ONLY the `lsp` key'),
+  'refresh-context.md states the mutate-only-the-lsp-key RMW discipline'
+);
+// (d) never-hard-fail / all-unavailable default in both files
+assert(
+  initMd.includes('Discovery NEVER hard-fails.') && /never hard-fail/i.test(refreshMd),
+  'both files carry the never-hard-fail rule for LSP discovery'
+);
+// (e) absent-section backward compat: older installs behave exactly as before
+assert(
+  initMd.includes('When the section is ABSENT (older installs)'),
+  'init.md schema documents that an absent config.lsp section means unchanged grep behavior'
+);
+
+// ============================================================
 // Results
 // ============================================================
 console.log(`\nResults: ${passed} passed, ${failed} failed out of ${passed + failed} assertions`);

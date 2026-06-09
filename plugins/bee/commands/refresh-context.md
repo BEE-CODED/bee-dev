@@ -11,7 +11,7 @@ Read these files using the Read tool:
 
 ## Instructions
 
-You are running `/bee:refresh-context` -- a command that re-runs the context-builder agent to extract fresh codebase patterns and conventions into 4 structured documents (STACK.md, ARCHITECTURE.md, CONVENTIONS.md, CONCERNS.md) plus a backward-compatible CONTEXT.md summary. This is useful after significant code changes or when starting a new spec on an existing codebase. This command does not commit any changes. In addition to the derived context documents, this command also re-runs MCP tool discovery and updates the `mcp` section of `.bee/config.json` on every refresh (so per-install Context7 / Laravel Boost tool names stay current — see Step 3). Follow these steps in order.
+You are running `/bee:refresh-context` -- a command that re-runs the context-builder agent to extract fresh codebase patterns and conventions into 4 structured documents (STACK.md, ARCHITECTURE.md, CONVENTIONS.md, CONCERNS.md) plus a backward-compatible CONTEXT.md summary. This is useful after significant code changes or when starting a new spec on an existing codebase. This command does not commit any changes. In addition to the derived context documents, this command also re-runs MCP tool discovery and LSP availability discovery, updating the `mcp` and `lsp` sections of `.bee/config.json` on every refresh (so per-install Context7 / Laravel Boost tool names and per-stack language-server availability stay current — see Steps 3 and 3.5). Follow these steps in order.
 
 ### Step 1: Validation Guard
 
@@ -25,7 +25,7 @@ Do NOT proceed. Stop immediately.
 
 Display the following message to the user:
 
-"Re-extracting codebase context into structured documents. This will overwrite .bee/STACK.md, .bee/ARCHITECTURE.md, .bee/CONVENTIONS.md, .bee/CONCERNS.md, and .bee/CONTEXT.md, and will refresh the `mcp` section of .bee/config.json with the current MCP tool names."
+"Re-extracting codebase context into structured documents. This will overwrite .bee/STACK.md, .bee/ARCHITECTURE.md, .bee/CONVENTIONS.md, .bee/CONCERNS.md, and .bee/CONTEXT.md, and will refresh the `mcp` and `lsp` sections of .bee/config.json with the current MCP tool names and per-stack LSP availability."
 
 Proceed immediately -- do not ask for confirmation or wait for user input.
 
@@ -59,6 +59,16 @@ So the all-false default written when ToolSearch finds nothing (or is unavailabl
 3. **Re-serialize** the whole parsed object back to JSON (pretty-printed, matching the existing 2-space indentation) and **write** it back to `.bee/config.json`.
 
 Never text-substitute on the raw JSON string. All keys other than `mcp` are preserved exactly because they are carried through the parsed object untouched.
+
+### Step 3.5: LSP Availability Discovery (refresh config.lsp)
+
+Language servers are often configured (or removed) after init, so the `lsp` section of config.json can go stale. Re-probe on every refresh. This uses the SAME discovery contract as `/bee:init` Step 3.9 — do not diverge.
+
+**Probe per stack:** for each stack in `config.stacks`, pick ONE representative source file of the stack's primary file type (Glob inside the stack path) and call the **LSP** tool with `operation: "documentSymbol"` on it at line 1, character 1. Symbols (or an empty result) returned → `available: true`; an error (no server for the file type, executable missing, tool absent) → `available: false`; no source files → `available: false`. Never hard-fail — probe errors ARE the unavailable signal.
+
+**Build the `lsp` object:** one `{ "<stack_name>": { "available": <bool> } }` entry per configured stack.
+
+**Persist via the SAME JSON-aware Read-Modify-Write discipline as Step 3, mutating ONLY the `lsp` key:** read + parse config.json, set `parsed.lsp` to the object built above (creates the section when absent, replaces it when present), touch no other key, re-serialize pretty-printed, write back. Never text-substitute on the raw JSON string.
 
 ### Step 4: Spawn Context-Builder Agent
 
@@ -98,7 +108,7 @@ Re-read `.bee/STATE.md` from disk (Read-Modify-Write pattern -- always read the 
 Update the Last Action section:
 - **Command:** `/bee:refresh-context`
 - **Timestamp:** current ISO 8601 timestamp
-- **Result:** "Codebase context extracted to .bee/ (STACK.md, ARCHITECTURE.md, CONVENTIONS.md, CONCERNS.md, CONTEXT.md); config.json `mcp` section refreshed via ToolSearch discovery"
+- **Result:** "Codebase context extracted to .bee/ (STACK.md, ARCHITECTURE.md, CONVENTIONS.md, CONCERNS.md, CONTEXT.md); config.json `mcp` and `lsp` sections refreshed (ToolSearch discovery + per-stack LSP probe)"
 
 Write the updated STATE.md back to disk.
 
@@ -116,7 +126,7 @@ AskUserQuestion(
 **Design Notes (do not display to user):**
 
 - The context-builder agent is spawned with `model: "sonnet"` for economy/quality mode (structured scanning via Glob/Grep/Read and template-based output). In premium mode, the model parameter is omitted (inherits parent model for maximum quality).
-- No user confirmation is needed because the side effects are non-destructive: overwriting derived context documents that can always be regenerated, and refreshing the `mcp` section of config.json (a JSON-aware Read-Modify-Write that mutates only the `mcp` key and preserves all other config). The Step 2 message discloses both.
+- No user confirmation is needed because the side effects are non-destructive: overwriting derived context documents that can always be regenerated, and refreshing the `mcp` and `lsp` sections of config.json (two single-key JSON-aware Read-Modify-Writes, each mutating only its own key and preserving all other config). The Step 2 message discloses all three.
 - The command does not auto-commit. The user decides when to commit via `/bee:commit`.
 - The `/bee:resume` suggestion is important because resume reads context documents and presents them as part of the briefing -- this closes the loop for the user.
 - The context packet includes the project root and stack config so the agent knows where to scan and what framework conventions to expect. The agent reads config.json itself, but passing the stack name upfront helps it prioritize scanning patterns.

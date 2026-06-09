@@ -18,18 +18,19 @@ rm -f "$BEE_DIR/.review-reminder-shown"
 # Write session start timestamp for metrics
 date -u +"%Y-%m-%dT%H:%M:%SZ" > "$BEE_DIR/.session-start"
 
-# Output state summary (stdout goes to Claude's context)
-# Cap at 60 lines to prevent unbounded context growth
+# Output a STATE.md DIGEST (stdout goes to Claude's context).
+# The old head-60 slice injected ~20KB of mostly Decisions Log history while never
+# reaching the Last Action section. The digest injects exactly what a resuming
+# session needs -- Current Spec, the Phases table, and Last Action (a few KB) --
+# and points at the full file for everything else.
 if [ -f "$BEE_DIR/STATE.md" ]; then
   echo "## Bee Project State"
-  LINES=$(wc -l < "$BEE_DIR/STATE.md" | tr -d ' ')
-  if [ "$LINES" -gt 60 ]; then
-    head -n 60 "$BEE_DIR/STATE.md"
-    echo ""
-    echo "(STATE.md truncated at 60/$LINES lines -- read full file with Read tool if needed)"
-  else
-    cat "$BEE_DIR/STATE.md"
-  fi
+  awk '
+    /^## / { insec = ($0 == "## Current Spec" || $0 == "## Phases" || $0 == "## Last Action") }
+    insec { print }
+  ' "$BEE_DIR/STATE.md"
+  echo ""
+  echo "(Digest: Current Spec + Phases + Last Action. Decisions Log and history: read $BEE_DIR/STATE.md with the Read tool when needed.)"
   echo ""
 fi
 

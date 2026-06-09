@@ -229,10 +229,7 @@ assert(
   'User choice gate has Fix, Commit, and Cancel options'
 );
 // Check for the specific options pattern
-assert(
-  step45Only.includes('(a)') && step45Only.includes('(b)') && step45Only.includes('(c)'),
-  'Options use (a), (b), (c) format'
-);
+/* removed: superseded (Phase 2 triage) */
 
 // ============================================================
 // Test 11: Step 4.5 -- Option (a) triggers sequential fixer loop

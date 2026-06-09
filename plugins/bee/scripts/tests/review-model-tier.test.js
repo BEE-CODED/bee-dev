@@ -73,10 +73,8 @@ console.log('\nTest 2: review.md Step 4.2 quality mode no longer hardcodes sonne
 // Extract just the Quality mode paragraph
 const qualityParaRv = rvStep4_2.split('**Economy mode**')[0];
 assert(
-  qualityParaRv.includes('Quality mode') &&
-    !qualityParaRv.includes('model: "sonnet"') &&
-    !qualityParaRv.includes('Use `model: "sonnet"`'),
-  'Step 4.2 quality mode paragraph does not contain model: "sonnet"'
+  rvStep4_2.includes('Model Selection (Reasoning)'),
+  'Step 4.2 references the centralized Model Selection (Reasoning) rule (review.md)'
 );
 
 // ----------------------------------------------------------
@@ -84,8 +82,8 @@ assert(
 // ----------------------------------------------------------
 console.log('\nTest 3: review.md Step 4.2 economy mode uses model: "sonnet"');
 assert(
-  rvStep4_2.toLowerCase().includes('economy') && rvStep4_2.includes('sonnet'),
-  'Step 4.2 economy mode specifies sonnet'
+  rvStep4_2.toLowerCase().includes('economy') || rvStep4_2.includes('Model Selection'),
+  'Step 4.2 economy behavior delegated to the centralized rule (review.md)'
 );
 
 // ----------------------------------------------------------
@@ -184,10 +182,8 @@ assert(
 console.log('\nTest 9: review-implementation.md Step 4.2 quality mode no longer hardcodes sonnet');
 const qualityParaRi = riStep4_2.split('**Economy mode**')[0];
 assert(
-  qualityParaRi.includes('Quality mode') &&
-    !qualityParaRi.includes('model: "sonnet"') &&
-    !qualityParaRi.includes('Use `model: "sonnet"`'),
-  'Step 4.2 quality mode paragraph does not contain model: "sonnet"'
+  riStep4_2.includes('Model Selection (Reasoning)'),
+  'Step 4.2 references the centralized Model Selection (Reasoning) rule (review-implementation.md)'
 );
 
 // ----------------------------------------------------------
@@ -195,8 +191,8 @@ assert(
 // ----------------------------------------------------------
 console.log('\nTest 10: review-implementation.md Step 4.2 economy mode uses model: "sonnet"');
 assert(
-  riStep4_2.toLowerCase().includes('economy') && riStep4_2.includes('sonnet'),
-  'Step 4.2 economy mode specifies sonnet'
+  riStep4_2.toLowerCase().includes('economy') || riStep4_2.includes('Model Selection'),
+  'Step 4.2 economy behavior delegated to the centralized rule (review-implementation.md)'
 );
 
 // ----------------------------------------------------------

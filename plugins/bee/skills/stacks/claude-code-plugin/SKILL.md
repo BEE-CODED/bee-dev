@@ -58,7 +58,7 @@ Agents are Markdown files in `agents/` with YAML frontmatter and structured inst
 
 ### Read-only vs write-capable agents
 
-Read-only agents (bug-detector, pattern-reviewer, stack-reviewer, plan-compliance-reviewer, finding-validator, integrity-auditor, test-auditor, plan-reviewer, project-reviewer) only have `Read, Glob, Grep` and optionally MCP tools. They analyze code but never create or modify files. Their output is structured findings in a defined format.
+Read-only agents (bug-detector, pattern-reviewer, stack-reviewer, plan-compliance-reviewer, finding-validator, integrity-auditor, test-auditor, plan-reviewer, project-reviewer) only have `Read, Glob, Grep`, optionally MCP tools, and the read-only `LSP` navigation tool (Rule 13 LSP-first navigation — a stack-reviewer must not flag the `LSP` token in these agents' allowlists). They analyze code but never create or modify files. Their output is structured findings in a defined format.
 
 Write-capable agents (implementer, fixer, researcher, spec-writer, phase-planner, spec-shaper, test-planner) have `Read, Write, Edit, Bash, Grep, Glob` and produce file changes or state updates.
 
@@ -204,6 +204,16 @@ $ grep -c "up to 5 validators" plugins/bee/commands/review.md
 
 Pasted in task notes as evidence. No file created. This is sufficient TDD evidence for the SubagentStop hook on prose-only tasks.
 
+### Test-grain rule (what a test may pin)
+
+The when-to-write rule above decides IF a test exists; this rule decides WHAT it may assert.
+
+**Meta-tests pin DURABLE CONTRACTS — never incidental prose.** Durable contracts are the things a future legitimate edit must consciously preserve: cross-file invariants (a heading consumers grep, a roster both producer and consumer read), output-structure behaviors (section headings agents emit, exit codes scripts return, load-bearing status tokens), and named-constant rosters. Never pin: step counts ("Command has exactly 8 steps"), prose literals that survive only until the next reword, styling class names, model-name wording, round/iteration limits, or menu phrasing. Those assertions break on every healthy edit, which trains everyone to ignore failures — that is exactly how a red suite stops meaning anything.
+
+**Re-aiming chronic breakers:** when a suite breaks repeatedly on rewords, do not patch the literal — re-aim the assertion at the durable contract underneath (what would actually break a consumer if it changed?). If no durable contract exists under the pin — the test only ever asserted prose — DELETE the assertion or the suite; prefer zero tests over shallow tests.
+
+**Consolidation preference:** paired-contract assertions belong in the canonical roster suite (`command-primitives.test.js` `*_COMMANDS` rosters, per case 1 above), not in new one-off files.
+
 ### Plain-Node test pattern (for the cases above where a test file IS warranted)
 
 ```js
@@ -230,6 +240,18 @@ process.exit(failed > 0 ? 1 : 0);
 ```
 
 Test files live in `scripts/tests/`. Run individually: `node plugins/bee/scripts/tests/{filename}.test.js`. (`/bee:test` is the manual testing handoff, not a unit-test orchestrator.)
+
+### Aggregate runner and the commit self-gate
+
+The full meta-suite runs through the aggregate runner — discovery is dynamic (`scripts/tests/*.test.js`, `scripts/*.test.js`, `scripts/tests/test-*.sh`), so new suites are picked up without registration:
+
+```bash
+node plugins/bee/scripts/run-meta-tests.js                  # full run (exit 1 = non-baselined FAIL)
+node plugins/bee/scripts/affected-suites.js --root . {changed-paths...} \
+  | node plugins/bee/scripts/run-meta-tests.js --root . --subset-stdin   # affected subset
+```
+
+Commits on the bee repo are gated: pre-commit-gate.sh maps staged paths to affected suites and BLOCKS on any non-baselined FAIL (baselined failures and budget skips warn-and-allow; tooling failures fail open). After editing commands/agents/skills or scripts, run the affected subset BEFORE finishing the task — a gate block at commit time means this step was skipped. The known-failing baseline (`scripts/meta-test-baseline.txt`) ratchets DOWN only: `--generate` refuses new additions without `--force`. Never add a failing suite to the baseline to get past the gate — fix the suite or re-aim it per the test-grain rule above.
 
 ## Must-Haves
 

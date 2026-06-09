@@ -238,5 +238,30 @@ assert(
 // ============================================================
 // Results
 // ============================================================
+// ============================================================
+// Test 20 (Phase 3): dead-field symbolic branch admits findReferences as the
+// absent-endpoint evidence, gated on config.lsp, with the string-addressed
+// clause explicitly excluded from the branch (LSP cannot see string keys)
+// ============================================================
+console.log('\nTest 20: LSP symbolic branch (Rule 13) in the dead-field detector');
+assert(
+  patternReviewer.includes('SYMBOLIC IDENTIFIERS (Rule 13 branch)') &&
+    patternReviewer.includes('config.lsp'),
+  'Symbolic findReferences branch present and gated on config.lsp availability'
+);
+assert(
+  /findReferences on X: zero references/.test(patternReviewer) &&
+    /findReferences on X returned zero references/.test(patternReviewer),
+  'Zero-result findReferences admitted as dual-endpoint CITED evidence (branch + evidence-form + template)'
+);
+assert(
+  /NEVER use this branch/.test(patternReviewer),
+  'String-addressed keys explicitly excluded from the LSP branch'
+);
+assert(
+  patternReviewer.includes('I grepped for {consumers/writers} of X and found none'),
+  'Grep evidence wording preserved verbatim (string-addressed/fallback standard unchanged)'
+);
+
 console.log(`\nResults: ${passed} passed, ${failed} failed out of ${passed + failed} assertions`);
 process.exit(failed > 0 ? 1 : 0);

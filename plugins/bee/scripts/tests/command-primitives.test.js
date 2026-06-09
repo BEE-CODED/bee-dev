@@ -814,6 +814,10 @@ if (thinkingSkill !== null) {
     /## Rule 12: Fail Visibly/.test(thinkingSkill),
     'thinking-principles skill defines Rule 12 (Fail Visibly)'
   );
+  assert(
+    /## Rule 13: LSP-First Navigation/.test(thinkingSkill),
+    'thinking-principles skill defines Rule 13 (LSP-First Navigation) — the single source of the LSP-vs-grep contract (agents reference, never copy)'
+  );
   // Negative: rules already covered structurally by bee are NOT duplicated here.
   // R5/R6 are unused in the source taxonomy (Karpathy 1-4 + author's R7-R12).
   assert(
@@ -834,15 +838,16 @@ if (thinkingSkill !== null) {
   );
 }
 
-console.log('\n=== Thinking Principles — Canonical references in 6 consumer agents ===');
+console.log('\n=== Thinking Principles — Canonical references in 7 consumer agents ===');
 
 const THINKING_PRINCIPLE_CONSUMERS = {
-  'implementer.md':       { rules: [8, 9, 12], titles: ['Read Before Write', 'Test Intent', 'Fail Visibly'] },
-  'quick-implementer.md': { rules: [8, 9, 12], titles: ['Read Before Write', 'Test Intent', 'Fail Visibly'] },
-  'researcher.md':        { rules: [8],        titles: ['Read Before Write'] },
-  'bug-detector.md':      { rules: [7, 12],    titles: ['Surface Conflicts', 'Fail Visibly'] },
-  'pattern-reviewer.md':  { rules: [7],        titles: ['Surface Conflicts'] },
-  'fixer.md':             { rules: [12],       titles: ['Fail Visibly'] },
+  'implementer.md':       { rules: [8, 9, 12, 13], titles: ['Read Before Write', 'Test Intent', 'Fail Visibly', 'LSP-First Navigation'] },
+  'quick-implementer.md': { rules: [8, 9, 12, 13], titles: ['Read Before Write', 'Test Intent', 'Fail Visibly', 'LSP-First Navigation'] },
+  'researcher.md':        { rules: [8, 13],        titles: ['Read Before Write', 'LSP-First Navigation'] },
+  'bug-detector.md':      { rules: [7, 12, 13],    titles: ['Surface Conflicts', 'Fail Visibly', 'LSP-First Navigation'] },
+  'pattern-reviewer.md':  { rules: [7, 13],        titles: ['Surface Conflicts', 'LSP-First Navigation'] },
+  'fixer.md':             { rules: [12, 13],       titles: ['Fail Visibly', 'LSP-First Navigation'] },
+  'debug-investigator.md': { rules: [13],          titles: ['LSP-First Navigation'] },
 };
 
 for (const [agentFile, expected] of Object.entries(THINKING_PRINCIPLE_CONSUMERS)) {
@@ -881,6 +886,43 @@ for (const [agentFile, expected] of Object.entries(THINKING_PRINCIPLE_CONSUMERS)
       `${agentFile} names Rule ${ruleNum} (${ruleTitle}) explicitly — this is the rule that addresses the failure mode this agent is most prone to`
     );
   }
+}
+
+console.log('\n=== LSP tool allowlists (Phase 3) — 10 restricted files + variant contract ===');
+
+// The 10 restricted agents that gained the read-only LSP navigation tool. Word-boundary
+// regex so `LSP` is matched as a tool name, not a substring of another token.
+// researcher.md inverse invariant (NO tools: line — inherit-all is HOW it gets LSP)
+// is ALREADY pinned at mcp-discovery.test.js:87-91 — referenced, not duplicated, same
+// treatment as the stack-implementer no-tools pin (mcp-discovery test 12).
+const LSP_ALLOWLIST_FILES = [
+  'pattern-reviewer.md', 'bug-detector.md', 'debug-investigator.md',
+  'fixer.md', 'implementer.md', 'quick-implementer.md',
+  'stacks/laravel-inertia-react/bug-detector.md', 'stacks/laravel-inertia-vue/bug-detector.md',
+  'stacks/laravel-inertia-react/pattern-reviewer.md', 'stacks/laravel-inertia-vue/pattern-reviewer.md',
+];
+for (const f of LSP_ALLOWLIST_FILES) {
+  const content = readFile(path.join(AGENTS_DIR, f));
+  assert(
+    content !== null && /^tools:.*\bLSP\b/m.test(content),
+    `${f} tools: allowlist grants the LSP tool — without it the Rule 13 contract is inert for this agent`
+  );
+}
+// Tool-without-contract is forbidden: the four stack variants REPLACE the generic
+// agents on exactly the Laravel projects where LSP is available (review.md routing),
+// so each must ALSO carry the Rule 13 reference + the thinking-principles skill.
+const LSP_VARIANT_FILES = LSP_ALLOWLIST_FILES.filter((f) => f.startsWith('stacks/'));
+for (const f of LSP_VARIANT_FILES) {
+  const content = readFile(path.join(AGENTS_DIR, f));
+  assert(
+    content !== null && /Rule\s*13\s*\(LSP-First Navigation\)/.test(content),
+    `${f} references Rule 13 (LSP-First Navigation) — variants substitute for generics on LSP-capable stacks; tool-without-contract is forbidden`
+  );
+  const fm = content && content.match(/^---\n([\s\S]+?)\n---/);
+  assert(
+    fm !== null && /^\s*-\s*thinking-principles\s*$/m.test(fm[1]),
+    `${f} frontmatter lists thinking-principles — required so the skill (and Rule 13) actually loads for the variant`
+  );
 }
 
 console.log('\n=== Thinking Principles — Test Quality Gate in implementer 3a (user-project tests) ===');

@@ -478,7 +478,11 @@ console.log('\nTest Group 6: scanDebugSessions');
 // ============================================================
 console.log('\nTest Group 7: scanQuickTasks (real .bee/quick)');
 {
-  const realQuick = scanners.scanQuickTasks(REAL_BEE_DIR);
+  // Fixture quick dir (the live .bee/quick contents drift; behavior is the contract)
+  const fxQuick = makeTempBeeDir();
+  writeFile(path.join(fxQuick, 'quick', '001-review-quality-rules.md'),
+    '# Quick Task 1: Add review quality rules\n\n- Date: 2026-03-20\n- Status: EXECUTED\n');
+  const realQuick = scanners.scanQuickTasks(fxQuick);
   assert(Array.isArray(realQuick), 'scanQuickTasks returns an array');
   assert(realQuick.length >= 1, 'scanQuickTasks finds real quick task file(s)');
 
@@ -487,7 +491,7 @@ console.log('\nTest Group 7: scanQuickTasks (real .bee/quick)');
   );
   assert(!!reviewRules, 'scanQuickTasks finds 001-review-quality-rules.md');
   assert(
-    reviewRules && reviewRules.number === '1',
+    reviewRules && String(reviewRules.number) === '1',
     'scanQuickTasks extracts task number from "# Quick Task 1:"'
   );
   assert(
@@ -525,7 +529,7 @@ console.log('\nTest Group 7: scanQuickTasks (real .bee/quick)');
     assert(results.length === 2, 'scanQuickTasks returns all .md files in the quick dir');
     const missing = results.find(r => r.filePath.includes('002-missing-metadata'));
     assert(
-      !!missing && missing.number === '2' && missing.title.includes('Missing metadata'),
+      !!missing && String(missing.number) === '2' && missing.title.includes('Missing metadata'),
       'scanQuickTasks still extracts number+title when date/status missing'
     );
   } finally {
