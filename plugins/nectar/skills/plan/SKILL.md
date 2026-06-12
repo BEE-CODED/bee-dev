@@ -58,7 +58,7 @@ Write `docs/work/<topic>/plan.md` in exactly this format:
 After decomposition, check the size before writing anything:
 
 - **One task total:** say so and skip the plan file. The work was quick-scale — return to inline execution with the build skill's discipline. A one-task plan.md is ceremony with no payoff.
-- **More than 3 waves or more than 10 tasks:** the topic is project-scale. Split it into smaller topics following the shape skill's project convention: add or extend the `## Topics` section in design.md with one slug and one-line scope per topic, then plan only the first topic. The rest get planned when their turn comes.
+- **More than 3 waves or more than 10 tasks:** the topic has outgrown a single plan — this is plan's escalation trigger, not a scale definition (the shape skill's table stays authoritative). Split it into smaller topics following the shape skill's project convention: add or extend the `## Topics` section in design.md with one slug and one-line scope per topic, then plan only the first topic. The rest get planned when their turn comes.
 
 ## Plan self-review
 

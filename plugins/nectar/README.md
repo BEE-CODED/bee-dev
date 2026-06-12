@@ -6,7 +6,7 @@ Eight skills. No commands. No state machine. The methodology activates when you 
 
 | Skill | When it activates | What it produces |
 |-------|-------------------|-----------------|
-| shape | Starting any new work — "let's build X", "add Y", "I have an idea" | `docs/work/<topic>/design.md` at feature/project scale; smaller work writes nothing |
+| shape | Starting any new work — "let's build X", "add Y", "I want to change how Z works" | `docs/work/<topic>/design.md` at feature/project scale; smaller work writes nothing |
 | plan | When a shaped feature needs an execution plan | `docs/work/<topic>/plan.md` with tasks in dependency waves |
 | build | Implementing — executing a plan or writing non-trivial code | No new artifact — updates `plan.md` checkboxes |
 | review | After implementation or on "review this" | `docs/work/<topic>/review.md` plus fixes applied |
@@ -24,6 +24,8 @@ Shape → plan → build → review is the main path. Debug, audit, capture, and
 ```
 docs/work/
   backlog.md              # captured ideas, one line each
+  audit-YYYY-MM-DD.md     # audit snapshots — latest per day wins
+  debug/<slug>.md         # debug hunts with no topic folder
   <topic>/
     design.md             # what and why, with acceptance criteria
     plan.md               # tasks with checkboxes, grouped in waves
