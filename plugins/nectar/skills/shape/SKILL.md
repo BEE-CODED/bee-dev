@@ -20,6 +20,12 @@ Before asking anything:
 
 If neither exists or nothing matches, say nothing and continue.
 
+Shape owns backlog cleanup:
+
+- When a backlog entry is folded into the new work, delete its line — the design doc supersedes it.
+- When a surfaced entry is declined, append ` (declined: N)` to its line (increment if present).
+- When surfacing an entry that already has `(declined: 2)`, suggest deleting it instead of surfacing again.
+
 ## Clarify
 
 Ask questions until the intent is unambiguous — then stop, even if that takes zero questions.
