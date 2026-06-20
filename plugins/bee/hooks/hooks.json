@@ -31,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/emit-event.js post_tool_use",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/emit-event-gate.sh post_tool_use",
             "timeout": 5
           }
         ]
@@ -337,7 +337,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/emit-event.js subagent_stop",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/emit-event-gate.sh subagent_stop",
             "timeout": 5
           }
         ]
@@ -357,7 +357,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/emit-event.js stop",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/emit-event-gate.sh stop",
             "timeout": 5
           }
         ]
@@ -373,15 +373,6 @@
             "timeout": 120
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/emit-event.js pre_tool_use",
-            "timeout": 5
-          }
-        ]
       }
     ],
     "UserPromptSubmit": [
@@ -389,7 +380,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/hooks/emit-event.js user_prompt_submit",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/emit-event-gate.sh user_prompt_submit",
             "timeout": 5
           }
         ]

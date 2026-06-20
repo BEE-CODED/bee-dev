@@ -249,7 +249,9 @@ if (!isRewired) {
     'SubagentStop has zero type:"prompt" entries post-rewire'
   );
 
-  // 5c: terminal entry is the catch-all emit-event.js subagent_stop, no matcher.
+  // 5c: terminal entry is the catch-all subagent_stop emit, no matcher.
+  // (Now routed through emit-event-gate.sh, which execs emit-event.js only when a
+  // consumer is active — see emit-event-gate.sh / hooks-emit-gate.test.js.)
   const terminal = subStop[subStop.length - 1];
   const terminalHook = terminal && terminal.hooks && terminal.hooks[0];
   assert(
@@ -260,9 +262,9 @@ if (!isRewired) {
     terminalHook
       && terminalHook.type === 'command'
       && typeof terminalHook.command === 'string'
-      && terminalHook.command.includes('emit-event.js')
+      && terminalHook.command.includes('emit-event')
       && terminalHook.command.includes('subagent_stop'),
-    'terminal SubagentStop entry is `emit-event.js subagent_stop` (catch-all command)'
+    'terminal SubagentStop entry is the catch-all subagent_stop emit (gated)'
   );
 
   // 5d: for every per-agent matcher, the corresponding validator file exists.

@@ -443,7 +443,9 @@ try {
 if (hooksJson && hooksJson.hooks) {
   const h = hooksJson.hooks;
 
-  // Helper: does any matcher-group in the given event array invoke emit-event.js with the given kind?
+  // Helper: does any matcher-group in the given event array wire emit-event for the given kind?
+  // Matches both the direct `emit-event.js` and the `emit-event-gate.sh` wrapper (the gate execs
+  // emit-event.js only when a consumer is active — see emit-event-gate.sh).
   function findEmitGroup(eventArr, kind) {
     if (!Array.isArray(eventArr)) return null;
     for (const group of eventArr) {
@@ -453,7 +455,7 @@ if (hooksJson && hooksJson.hooks) {
           entry &&
           entry.type === 'command' &&
           typeof entry.command === 'string' &&
-          entry.command.includes('scripts/hooks/emit-event.js') &&
+          entry.command.includes('scripts/hooks/emit-event') &&
           entry.command.endsWith(' ' + kind)
         ) {
           return { group, entry };
@@ -463,21 +465,11 @@ if (hooksJson && hooksJson.hooks) {
     return null;
   }
 
-  // PreToolUse
+  // PreToolUse — the redundant pre_tool_use emit was DROPPED for speed (the dashboard
+  // already hides pre events: LiveActivityPanel filters ev.kind !== 'pre_tool_use').
   assert(Array.isArray(h.PreToolUse), 'PreToolUse is an array');
   const pre = findEmitGroup(h.PreToolUse, 'pre_tool_use');
-  assert(pre !== null, 'PreToolUse contains an emit-event.js pre_tool_use entry');
-  if (pre) {
-    assert(pre.entry.timeout === 5, 'PreToolUse emit-event entry has timeout: 5');
-    assert(
-      pre.entry.command.includes('${CLAUDE_PLUGIN_ROOT}'),
-      'PreToolUse emit-event entry uses ${CLAUDE_PLUGIN_ROOT}'
-    );
-    assert(
-      pre.group.matcher === undefined,
-      'PreToolUse emit-event group has no matcher (fires on every call)'
-    );
-  }
+  assert(pre === null, 'PreToolUse no longer emits a pre_tool_use event (dropped — dashboard hides pre events)');
 
   // PostToolUse
   const post = findEmitGroup(h.PostToolUse, 'post_tool_use');
