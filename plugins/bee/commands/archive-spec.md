@@ -13,6 +13,26 @@ Read these files using the Read tool:
 
 You are running `/bee:archive-spec` -- the spec archival command for BeeDev. This command moves the completed spec to the archive directory and resets STATE.md. Follow these steps in order. This command never auto-commits -- the user decides when to commit via `/bee:commit`.
 
+### Step 0: Resolve target spec
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js resolve --bee .bee
+```
+
+- `{"mode":"create"}` → no active spec to archive. Tell the user: "No active spec to archive. Run `/bee:new-spec` first." Stop.
+- `{"mode":"auto","slug":"X"}` → target spec `X`. Check the Current Spec Path in `.bee/STATE.md`; if it does NOT already point to `.bee/specs/X/`, the touch below will re-sync it (stale global — e.g., prior complete reset to NO_SPEC).
+- `{"mode":"pick","candidates":[…]}` → ask via AskUserQuestion which spec to archive. Present each candidate as `{title} ({stage})` (slug as selection value), last-touched first, `Custom` last. If two or more candidates share the same title AND stage, append ` [{slug}]` to each of those labels so they are distinguishable. If the JSON has `more`, include "+{more} more active spec(s) — run `/bee:spec list` to see all." as informational text in the question body (NOT as a selectable option).
+
+Once the slug is chosen, run:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js touch --bee .bee --slug <slug>
+```
+
+Check the exit code of this touch command. If it exits non-zero (snapshot missing or spec unknown), ABORT with an explicit error: "Could not switch to spec <slug> (snapshot missing); aborting to avoid acting on the wrong spec. Run `/bee:spec list`."
+
+so that global STATE.md reflects the chosen spec for the rest of this command. Re-read `.bee/STATE.md` now — the `touch` above re-synced it to the resolved spec; use this fresh copy, not the preamble's. Use this resolved slug as `{spec-folder-name}` wherever that placeholder appears in the steps below.
+
 ### Step 1: Validation Guards
 
 See `skills/command-primitives/SKILL.md` Validation Guards.
@@ -65,6 +85,16 @@ If the user selects "Cancel", display "Archive cancelled." and stop.
    - Check that the original location no longer exists: `test ! -d {spec-path}`
    - If verification fails, tell the user: "Archive move failed. The spec directory may be in an inconsistent state. Check `.bee/archive/` and `.bee/specs/` manually." Stop.
 
+### Step 4.5: Close the spec in the multi-spec registry
+
+Mark the archived spec terminal so it leaves the active queue:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js set-stage --bee .bee --slug "{spec-folder-name}" --stage archived
+```
+
+If this prints `set-stage: unknown spec ...` (a legacy spec not in the registry), that is expected — continue.
+
 ### Step 5: Reset STATE.md
 
 Perform a double-write to STATE.md to record the transition through ARCHIVED status:
@@ -89,19 +119,23 @@ Perform a double-write to STATE.md to record the transition through ARCHIVED sta
 6. Keep the Last Action from the first write unchanged.
 7. Write STATE.md to disk.
 
-### Step 5.5: Archive Agent Memory
+**Load survivor spec into global (FIX 1 — prevents "no active spec" after multi-spec archive):**
 
-Archive agent memory from the completed spec so agents start clean for the next spec. Capture the script's stdout and display it to the user — the script emits one status line per outcome (success with count, no-op, or error) instead of running silently:
+After writing NO_SPEC, check for remaining active specs:
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/archive-memory.sh "{spec-name}"
+node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js list --bee .bee --active --json
 ```
 
-1. Capture stdout from the Bash invocation above.
-2. Display the captured output to the user verbatim (e.g. `archived 3 file(s) to .bee/memory-archive/{spec-name}/` or `no memory to archive (no shared entries found)`).
-3. If the script exits with a non-zero code, surface the stderr error message to the user before proceeding so the failure is not silent.
+Parse the JSON array. Filter out entries whose `slug` equals `{spec-folder-name}` (the just-archived spec). If one or more OTHER active specs remain, load the most-recently-touched survivor into global:
 
-This archives agent memory to `.bee/memory-archive/{spec-name}/`, keeps only project-level shared entries, and clears agent-specific memory.
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js touch --bee .bee --slug <most-recent-survivor-slug>
+```
+
+Then re-read `.bee/STATE.md` from disk. Tell the user: "Switched to remaining spec: {most-recent-survivor-slug}."
+
+If NO other active specs remain, leave global at NO_SPEC — the genuine idle case.
 
 ### Step 6: Summary
 

@@ -24,7 +24,50 @@ You are running `/bee:plan-phase` -- the three-step planning command for BeeDev.
 ### Step 1: Validation Guards
 
 See `skills/command-primitives/SKILL.md` Validation Guards.
-Apply: NOT_INITIALIZED, NO_SPEC, Phase Number Argument, Already Planned.
+Apply: NOT_INITIALIZED.
+
+If the dynamic context contains NO_SPEC and no spec.md exists in any `.bee/specs/*/` directory: tell the user "No active spec. Run `/bee:new-spec` first." Stop. (Fallback only — the resolver below handles this for the multi-spec case.)
+
+### Step: Resolve target spec
+
+Determine which spec this command acts on:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js resolve --bee .bee
+```
+
+Interpret the JSON:
+- `{"mode":"create"}` → no active spec. Tell the user: "No active spec. Run `/bee:new-spec` first." Stop.
+- `{"mode":"auto","slug":"X"}` → target spec `X`. Check the Current Spec Path in `.bee/STATE.md`; if it does NOT already point to `.bee/specs/X/`, run `node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js touch --bee .bee --slug X` and re-read `.bee/STATE.md` from disk (stale global — e.g., prior complete reset to NO_SPEC). If the Current Spec Path already matches, proceed without touching (single-spec byte-for-byte: no extra noise).
+- `{"mode":"pick","candidates":[…]}` → ask via AskUserQuestion which spec to work on. Present each candidate as `{title} ({stage})` (slug as selection value), most-recently-touched first, `Custom` last. If two or more candidates share the same title AND stage, append ` [{slug}]` to each of those labels so they are distinguishable. If the JSON includes a `more` field, include "+{more} more active spec(s) — run `/bee:spec list` to see all." as informational text in the question body (NOT as a selectable option). If a candidate lacks a `title`, fall back to its slug. Use the chosen slug.
+
+For the **pick** branch (and the **auto** branch where the Current Spec Path did NOT already match): run `node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js touch --bee .bee --slug <slug>` — this syncs `.bee/STATE.md` to the chosen spec. Check the exit code of this touch command. If it exits non-zero (snapshot missing or spec unknown), ABORT with an explicit error: "Could not switch to spec <slug> (snapshot missing); aborting to avoid acting on the wrong spec. Run `/bee:spec list`." Re-read `.bee/STATE.md` now — the `touch` above re-synced it to the resolved spec; use this fresh copy, not the preamble's. Then proceed using `.bee/STATE.md` as this command normally does. For the **auto** branch where the Current Spec Path already matched: proceed without touching (no noise).
+
+**Advance spec stage to `planning` (if not already at a later stage):**
+
+Check the current registry stage by running:
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js list --bee .bee --active --json
+```
+Find the entry matching `<slug>`. The `STAGES` order is: `shaping`, `discussing`, `planning`, `executing`, `reviewing`, `shipped`, `archived`. If the spec's current stage index is already >= the index of `planning` (i.e., it is `planning`, `executing`, `reviewing`, `shipped`, or `archived`), skip the set-stage call. Otherwise:
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js set-stage --bee .bee --slug <slug> --stage planning
+```
+If this prints `set-stage: unknown spec ...` (legacy spec not in registry), tolerate it and continue.
+
+### Step 1.5: Post-Resolve Guards (evaluate against the CHOSEN spec)
+
+These guards run AFTER spec resolution so they evaluate the correct spec's state.
+
+**Phase Number Argument:** See `skills/command-primitives/SKILL.md` Guard: Phase Number Argument. Check `$ARGUMENTS` for a phase number against the resolved spec's `phases.md`. If missing, prompt; if exceeds phase count, stop.
+
+**Already Planned:** See `skills/command-primitives/SKILL.md` Guard: Already Planned. Evaluate the resolved spec's STATE.md Phases table. If the target phase's Plan column is `Yes`: PLANNED → soft warning; EXECUTING+ → strong warning that progress may be lost. Stop unless the user confirms.
+
+**Committed-phase hard stop:** Re-read the resolved spec's STATE.md Phases table. If the target phase's Executed AND Committed columns are both populated (non-empty), STOP immediately with a strong warning:
+
+"Phase {N} of spec {slug} is already executed and committed. Re-planning will overwrite its committed TASKS.md. Because .bee/ is gitignored, this file is NOT recoverable from git. Confirm to proceed?"
+
+Use AskUserQuestion with options: ["Cancel (recommended)", "Proceed anyway (data loss risk)", "Custom"]. Only proceed on explicit "Proceed anyway" confirmation.
 
 ### Step 2: Create Phase Directory
 

@@ -173,6 +173,80 @@ process.stdin.on('end', () => {
       // Never crash the statusline
     }
 
+    // Multi-spec queue indicator.
+    // Uses specs-registry activeSpecs() semantics (non-terminal stages).
+    // Determines whether the global STATE.md currently reflects one of the active specs
+    // (a "focused" spec) by matching the Current Spec Path slug against the registry.
+    //
+    // Outcomes:
+    //   • .bee/worktree-spec marker present: append ⊞wt, skip queue logic (stale copied registry)
+    //   • No specs.json (legacy/idle): no-op — beeSegment unchanged (byte-identical to single-spec path)
+    //   • active.length === 0: no-op
+    //   • active.length >= 1, focused spec present: append " +N queued" when N > 0
+    //   • active.length >= 1, NO focused spec (NO_SPEC global): replace beeSegment with
+    //     "{N} spec(s) queued — none focused"
+    try {
+      // If running inside a promoted worktree, the marker takes priority — annotate and skip queue logic
+      const wtMarkerPath = path.join(dir, '.bee', 'worktree-spec');
+      const inWorktree = fs.existsSync(wtMarkerPath);
+      if (inWorktree) {
+        beeSegment = beeSegment + ` \x1b[2m⊞wt\x1b[0m`;
+      }
+      const specsJsonPath = path.join(dir, '.bee', 'specs.json');
+      if (!inWorktree && fs.existsSync(specsJsonPath)) {
+        const raw = fs.readFileSync(specsJsonPath, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.specs)) {
+          const TERMINAL = ['shipped', 'archived'];
+          const active = parsed.specs
+            .filter(s => !TERMINAL.includes(s.stage))
+            .sort((a, b) => String(b.last_touched || '').localeCompare(String(a.last_touched || '')));
+
+          if (active.length > 0) {
+            // Detect focused spec: extract slug from STATE.md Current Spec Path and match registry
+            let focusedSlug = null;
+            try {
+              const statePath = path.join(dir, '.bee', 'STATE.md');
+              if (fs.existsSync(statePath)) {
+                const stateContent = fs.readFileSync(statePath, 'utf8');
+                const specPathMatch = stateContent.match(/^- Path:\s*\.bee\/specs\/([^/\s]+)/m);
+                const specStatusMatch = stateContent.match(/^- Status:\s*(.+)$/m);
+                const specStatus = specStatusMatch ? specStatusMatch[1].trim() : 'NO_SPEC';
+                const slug = specPathMatch ? specPathMatch[1] : null;
+                if (slug && specStatus !== 'NO_SPEC' && active.some(s => s.slug === slug)) {
+                  focusedSlug = slug;
+                }
+              }
+            } catch (_) {}
+
+            if (focusedSlug) {
+              // Worktree indicator: if the focused spec's location is not in-place, annotate
+              const focusedSpec = active.find(s => s.slug === focusedSlug);
+              const isWorktree = focusedSpec && focusedSpec.location && focusedSpec.location !== 'in-place';
+              if (isWorktree) {
+                beeSegment = beeSegment + ` \x1b[2m⊞wt\x1b[0m`;
+              }
+
+              // Focused spec: append "+N queued" when there are other active specs
+              const queued = active.length - 1;
+              if (queued > 0) {
+                beeSegment = beeSegment + ` \x1b[2m+${queued} queued\x1b[0m`;
+              }
+              // queued === 0 and not worktree: single-spec path — no-op, beeSegment unchanged
+            } else {
+              // No focused spec but active specs exist — surface the queue and name the most-recently-touched spec
+              const top = active[0]; // already sorted most-recently-touched first
+              const topLabel = top.title && top.title !== top.slug ? top.title : top.slug;
+              const queueSuffix = active.length > 1 ? ` \x1b[2m(+${active.length - 1} more)\x1b[0m` : '';
+              beeSegment = `\x1b[33m${active.length} queued\x1b[0m \x1b[2m— none focused; last: ${topLabel}\x1b[0m${queueSuffix}`;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Never crash the statusline — if specs.json is unreadable, proceed without it
+    }
+
     // Git dirty count
     let gitSegment = '';
     const dirty = gitDirtyCount(dir);

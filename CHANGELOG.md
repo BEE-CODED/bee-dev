@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- Multi-spec support: bee now tracks multiple concurrent active specs in a `.bee/specs.json` registry, each with its own state and phases. `/bee:spec list` shows them, `/bee:spec use <slug>` focuses one for this chat, `/bee:spec status` reports the focused spec. Single-spec projects are unaffected (byte-for-byte the same).
+- Per-spec memory: each spec can carry `.bee/specs/<slug>/memory.md` with guidance that is injected into agents while that spec is the active one. View and edit it with `/bee:memory`.
+- Worktree promotion: promote any active spec to its own git worktree with `/bee:spec promote <slug>` to build it in parallel; merge back with `/bee:workspace complete`.
+- Execute-time guard: starting a second spec's execution in the same tree now offers to promote it to a worktree, queue it, or pause the other — never a hard stop.
+- Multi-spec dashboard: the hive dashboard and `/bee:spec dashboard` now show every active spec — its stage, whether it's in-place or in a worktree, and last activity — not just the last-touched one.
+
+### Changed
+- `/bee:memory` now manages both global preferences (`user.md`) and the active spec's memory.
+
+### Removed
+- Retired the unused project-global agent-memory archiving (`.bee/memory/` and `archive-memory.sh`). `user.md` remains the global persistent memory; per-spec memory now lives with each spec.
+
+---
+
 ## [4.5.2] - 2026-06-03 -- Bee Velocity — Conversation context capture + per-install MCP tool discovery
 
 Two context-fidelity fixes. First, bee commands no longer lose the conversation when they hand work to subagents. Second, bee's Context7 and Laravel Boost integrations now work regardless of how those MCP servers were installed.

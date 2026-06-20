@@ -41,6 +41,52 @@ Check these guards in order. Stop immediately if any fails:
    "Phase {N} is already executed (status: {status}). Re-executing will re-run all incomplete tasks. Continue?"
    Wait for explicit confirmation before proceeding. If the user declines, stop.
 
+### Step: Resolve target spec
+
+Determine which spec this command acts on:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js resolve --bee .bee
+```
+
+Interpret the JSON:
+- `{"mode":"create"}` → no active spec. Tell the user: "No active spec. Run `/bee:new-spec` first." Stop.
+- `{"mode":"auto","slug":"X"}` → target spec `X`. Check the Current Spec Path in `.bee/STATE.md`; if it does NOT already point to `.bee/specs/X/`, run `node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js touch --bee .bee --slug X` and re-read `.bee/STATE.md` from disk (stale global — e.g., prior complete reset to NO_SPEC). If the Current Spec Path already matches, proceed without touching (single-spec byte-for-byte: no extra noise).
+- `{"mode":"pick","candidates":[…]}` → ask via AskUserQuestion which spec to work on. Present each candidate as `{title} ({stage})` (slug as selection value), most-recently-touched first, `Custom` last. If two or more candidates share the same title AND stage, append ` [{slug}]` to each of those labels so they are distinguishable. If the JSON includes a `more` field, include "+{more} more active spec(s) — run `/bee:spec list` to see all." as informational text in the question body (NOT as a selectable option). If a candidate lacks a `title`, fall back to its slug. Use the chosen slug.
+
+For the **pick** branch (and the **auto** branch where the Current Spec Path did NOT already match): run `node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js touch --bee .bee --slug <slug>` — this syncs `.bee/STATE.md` to the chosen spec. Check the exit code of this touch command. If it exits non-zero (snapshot missing or spec unknown), ABORT with an explicit error: "Could not switch to spec <slug> (snapshot missing); aborting to avoid acting on the wrong spec. Run `/bee:spec list`." Re-read `.bee/STATE.md` now — the `touch` above re-synced it to the resolved spec; use this fresh copy, not the preamble's. Then proceed using `.bee/STATE.md` as this command normally does. For the **auto** branch where the Current Spec Path already matched: proceed without touching (no noise).
+
+### Step: Execute-time guard (concurrency offer)
+
+Before executing, check whether another spec is already executing in-place. This keeps "at most one in-place execution at a time" safe **without ever blocking** the user.
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js guard --bee .bee --slug {target-slug}
+```
+
+Parse the JSON `{ "conflict": bool, "other": slug|null, "claimed": bool }`.
+
+- **`conflict` is false** → the target has been atomically CLAIMED (advanced to `executing` in the registry); proceed to wave execution normally. (This is the common case: single spec, or the only executing spec is this one, or this spec is already in a worktree.)
+- **`conflict` is true** → another spec (`{other}`) is executing in-place; the target was NOT claimed. Offer (never auto-decide):
+
+  ```
+  AskUserQuestion(
+    question: "Spec '{other}' is already executing in-place. How do you want to run '{target-slug}'?",
+    options: [
+      "Promote '{target-slug}' to a worktree (Recommended)",
+      "Keep '{target-slug}' queued (don't execute now)",
+      "Pause '{other}' first",
+      "Custom"
+    ]
+  )
+  ```
+
+  - **Promote (Recommended):** run `/bee:spec promote {target-slug}`, then tell the user to `cd` into the new worktree and re-run `/bee:execute-phase` there. Do NOT execute in-place now. Stop. (Target was NOT claimed — it remains at its prior stage.)
+  - **Keep queued:** stop before wave execution; the spec stays planned/queued, with no stale `executing` entry in the registry. Tell the user it will wait. Stop.
+  - **Pause '{other}':** (a) sync the registry: `node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js set-stage --bee .bee --slug {other} --stage planning`; (b) set `{other}`'s currently-EXECUTING phase back to `PLANNED` in its per-spec STATE.md (so it is no longer "executing"); (c) RE-RUN the guard for `{target-slug}`: `node ${CLAUDE_PLUGIN_ROOT}/scripts/specs-cli.js guard --bee .bee --slug {target-slug}` — now there is no conflict, so the guard atomically claims `{target-slug}` (advances it to `executing`); then proceed to wave execution.
+
+The guard never hard-stops — every branch leaves the user a way forward.
+
 ### Step 1b: Parse Arguments
 
 Check `$ARGUMENTS` for the `--no-aggregate-validate` flag:
