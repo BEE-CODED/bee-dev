@@ -1,6 +1,6 @@
 ---
 name: shape
-description: Use when the user starts a NEW piece of work to act on now — "let's build X", "add Y", "I want to change how Z works" — before any code or files are written. Clarifies intent through short questions, detects the right scale (trivial/quick/feature/project), and produces a design with acceptance criteria only when the work warrants one. Not for fixing bugs or failing tests (debug), reviewing existing code (review), resuming prior work (resume), or parking a mid-work idea for later (capture).
+description: Use when the user starts a NEW piece of work to act on now — "let's build X", "add Y", "I want to change how Z works" — before any code or files are written. Clarifies intent through short questions, detects the right scale (trivial/quick/feature/project), and produces a design with acceptance criteria only when the work warrants one. Not for fixing bugs or failing tests (debug), reviewing existing code (review), returning to prior work (orient), or parking a mid-work idea for later (capture).
 ---
 
 # Shape
@@ -16,7 +16,7 @@ Do NOT write implementation code, scaffold projects, or create files until you h
 Before asking anything:
 
 - Read `docs/work/backlog.md` if it exists. If any line relates to the current topic, surface it: quote the line and ask whether to fold it into this work.
-- Glance at `docs/work/` for a topic folder matching the request. If one exists and contains a design.md or plan.md, surface it and hand off to the resume skill instead of re-shaping.
+- Glance at `docs/work/` for a topic folder matching the request. If one exists and contains a design.md or plan.md, surface it and hand off to the orient skill instead of re-shaping.
 
 If neither exists or nothing matches, say nothing and continue.
 

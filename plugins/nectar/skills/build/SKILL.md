@@ -7,6 +7,10 @@ description: Use when implementing — "implement the plan", "let's code this", 
 
 Execute work test-first. With a `docs/work/<topic>/plan.md`, run its waves in order. Without one — quick-scale work, decided inline — the same TDD loop applies to every non-trivial change; only the wave machinery and the checkboxes drop away. Non-trivial means anything above trivial scale as defined by the shape skill: trivial edits just get done, everything from quick scale up gets tests first. "No plan" never means "no tests first".
 
+## Read before write
+
+Before the first test of a task — or of any inline change — read the files the task touches, their existing tests, and the nearest neighbors. Three things must come out of the read: the helpers that already exist so the change reuses them instead of reinventing them, the local idioms — naming, error shape, test structure — the new code must match, and the exact place the change belongs. Code that duplicates an existing utility or ignores the surrounding conventions is wrong even when its tests pass; the finished diff should read as if the codebase's own author wrote it.
+
 ## TDD loop
 
 Apply this sequence to each task (or, without a plan, to each behavior being added or changed). The order is the discipline — no step may be skipped or reordered:
@@ -23,6 +27,8 @@ Never write the implementation first. Code written before its test gets a test t
 
 Bug fix mid-build? Reproduce it as a failing test first, then fix — same loop.
 
+Without a plan, the work closes the way a wave closes: run the full test suite once, then the project's lint and typecheck commands when it has them, before declaring the work done.
+
 ## Wave execution
 
 When executing a plan.md:
@@ -30,10 +36,10 @@ When executing a plan.md:
 - Read the plan and find the first wave containing unchecked `- [ ]` tasks — that is where execution starts (or resumes).
 - Execute waves strictly in order. Wave N+1 starts only when every task in wave N is done or has failed.
 - **Overlap check before dispatch:** compare the `- files:` lists of the wave's unchecked tasks. Any shared path forces serial execution of the overlapping tasks; only the disjoint remainder runs in parallel. Do not rely on the plan being freshly generated — the codebase may have drifted since it was written.
-- **Within a wave:** if more than one unchecked task remains after the overlap check, dispatch one subagent per unchecked task via the Agent tool, all spawned in a single message so they run in parallel. A wave of one task is executed directly, no subagent. Before dispatching, determine once the project's test command and its per-file invocation syntax — every subagent prompt carries it.
-- **Each subagent's prompt includes:** its task line from plan.md verbatim — the `T<n>` ID, description, and "done when" criteria — its indented `- files:` list, the path to `docs/work/<topic>/design.md`, the five TDD loop steps written out in full (subagents never see this skill file, so "the loop above" means nothing to them), and the test command with per-file syntax plus the instruction to run only its own task's test files, never the full suite.
+- **Within a wave:** if more than one unchecked task remains after the overlap check, dispatch one subagent per unchecked task via the Agent tool, all spawned in a single message so they run in parallel. A wave of one task is executed directly, no subagent. Before dispatching, determine once the project's test command with its per-file invocation syntax, plus its lint and typecheck commands when the project has them — every subagent prompt carries the test command; lint and typecheck stay with you for the wave close.
+- **Each subagent's prompt includes:** its task line from plan.md verbatim — the `T<n>` ID, description, and "done when" criteria — its indented `- files:` list, the path to `docs/work/<topic>/design.md`, the five TDD loop steps and the read-before-write rule written out in full (subagents never see this skill file, so "the loop above" means nothing to them), and the test command with per-file syntax plus the instruction to run only its own task's test files, never the full suite.
 - Subagents report results in their final message. You are the sole writer of plan.md — subagents never edit it.
-- **After all subagents in a wave return:** first re-verify each task's "done when" criteria yourself — re-run its test files; a subagent's claim of success is not verification. Then run the full test suite once. Tick the verified tasks only after the suite is green. If the suite is red from cross-task interaction, no task in the wave gets ticked until the regression is attributed to a specific task; fix or revert that task, then re-verify and re-run the suite.
+- **After all subagents in a wave return:** first re-verify each task's "done when" criteria yourself — re-run its test files; a subagent's claim of success is not verification. Then run the full test suite once, and the project's lint and typecheck commands when it has them. Tick the verified tasks only after all of these are green. If the suite is red from cross-task interaction, no task in the wave gets ticked until the regression is attributed to a specific task; fix or revert that task, then re-verify and re-run the suite.
 - Do not pause between waves to ask "continue?" — proceed automatically to the next wave until the plan is done or a task fails.
 
 ## Progress

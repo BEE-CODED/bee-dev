@@ -29,7 +29,7 @@ A lens pass produces findings only — never edits — regardless of who runs it
 Lens definitions:
 
 - **correctness:** logic, edge cases, error paths
-- **conventions:** does it read like the surrounding code
+- **conventions:** does it read like the surrounding code — idioms, naming, and simplicity: duplicating an existing helper, dead code, or abstraction beyond what the change needs is a finding
 - **security:** injection, authz, secrets, unsafe input
 - **tests:** do they verify behavior, not implementation
 - **performance:** N+1, unnecessary work in hot paths
@@ -90,7 +90,7 @@ A finding without quotable evidence is REFUTED by definition. Validation is mand
 2. Present STYLISTIC findings to the user as a choice: fix or leave. Apply only what the user picks.
 3. **Any applied edit resets the loop** — a CONFIRMED fix and a user-chosen STYLISTIC fix alike. The clean pass must postdate the last edit of any kind.
 4. Re-review with the same validation discipline. Intermediate rounds may narrow scope to the changed areas and the lenses that produced the confirmed findings — but the terminal pass is always full-scope, full-lens-set.
-5. The loop ends only when that full-scope, full-lens-set pass yields zero CONFIRMED findings. Never declare the work clean without it.
+5. The loop ends only when that full-scope, full-lens-set pass yields zero CONFIRMED findings AND the full test suite — plus the project's lint and typecheck commands when it has them — has run green after the last applied edit. A clean lens pass over code that fails its own suite is not clean.
 6. **Circuit breaker:** if a finding survives 2 fix rounds, or a fix regresses something else, stop — report the current state to the user and hand off to the debug skill. No brute-force fix loops.
 
 ## Report

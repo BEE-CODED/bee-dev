@@ -1,9 +1,22 @@
 {
   "name": "nectar",
-  "version": "0.1.0",
-  "description": "The essence of spec-driven development distilled into 8 pure skills — shape, plan, build, review, debug, audit, capture, resume. No commands, no state machine, no ceremony: plain artifacts in docs/work/ are the only state.",
+  "version": "0.2.0",
+  "description": "The essence of spec-driven development distilled into 8 pure skills — shape, plan, build, review, debug, audit, capture, orient. No commands, no state machine, no ceremony: plain artifacts in docs/work/ are the only state.",
   "author": {
     "name": "Beecoded",
-    "email": "george.popescu@beecoded.ro"
-  }
+    "email": "george.popescu@beecoded.ro",
+    "url": "https://github.com/beecoded"
+  },
+  "repository": "https://github.com/beecoded/bee",
+  "license": "MIT",
+  "keywords": [
+    "spec-driven",
+    "tdd",
+    "skills",
+    "workflow",
+    "code-review",
+    "debugging",
+    "planning",
+    "lightweight"
+  ]
 }

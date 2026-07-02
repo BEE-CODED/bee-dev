@@ -13,11 +13,11 @@ Eight skills. No commands. No state machine. The methodology activates when you 
 | debug | Any bug, test failure, or unexpected behavior | Root cause, fix, regression test; `docs/work/<topic>/debug-<slug>.md` only if the hunt spans sessions |
 | audit | On "audit this", pre-release sweeps, unfamiliar codebases | Severity-grouped `docs/work/audit-YYYY-MM-DD.md` |
 | capture | When an idea surfaces mid-work | One line in `docs/work/backlog.md` |
-| resume | On "where were we", "what's next", new sessions on existing work | No artifact — status report and one proposed next action |
+| orient | On "where were we", "what's next", new sessions on existing work | No artifact — status report and one proposed next action |
 
 ## The lifecycle
 
-Shape → plan → build → review is the main path. Debug, audit, capture, and resume are satellites that activate when their condition is met.
+Shape → plan → build → review is the main path. Debug, audit, capture, and orient are satellites that activate when their condition is met.
 
 ## State convention
 

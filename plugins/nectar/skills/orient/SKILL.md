@@ -1,11 +1,11 @@
 ---
-name: resume
+name: orient
 description: Use when returning to a project — "where were we", "what's next", "continue", or any new session touching existing work in docs/work/. Reconstructs status purely from artifacts and git, then proposes exactly one next action. Not for starting brand-new work (shape).
 ---
 
-# Resume
+# Orient
 
-Reconstruct where the work stands from artifacts and git alone, then propose exactly one next action. Resume reads, reports, and proposes — it never creates or edits a file, never ticks a box, never deletes anything, never commits. The single next action is a proposal for the user to accept or override, not something to execute unprompted.
+Reconstruct where the work stands from artifacts and git alone, then propose exactly one next action. Orient reads, reports, and proposes — it never creates or edits a file, never ticks a box, never deletes anything, never commits. The single next action is a proposal for the user to accept or override, not something to execute unprompted.
 
 ## Scan
 
@@ -37,7 +37,7 @@ The cross-check runs in addition to whichever status rule matched — it never c
 - Any commit or uncommitted change touching a `- files:` path while its task's box is unticked → same, in reverse.
 - design.md present, and `git status` shows uncommitted changes that diverge from what the design describes → flag the discrepancy and ask, instead of guessing which is current.
 
-Report the mismatch as a fact and let the user decide which is true. Do not untick, tick, or "repair" anything — resume has no write access to reality, only a description of it.
+Report the mismatch as a fact and let the user decide which is true. Do not untick, tick, or "repair" anything — orient has no write access to reality, only a description of it.
 
 ## Propose
 
